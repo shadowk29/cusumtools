@@ -103,28 +103,31 @@ class App(tk.Frame):
         a.set_xlabel(x_col)
         a.set_ylabel(y_col)
         self.f.subplots_adjust(bottom=0.14,left=0.16)
-        a.plot(self.eventsdb_subset[x_col],self.eventsdb_subset[y_col])
+        a.plot(self.eventsdb_subset[x_col],self.eventsdb_subset[y_col],marker='.',linestyle='None')
         self.canvas.show()
 
     def plot_1d_histogram(self):
         col = self.x_option.cget('text')
+        numbins = self.xbin_entry.get()
         self.f.clf()
         a = self.f.add_subplot(111)
         a.set_xlabel(col)
         a.set_ylabel('Count')
         self.f.subplots_adjust(bottom=0.14,left=0.16)
-        a.hist(self.eventsdb_subset[col])
+        a.hist(self.eventsdb_subset[col],bins=int(numbins))
         self.canvas.show()
         
     def plot_2d_histogram(self):
         x_col = self.x_option.cget('text')
         y_col = self.y_option.cget('text')
+        xbins = self.xbin_entry.get()
+        ybins = self.ybin_entry.get()
         self.f.clf()
         a = self.f.add_subplot(111)
         a.set_xlabel(x_col)
         a.set_ylabel(y_col)
         self.f.subplots_adjust(bottom=0.14,left=0.16)
-        a.hexbin(self.eventsdb_subset[x_col],self.eventsdb_subset[y_col])
+        a.hist2d(self.eventsdb_subset[x_col],self.eventsdb_subset[y_col],bins=[int(xbins),int(ybins)])
         self.canvas.show()
 
     def disable_options(self, *args):
