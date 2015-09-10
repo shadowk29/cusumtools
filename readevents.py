@@ -29,9 +29,7 @@ class App(tk.Frame):
         
         self.filter_button = tk.Button(parent,text='Apply Filter',command=self.filter_db)
         self.reset_button = tk.Button(parent,text='Reset DB',command=self.reset_db)
-        self.plot_button = tk.Button(parent,text='Plot XY Graph',command=self.plot_xy)
-        self.hist1d_button = tk.Button(parent,text='Plot 1D Histogram',command=self.plot_1d_histogram)
-        self.hist2d_button = tk.Button(parent,text='Plot 2D Histogram',command=self.plot_2d_histogram)
+        self.plot_button = tk.Button(parent,text='Update Plot',command=self.update_plot)
         
 
         self.x_option = tk.OptionMenu(parent, self.x_col_options, *self.column_list)
@@ -53,13 +51,19 @@ class App(tk.Frame):
 
         
         self.filter_entry = tk.Entry(parent)
-        filter_label=tk.Label(parent,text='DB Filter String:')
-        self.x_label=tk.Label(parent,text='X Bins:')
-        self.y_label=tk.Label(parent,text='Y Bins:')
+        self.filter_label=tk.Label(parent,text='DB Filter String:')
+        self.x_bins=tk.Label(parent,text='X Bins:')
+        self.y_bins=tk.Label(parent,text='Y Bins:')
+
+        self.xbin_entry = tk.Entry(parent)
+        self.xbin_entry.insert(0,10)
+        self.ybin_entry = tk.Entry(parent)
+        self.ybin_entry.insert(0,10)
         
-        
-        self.x_label.grid(row=3,column=2)
-        self.y_label.grid(row=4,column=2)
+        self.x_bins.grid(row=3,column=2)
+        self.y_bins.grid(row=4,column=2)
+        self.xbin_entry.grid(row=3,column=3)
+        self.ybin_entry.grid(row=4,column=3)
         
         self.graph_option.grid(row=3,column=0,rowspan=2)
         self.x_option.grid(row=3,column=1)
@@ -68,14 +72,12 @@ class App(tk.Frame):
         self.filter_button.grid(row=1,column=2)
         self.reset_button.grid(row=1,column=3)
         
-        self.plot_button.grid(row=5,column=1)
-        self.hist1d_button.grid(row=5,column=2)
-        self.hist2d_button.grid(row=5,column=3)
+        self.plot_button.grid(row=3,column=4,rowspan=2)
 
         self.toolbar_frame.grid(row=1,column=0,columnspan=5)
         self.canvas.get_tk_widget().grid(row=0,column=0,columnspan=5)
         
-        filter_label.grid(row=2,column=0)
+        self.filter_label.grid(row=2,column=0)
         self.filter_entry.grid(row=2,column=1)
         self.filter_button.grid(row=2,column=2)
         self.reset_button.grid(row=2,column=3)
@@ -129,9 +131,30 @@ class App(tk.Frame):
         option = self.graph_option.cget('text')
         if option == '1D Histogram':
             self.y_option['state']='disabled'
+            self.ybin_entry['state']='disabled'
+            self.xbin_entry['state']='normal'
+        elif option == 'XY Plot':
+            self.ybin_entry['state']='disabled'
+            self.xbin_entry['state']='disabled'
+            self.y_option['state']='normal'
         else:
             self.y_option['state']='normal'
-        
+            self.ybin_entry['state']='normal'
+            self.xbin_entry['state']='normal'
+
+    def update_plot(self):
+        option = self.graph_option.cget('text')
+        if option == 'XY Plot':
+            self.plot_xy()
+        elif option == '1D Histogram':
+            self.plot_1d_histogram()
+        elif option == '2D Histogram':
+            self.plot_2d_histogram()
+        else:
+            pass
+
+
+       
 def main():
     root=tk.Tk()
     root.withdraw()
