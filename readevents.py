@@ -12,8 +12,9 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolb
 
     
 class App(tk.Frame):
-    def __init__(self, parent,eventsdb,column_list):
+    def __init__(self, parent,eventsdb,column_list,events_folder):
         tk.Frame.__init__(self, parent)
+        self.events_folder = events_folder
         self.eventsdb = eventsdb
         self.eventsdb_subset = eventsdb
         self.column_list = column_list
@@ -54,8 +55,10 @@ class App(tk.Frame):
         self.event_toolbar = NavigationToolbar2TkAgg(self.event_canvas, self.event_toolbar_frame)
         self.event_toolbar.update()
 
-        
-        
+        self.event_index = tk.IntVar()
+        self.event_index.set(self.eventsdb_subset['event_id'][0])
+        self.event_entry = tk.Entry(parent, textvariable=self.event_index)
+        self.plot_event_button = tk.Button(parent,text='Plot Event',command=self.plot_event)
         
 
         
@@ -91,7 +94,9 @@ class App(tk.Frame):
 
         self.event_toolbar_frame.grid(row=1,column=6,columnspan=6)
         self.event_canvas.get_tk_widget().grid(row=0,column=6,columnspan=6)
-        
+        self.event_entry.grid(row=2,column=6)
+        self.plot_event_button.grid(row=2,column=11)
+            
         self.filter_label.grid(row=2,column=0)
         self.filter_entry.grid(row=2,column=1)
         self.filter_button.grid(row=2,column=2)
@@ -198,14 +203,33 @@ class App(tk.Frame):
         else:
             return_col = self.eventsdb_subset[col]
         return return_col
+
+    def plot_event(self):
+        index = self.event_index.get()
+        if any(self.eventsdb_subset['event_id']==index):
+            event_file_path = self.events_folder+'event_%05d.csv' % index
+            event_file = pd.read_csv(event_file_path,encoding='utf-8')
+            event_file.columns = ['time','current','cusum']
+            self.event_f.clf()
+            a = self.event_f.add_subplot(111)
+            a.set_xlabel('Time (us)')
+            a.set_ylabel('Current (pA)')
+            self.event_f.subplots_adjust(bottom=0.14,left=0.21)
+            a.plot(event_file['time'],event_file['current'],event_file['time'],event_file['cusum'])
+            self.event_canvas.show()
+        else:
+            self.event_f.clf()
+            print 'No such event'
        
 def main():
     root=tk.Tk()
     root.withdraw()
     file_path_string = tkFileDialog.askopenfilename(initialdir='C:\Users\kbrig035\Analysis\CUSUM\output\\')
+    folder = file_path_string.replace('events.csv','events/')
+    root.wm_title("CUSUM Tools")
     eventsdb = pd.read_csv(file_path_string,encoding='utf-8')
     column_list = list(eventsdb)
-    App(root,eventsdb,column_list).grid(row=0,column=0)
+    App(root,eventsdb,column_list,folder).grid(row=0,column=0)
     root.mainloop()
 
 if __name__=="__main__":
