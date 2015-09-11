@@ -9,9 +9,7 @@ import Tkinter as tk
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2TkAgg
 
-def parse_semicolon_list(eventsdb,cols):
-    for col in cols:
-        eventsdb[col] = [np.array(a,dtype=float) for a in eventsdb[col].str.split(';')]
+
     
 class App(tk.Frame):
     def __init__(self, parent,eventsdb,column_list):
@@ -35,6 +33,10 @@ class App(tk.Frame):
         self.x_option = tk.OptionMenu(parent, self.x_col_options, *self.column_list)
         self.y_option = tk.OptionMenu(parent, self.y_col_options, *self.column_list)
         self.graph_option = tk.OptionMenu(parent, self.graph_list, 'XY Plot', '1D Histogram', '2D Histogram', command=self.disable_options)
+        self.x_log_var = tk.IntVar()
+        self.x_log_check = tk.Checkbutton(parent, text='Log X', variable = self.x_log_var)
+        self.y_log_var = tk.IntVar()
+        self.y_log_check = tk.Checkbutton(parent, text='Log Y', variable = self.y_log_var)
 
         self.db_info_string = tk.StringVar()
         self.db_info_string.set('Number of events: ' +str(len(self.eventsdb_subset)))
@@ -59,11 +61,14 @@ class App(tk.Frame):
         self.xbin_entry.insert(0,10)
         self.ybin_entry = tk.Entry(parent)
         self.ybin_entry.insert(0,10)
+
+        self.x_log_check.grid(row=3,column=2)
+        self.y_log_check.grid(row=4,column=2)
         
-        self.x_bins.grid(row=3,column=2)
-        self.y_bins.grid(row=4,column=2)
-        self.xbin_entry.grid(row=3,column=3)
-        self.ybin_entry.grid(row=4,column=3)
+        self.x_bins.grid(row=3,column=3)
+        self.y_bins.grid(row=4,column=3)
+        self.xbin_entry.grid(row=3,column=4)
+        self.ybin_entry.grid(row=4,column=4)
         
         self.graph_option.grid(row=3,column=0,rowspan=2)
         self.x_option.grid(row=3,column=1)
@@ -72,10 +77,10 @@ class App(tk.Frame):
         self.filter_button.grid(row=1,column=2)
         self.reset_button.grid(row=1,column=3)
         
-        self.plot_button.grid(row=3,column=4,rowspan=2)
+        self.plot_button.grid(row=3,column=5,rowspan=2)
 
-        self.toolbar_frame.grid(row=1,column=0,columnspan=5)
-        self.canvas.get_tk_widget().grid(row=0,column=0,columnspan=5)
+        self.toolbar_frame.grid(row=1,column=0,columnspan=6)
+        self.canvas.get_tk_widget().grid(row=0,column=0,columnspan=6)
         
         self.filter_label.grid(row=2,column=0)
         self.filter_entry.grid(row=2,column=1)
@@ -96,38 +101,59 @@ class App(tk.Frame):
         self.db_info_string.set('Number of events: ' +str(len(self.eventsdb_subset)))
 
     def plot_xy(self):
-        x_col = self.x_option.cget('text')
-        y_col = self.y_option.cget('text')
+        logscale_x = self.x_log_var.get()
+        logscale_y = self.y_log_var.get()
+        x_label = self.x_option.cget('text')
+        y_label = self.y_option.cget('text')
+        x_col = self.parse_db_col(x_label)
+        y_col = self.parse_db_col(y_label)
         self.f.clf()
         a = self.f.add_subplot(111)
-        a.set_xlabel(x_col)
-        a.set_ylabel(y_col)
+        a.set_xlabel(x_label)
+        a.set_ylabel(y_label)
         self.f.subplots_adjust(bottom=0.14,left=0.16)
-        a.plot(self.eventsdb_subset[x_col],self.eventsdb_subset[y_col],marker='.',linestyle='None')
+        a.plot(x_col,y_col,marker='.',linestyle='None')
+        if logscale_x:
+            a.set_xscale('log')
+        if logscale_y:
+            a.set_yscale('log')
         self.canvas.show()
 
     def plot_1d_histogram(self):
-        col = self.x_option.cget('text')
+        logscale_x = self.x_log_var.get()
+        logscale_y = self.y_log_var.get()
+        x_label = self.x_option.cget('text')
+        col = self.parse_db_col(x_label)
         numbins = self.xbin_entry.get()
         self.f.clf()
         a = self.f.add_subplot(111)
-        a.set_xlabel(col)
-        a.set_ylabel('Count')
-        self.f.subplots_adjust(bottom=0.14,left=0.16)
-        a.hist(self.eventsdb_subset[col],bins=int(numbins))
+        if logscale_x:
+            a.set_xlabel('Log(' +str(x_label)+')')
+            a.set_ylabel('Count')
+            self.f.subplots_adjust(bottom=0.14,left=0.16)
+            a.hist(np.log(col),bins=int(numbins),log=bool(logscale_y))
+        else:
+            a.set_xlabel(x_label)
+            a.set_ylabel('Count')
+            self.f.subplots_adjust(bottom=0.14,left=0.16)
+            a.hist(col,bins=int(numbins),log=bool(logscale_y))
         self.canvas.show()
         
     def plot_2d_histogram(self):
-        x_col = self.x_option.cget('text')
-        y_col = self.y_option.cget('text')
+        logscale_x = self.x_log_var.get()
+        logscale_y = self.y_log_var.get()
+        x_label = self.x_option.cget('text')
+        y_label = self.y_option.cget('text')
+        x_col = self.parse_db_col(x_label)
+        y_col = self.parse_db_col(y_label)
         xbins = self.xbin_entry.get()
         ybins = self.ybin_entry.get()
         self.f.clf()
         a = self.f.add_subplot(111)
-        a.set_xlabel(x_col)
-        a.set_ylabel(y_col)
+        a.set_xlabel(x_label)
+        a.set_ylabel(y_label)
         self.f.subplots_adjust(bottom=0.14,left=0.16)
-        a.hist2d(self.eventsdb_subset[x_col],self.eventsdb_subset[y_col],bins=[int(xbins),int(ybins)])
+        a.hist2d(np.log(x_col) if bool(logscale_x) else x_col,np.log(y_col) if bool(logscale_y) else y_col,bins=[int(xbins),int(ybins)],norm=matplotlib.colors.LogNorm())
         self.canvas.show()
 
     def disable_options(self, *args):
@@ -156,7 +182,12 @@ class App(tk.Frame):
         else:
             pass
 
-
+    def parse_db_col(self, col):
+        if col in ['blockages_pA','level_current_pA','level_duration_us']:
+            return_col = np.hstack([np.array(a,dtype=float) for a in self.eventsdb_subset[col].str.split(';')])
+        else:
+            return_col = self.eventsdb_subset[col]
+        return return_col
        
 def main():
     root=tk.Tk()
