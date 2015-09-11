@@ -19,32 +19,16 @@ class App(tk.Frame):
         self.eventsdb_subset = eventsdb
         self.column_list = column_list
         self.x_col_options = tk.StringVar()
-        self.x_col_options.set('Select X')
+        self.x_col_options.set('Level Duration (us)')
         self.y_col_options = tk.StringVar()
-        self.y_col_options.set('Select Y')
+        self.y_col_options.set('Blockage Level (pA)')
         self.graph_list = tk.StringVar()
-        self.graph_list.set('Graph Type')
+        self.graph_list.set('2D Histogram')
         self.alias_columns()
         parent.deiconify()
-        
-        
-        self.filter_button = tk.Button(parent,text='Apply Filter',command=self.filter_db)
-        self.reset_button = tk.Button(parent,text='Reset DB',command=self.reset_db)
-        self.plot_button = tk.Button(parent,text='Update Plot',command=self.update_plot)
-        
 
-        self.x_option = tk.OptionMenu(parent, self.x_col_options, *[self.alias_dict[option] for option in self.column_list])
-        self.y_option = tk.OptionMenu(parent, self.y_col_options, *[self.alias_dict[option] for option in self.column_list])
-        self.graph_option = tk.OptionMenu(parent, self.graph_list, 'XY Plot', '1D Histogram', '2D Histogram', command=self.disable_options)
-        self.x_log_var = tk.IntVar()
-        self.x_log_check = tk.Checkbutton(parent, text='Log X', variable = self.x_log_var)
-        self.y_log_var = tk.IntVar()
-        self.y_log_check = tk.Checkbutton(parent, text='Log Y', variable = self.y_log_var)
 
-        self.db_info_string = tk.StringVar()
-        self.db_info_string.set('Number of events: ' +str(len(self.eventsdb_subset)))
-        self.db_info_display = tk.Label(parent, textvariable=self.db_info_string)
-        
+        #Plotting widgets
         self.f = Figure(figsize=(5,4), dpi=100)
         self.canvas = FigureCanvasTkAgg(self.f, master=parent)
         self.toolbar_frame = tk.Frame(parent)
@@ -57,6 +41,14 @@ class App(tk.Frame):
         self.event_toolbar = NavigationToolbar2TkAgg(self.event_canvas, self.event_toolbar_frame)
         self.event_toolbar.update()
 
+        self.toolbar_frame.grid(row=1,column=0,columnspan=6)
+        self.canvas.get_tk_widget().grid(row=0,column=0,columnspan=6)
+
+        self.event_toolbar_frame.grid(row=1,column=6,columnspan=6)
+        self.event_canvas.get_tk_widget().grid(row=0,column=6,columnspan=6)
+        
+
+        #Single Event widgets
         self.event_index = tk.IntVar()
         self.event_index.set(self.eventsdb_subset['id'][0])
         self.event_entry = tk.Entry(parent, textvariable=self.event_index)
@@ -64,57 +56,70 @@ class App(tk.Frame):
         self.next_event_button = tk.Button(parent,text='Next',command=self.next_event)
         self.prev_event_button = tk.Button(parent,text='Prev',command=self.prev_event)
         self.delete_event_button = tk.Button(parent,text='Delete',command=self.delete_event)
-
-
+        
         parent.bind("<Left>", self.left_key_press)
         parent.bind("<Right>", self.right_key_press)        
 
-        
-        self.filter_entry = tk.Entry(parent)
-        self.filter_label=tk.Label(parent,text='DB Filter String:')
-        self.x_bins=tk.Label(parent,text='X Bins:')
-        self.y_bins=tk.Label(parent,text='Y Bins:')
+        self.event_entry.grid(row=2,column=8,columnspan=2)
+        self.plot_event_button.grid(row=3,column=8)
+        self.next_event_button.grid(row=2,column=10,sticky='E')
+        self.prev_event_button.grid(row=2,column=7,sticky='W')
+        self.delete_event_button.grid(row=3,column=9)
 
-        self.xbin_entry = tk.Entry(parent)
-        self.xbin_entry.insert(0,10)
-        self.ybin_entry = tk.Entry(parent)
-        self.ybin_entry.insert(0,10)
 
-        self.x_log_check.grid(row=3,column=2)
-        self.y_log_check.grid(row=4,column=2)
+        #Datbase widgets
         
-        self.x_bins.grid(row=3,column=3)
-        self.y_bins.grid(row=4,column=3)
-        self.xbin_entry.grid(row=3,column=4)
-        self.ybin_entry.grid(row=4,column=4)
+        self.filter_button = tk.Button(parent,text='Apply Filter',command=self.filter_db)
+        self.reset_button = tk.Button(parent,text='Reset DB',command=self.reset_db)
+        self.db_info_string = tk.StringVar()
+        self.db_info_string.set('Number of events: ' +str(len(self.eventsdb_subset)))
+        self.db_info_display = tk.Label(parent, textvariable=self.db_info_string)
+        self.save_subset_button = tk.Button(parent,text='Save Subset',command=self.save_subset)
         
-        self.graph_option.grid(row=3,column=0,rowspan=2)
-        self.x_option.grid(row=3,column=1)
-        self.y_option.grid(row=4,column=1)
         
         self.filter_button.grid(row=1,column=2)
         self.reset_button.grid(row=1,column=3)
-        
-        self.plot_button.grid(row=3,column=5,rowspan=2)
-
-        self.toolbar_frame.grid(row=1,column=0,columnspan=6)
-        self.canvas.get_tk_widget().grid(row=0,column=0,columnspan=6)
-
-        self.event_toolbar_frame.grid(row=1,column=6,columnspan=6)
-        self.event_canvas.get_tk_widget().grid(row=0,column=6,columnspan=6)
-        self.event_entry.grid(row=2,column=8,columnspan=2)
-        self.plot_event_button.grid(row=3,column=8)
-        self.next_event_button.grid(row=2,column=10)
-        self.prev_event_button.grid(row=2,column=7)
-        self.delete_event_button.grid(row=3,column=9)
-            
+        self.filter_entry = tk.Entry(parent)
+        self.filter_label=tk.Label(parent,text='DB Filter String:')
+        self.save_subset_button.grid(row=4,column=8,columnspan=2)
         self.filter_label.grid(row=2,column=0)
         self.filter_entry.grid(row=2,column=1)
         self.filter_button.grid(row=2,column=2)
         self.reset_button.grid(row=2,column=3)
         self.db_info_display.grid(row=2,column=4)
 
+
+        #Statistics plotting widgets
+        self.plot_button = tk.Button(parent,text='Update Plot',command=self.update_plot)
+        self.x_option = tk.OptionMenu(parent, self.x_col_options, *[self.alias_dict[option] for option in self.column_list])
+        self.y_option = tk.OptionMenu(parent, self.y_col_options, *[self.alias_dict[option] for option in self.column_list])
+        self.graph_option = tk.OptionMenu(parent, self.graph_list, 'XY Plot', '1D Histogram', '2D Histogram', command=self.disable_options)
+        self.x_log_var = tk.IntVar()
+        self.x_log_check = tk.Checkbutton(parent, text='Log X', variable = self.x_log_var)
+        self.y_log_var = tk.IntVar()
+        self.y_log_check = tk.Checkbutton(parent, text='Log Y', variable = self.y_log_var)
+        
+        self.x_bins=tk.Label(parent,text='X Bins:')
+        self.y_bins=tk.Label(parent,text='Y Bins:')
+
+        self.xbin_entry = tk.Entry(parent)
+        self.xbin_entry.insert(0,100)
+        self.ybin_entry = tk.Entry(parent)
+        self.ybin_entry.insert(0,100)
+
+        self.x_log_check.grid(row=3,column=2)
+        self.y_log_check.grid(row=4,column=2)
+        self.x_bins.grid(row=3,column=3)
+        self.y_bins.grid(row=4,column=3)
+        self.xbin_entry.grid(row=3,column=4)
+        self.ybin_entry.grid(row=4,column=4)
+        self.graph_option.grid(row=3,column=0,rowspan=2)
+        self.x_option.grid(row=3,column=1)
+        self.y_option.grid(row=4,column=1)
+        self.plot_button.grid(row=3,column=5,rowspan=2)
+
         self.plot_event()
+        self.update_plot()
         
     def filter_db(self):
         filterstring = self.filter_entry.get()
@@ -137,7 +142,7 @@ class App(tk.Frame):
         a = self.f.add_subplot(111)
         a.set_xlabel(x_label)
         a.set_ylabel(y_label)
-        self.f.subplots_adjust(bottom=0.14,left=0.16)
+        self.f.subplots_adjust(bottom=0.14,left=0.21)
         a.plot(x_col,y_col,marker='.',linestyle='None')
         if logscale_x:
             a.set_xscale('log')
@@ -156,8 +161,9 @@ class App(tk.Frame):
         if logscale_x:
             a.set_xlabel('Log(' +str(x_label)+')')
             a.set_ylabel('Count')
-            self.f.subplots_adjust(bottom=0.14,left=0.16)
-            a.hist(np.log(np.absolute(col)),bins=int(numbins),log=bool(logscale_y))
+            self.f.subplots_adjust(bottom=0.14,left=0.21)
+            sign = np.sign(np.average(col))
+            a.hist(np.log(sign*col),bins=int(numbins),log=bool(logscale_y))
         else:
             a.set_xlabel(x_label)
             a.set_ylabel('Count')
@@ -182,8 +188,10 @@ class App(tk.Frame):
             a.set_xlabel('Log(' +str(x_label)+')')
         if logscale_y:
             a.set_ylabel('Log(' +str(y_label)+')')
-        self.f.subplots_adjust(bottom=0.14,left=0.16)
-        a.hist2d(np.log(np.absolute(x_col)) if bool(logscale_x) else x_col,np.log(np.absolute(y_col)) if bool(logscale_y) else y_col,bins=[int(xbins),int(ybins)],norm=matplotlib.colors.LogNorm())
+        self.f.subplots_adjust(bottom=0.14,left=0.21)
+        xsign = np.sign(np.average(x_col))
+        ysign = np.sign(np.average(y_col))
+        a.hist2d(np.log(xsign*x_col) if bool(logscale_x) else x_col,np.log(ysign*y_col) if bool(logscale_y) else y_col,bins=[int(xbins),int(ybins)],norm=matplotlib.colors.LogNorm())
         self.canvas.show()
 
     def disable_options(self, *args):
@@ -296,7 +304,11 @@ class App(tk.Frame):
                       'blockages_pA': 'Blockage Level (pA)'}
         self.unalias_dict = dict (zip(self.alias_dict.values(),self.alias_dict.keys()))
 
-
+    def save_subset(self):
+        subset_file_path = self.events_folder.replace('events/','events-subset.csv')
+        subset_file = open(subset_file_path,'wb')
+        self.eventsdb_subset.to_csv(subset_file,index=False)
+        subset_file.close()
 
 def main():
     root=tk.Tk()
