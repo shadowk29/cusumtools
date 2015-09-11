@@ -44,12 +44,19 @@ class App(tk.Frame):
         
         self.f = Figure(figsize=(5,4), dpi=100)
         self.canvas = FigureCanvasTkAgg(self.f, master=parent)
-        
-
         self.toolbar_frame = tk.Frame(parent)
-        
         self.toolbar = NavigationToolbar2TkAgg(self.canvas, self.toolbar_frame)
         self.toolbar.update()
+
+        self.event_f = Figure(figsize=(5,4), dpi=100)
+        self.event_canvas = FigureCanvasTkAgg(self.event_f, master=parent)
+        self.event_toolbar_frame = tk.Frame(parent)
+        self.event_toolbar = NavigationToolbar2TkAgg(self.event_canvas, self.event_toolbar_frame)
+        self.event_toolbar.update()
+
+        
+        
+        
 
         
         self.filter_entry = tk.Entry(parent)
@@ -81,6 +88,9 @@ class App(tk.Frame):
 
         self.toolbar_frame.grid(row=1,column=0,columnspan=6)
         self.canvas.get_tk_widget().grid(row=0,column=0,columnspan=6)
+
+        self.event_toolbar_frame.grid(row=1,column=6,columnspan=6)
+        self.event_canvas.get_tk_widget().grid(row=0,column=6,columnspan=6)
         
         self.filter_label.grid(row=2,column=0)
         self.filter_entry.grid(row=2,column=1)
@@ -131,7 +141,7 @@ class App(tk.Frame):
             a.set_xlabel('Log(' +str(x_label)+')')
             a.set_ylabel('Count')
             self.f.subplots_adjust(bottom=0.14,left=0.16)
-            a.hist(np.log(col),bins=int(numbins),log=bool(logscale_y))
+            a.hist(np.log(np.absolute(col)),bins=int(numbins),log=bool(logscale_y))
         else:
             a.set_xlabel(x_label)
             a.set_ylabel('Count')
@@ -153,7 +163,7 @@ class App(tk.Frame):
         a.set_xlabel(x_label)
         a.set_ylabel(y_label)
         self.f.subplots_adjust(bottom=0.14,left=0.16)
-        a.hist2d(np.log(x_col) if bool(logscale_x) else x_col,np.log(y_col) if bool(logscale_y) else y_col,bins=[int(xbins),int(ybins)],norm=matplotlib.colors.LogNorm())
+        a.hist2d(np.log(np.absolute(x_col)) if bool(logscale_x) else x_col,np.log(np.absolute(y_col)) if bool(logscale_y) else y_col,bins=[int(xbins),int(ybins)],norm=matplotlib.colors.LogNorm())
         self.canvas.show()
 
     def disable_options(self, *args):
@@ -184,7 +194,7 @@ class App(tk.Frame):
 
     def parse_db_col(self, col):
         if col in ['blockages_pA','level_current_pA','level_duration_us']:
-            return_col = np.hstack([np.array(a,dtype=float) for a in self.eventsdb_subset[col].str.split(';')])
+            return_col = np.hstack([np.array(a,dtype=float)[1:-1] for a in self.eventsdb_subset[col].str.split(';')])
         else:
             return_col = self.eventsdb_subset[col]
         return return_col
