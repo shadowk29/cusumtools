@@ -63,6 +63,10 @@ class App(tk.Frame):
         self.next_event_button = tk.Button(parent,text='Next',command=self.next_event)
         self.prev_event_button = tk.Button(parent,text='Prev',command=self.prev_event)
         self.delete_event_button = tk.Button(parent,text='Delete',command=self.delete_event)
+
+
+        parent.bind("<Left>", self.left_key_press)
+        parent.bind("<Right>", self.right_key_press)
         
 
         
@@ -261,7 +265,12 @@ class App(tk.Frame):
         eventsdb_subset = self.eventsdb_subset
         self.eventsdb_subset = sqldf('SELECT * from eventsdb_subset WHERE id != %d' % event_index,locals())
         self.db_info_string.set('Number of events: ' +str(len(self.eventsdb_subset)))
-       
+
+    def right_key_press(self, event):
+        self.next_event()
+
+    def left_key_press(self, event):
+        self.prev_event()
 def main():
     root=tk.Tk()
     root.withdraw()
