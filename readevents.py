@@ -24,6 +24,7 @@ class App(tk.Frame):
         self.y_col_options.set('Select Y')
         self.graph_list = tk.StringVar()
         self.graph_list.set('Graph Type')
+        self.alias_columns()
         parent.deiconify()
         
         
@@ -32,8 +33,8 @@ class App(tk.Frame):
         self.plot_button = tk.Button(parent,text='Update Plot',command=self.update_plot)
         
 
-        self.x_option = tk.OptionMenu(parent, self.x_col_options, *self.column_list)
-        self.y_option = tk.OptionMenu(parent, self.y_col_options, *self.column_list)
+        self.x_option = tk.OptionMenu(parent, self.x_col_options, *[self.alias_dict[option] for option in self.column_list])
+        self.y_option = tk.OptionMenu(parent, self.y_col_options, *[self.alias_dict[option] for option in self.column_list])
         self.graph_option = tk.OptionMenu(parent, self.graph_list, 'XY Plot', '1D Histogram', '2D Histogram', command=self.disable_options)
         self.x_log_var = tk.IntVar()
         self.x_log_check = tk.Checkbutton(parent, text='Log X', variable = self.x_log_var)
@@ -66,8 +67,7 @@ class App(tk.Frame):
 
 
         parent.bind("<Left>", self.left_key_press)
-        parent.bind("<Right>", self.right_key_press)
-        
+        parent.bind("<Right>", self.right_key_press)        
 
         
         self.filter_entry = tk.Entry(parent)
@@ -131,8 +131,8 @@ class App(tk.Frame):
         logscale_y = self.y_log_var.get()
         x_label = self.x_option.cget('text')
         y_label = self.y_option.cget('text')
-        x_col = self.parse_db_col(x_label)
-        y_col = self.parse_db_col(y_label)
+        x_col = self.parse_db_col(self.unalias_dict[x_label])
+        y_col = self.parse_db_col(self.unalias_dict[y_label])
         self.f.clf()
         a = self.f.add_subplot(111)
         a.set_xlabel(x_label)
@@ -149,7 +149,7 @@ class App(tk.Frame):
         logscale_x = self.x_log_var.get()
         logscale_y = self.y_log_var.get()
         x_label = self.x_option.cget('text')
-        col = self.parse_db_col(x_label)
+        col = self.parse_db_col(self.unalias_dict[x_label])
         numbins = self.xbin_entry.get()
         self.f.clf()
         a = self.f.add_subplot(111)
@@ -170,8 +170,8 @@ class App(tk.Frame):
         logscale_y = self.y_log_var.get()
         x_label = self.x_option.cget('text')
         y_label = self.y_option.cget('text')
-        x_col = self.parse_db_col(x_label)
-        y_col = self.parse_db_col(y_label)
+        x_col = self.parse_db_col(self.unalias_dict[x_label])
+        y_col = self.parse_db_col(self.unalias_dict[y_label])
         xbins = self.xbin_entry.get()
         ybins = self.ybin_entry.get()
         self.f.clf()
@@ -271,6 +271,33 @@ class App(tk.Frame):
 
     def left_key_press(self, event):
         self.prev_event()
+
+    def alias_columns(self):
+        self.alias_dict = {'id': 'Event Number',
+                      'type': 'Event Type',
+                      'start_time_s': 'Start Time (s)',
+                      'duration_us': 'Dwell Time (us)',
+                      'threshold': 'Threshold (unitless)',
+                      'event_delay_s': 'Time Since Last Event (s)',
+                      'baseline_before_pA': 'Baseline Before (pA)',
+                      'baseline_after_pA': 'Baseline After (pA)',
+                      'effective_baseline_pA': 'Baseline (pA)',
+                      'area_pC': 'Equivalent Charge Deficit (pC)',
+                      'average_blockage_pA': 'Average Blockage (pA)',
+                      'relative_average_blockage': 'Relative Average Blockage (unitless)',
+                      'max_blockage_pA': 'Maximum Blockage (pA)',
+                      'relative_max_blockage': 'Relative Maximum Blockage (unitless)',
+                      'max_blockage_duration_us': 'Maximum Blockage Duration (us)',
+                      'n_levels': 'Number of Levels',
+                      'rc_const1_us': 'RC Constant 1 (us)',
+                      'rc_const2_us': 'RC Constant 2 (us)',
+                      'level_current_pA': 'Level Current (pA)',
+                      'level_duration_us': 'Level Duration (us)',
+                      'blockages_pA': 'Blockage Level (pA)'}
+        self.unalias_dict = dict (zip(self.alias_dict.values(),self.alias_dict.keys()))
+
+
+
 def main():
     root=tk.Tk()
     root.withdraw()
