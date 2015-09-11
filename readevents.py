@@ -174,6 +174,10 @@ class App(tk.Frame):
         a = self.f.add_subplot(111)
         a.set_xlabel(x_label)
         a.set_ylabel(y_label)
+        if logscale_x:
+            a.set_xlabel('Log(' +str(x_label)+')')
+        if logscale_y:
+            a.set_ylabel('Log(' +str(y_label)+')')
         self.f.subplots_adjust(bottom=0.14,left=0.16)
         a.hist2d(np.log(np.absolute(x_col)) if bool(logscale_x) else x_col,np.log(np.absolute(y_col)) if bool(logscale_y) else y_col,bins=[int(xbins),int(ybins)],norm=matplotlib.colors.LogNorm())
         self.canvas.show()
