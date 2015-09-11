@@ -26,6 +26,7 @@ class App(tk.Frame):
         self.graph_list.set('Graph Type')
         parent.deiconify()
         
+        
         self.filter_button = tk.Button(parent,text='Apply Filter',command=self.filter_db)
         self.reset_button = tk.Button(parent,text='Reset DB',command=self.reset_db)
         self.plot_button = tk.Button(parent,text='Update Plot',command=self.update_plot)
@@ -56,9 +57,12 @@ class App(tk.Frame):
         self.event_toolbar.update()
 
         self.event_index = tk.IntVar()
-        self.event_index.set(self.eventsdb_subset['event_id'][0])
+        self.event_index.set(self.eventsdb_subset['id'][0])
         self.event_entry = tk.Entry(parent, textvariable=self.event_index)
         self.plot_event_button = tk.Button(parent,text='Plot Event',command=self.plot_event)
+        self.next_event_button = tk.Button(parent,text='Next',command=self.next_event)
+        self.prev_event_button = tk.Button(parent,text='Prev',command=self.prev_event)
+        self.delete_event_button = tk.Button(parent,text='Delete',command=self.delete_event)
         
 
         
@@ -94,8 +98,11 @@ class App(tk.Frame):
 
         self.event_toolbar_frame.grid(row=1,column=6,columnspan=6)
         self.event_canvas.get_tk_widget().grid(row=0,column=6,columnspan=6)
-        self.event_entry.grid(row=2,column=6)
-        self.plot_event_button.grid(row=2,column=11)
+        self.event_entry.grid(row=2,column=8,columnspan=2)
+        self.plot_event_button.grid(row=3,column=8)
+        self.next_event_button.grid(row=2,column=10)
+        self.prev_event_button.grid(row=2,column=7)
+        self.delete_event_button.grid(row=3,column=9)
             
         self.filter_label.grid(row=2,column=0)
         self.filter_entry.grid(row=2,column=1)
@@ -103,7 +110,7 @@ class App(tk.Frame):
         self.reset_button.grid(row=2,column=3)
         self.db_info_display.grid(row=2,column=4)
 
-
+        self.plot_event()
         
     def filter_db(self):
         filterstring = self.filter_entry.get()
@@ -206,7 +213,7 @@ class App(tk.Frame):
 
     def plot_event(self):
         index = self.event_index.get()
-        if any(self.eventsdb_subset['event_id']==index):
+        if any(self.eventsdb_subset['id']==index):
             event_file_path = self.events_folder+'event_%05d.csv' % index
             event_file = pd.read_csv(event_file_path,encoding='utf-8')
             event_file.columns = ['time','current','cusum']
@@ -218,8 +225,38 @@ class App(tk.Frame):
             a.plot(event_file['time'],event_file['current'],event_file['time'],event_file['cusum'])
             self.event_canvas.show()
         else:
-            self.event_f.clf()
             print 'No such event'
+
+    def next_event(self):
+        current_index = self.eventsdb_subset[self.eventsdb_subset['id'] == self.event_index.get()].index.tolist()[0]
+        if current_index < len(self.eventsdb_subset)-1:
+            self.event_index.set(int(self.eventsdb_subset['id'][current_index + 1]))
+            self.plot_event()
+        else:
+            pass
+            
+
+    def prev_event(self):
+        current_index = self.eventsdb_subset[self.eventsdb_subset['id'] == self.event_index.get()].index.tolist()[0]
+        if current_index > 0:
+            self.event_index.set(int(self.eventsdb_subset['id'][current_index - 1]))
+            self.plot_event()
+        else:
+            pass
+
+    def delete_event(self):
+        event_index = self.event_index.get()
+        current_index = self.eventsdb_subset[self.eventsdb_subset['id'] == self.event_index.get()].index.tolist()[0]
+        if current_index < len(self.eventsdb_subset)-1:
+            self.next_event()
+        elif current_index > 0:
+            self.prev_event()
+        else:
+            self.event_index.set(self.eventsdb_subset['id'][0])
+            self.plot_event()
+        eventsdb_subset = self.eventsdb_subset
+        self.eventsdb_subset = sqldf('SELECT * from eventsdb_subset WHERE id != %d' % event_index,locals())
+        self.db_info_string.set('Number of events: ' +str(len(self.eventsdb_subset)))
        
 def main():
     root=tk.Tk()
