@@ -3,7 +3,6 @@ from pandasql import sqldf
 import matplotlib
 matplotlib.use('TkAgg')
 import numpy as np
-import pylab as pl
 import tkFileDialog
 import Tkinter as tk
 from matplotlib.figure import Figure
@@ -28,14 +27,15 @@ class App(tk.Frame):
         parent.deiconify()
 
 
+        
         #Plotting widgets
-        self.f = Figure(figsize=(5,4), dpi=100)
+        self.f = Figure(figsize=(7,5), dpi=100)
         self.canvas = FigureCanvasTkAgg(self.f, master=parent)
         self.toolbar_frame = tk.Frame(parent)
         self.toolbar = NavigationToolbar2TkAgg(self.canvas, self.toolbar_frame)
         self.toolbar.update()
 
-        self.event_f = Figure(figsize=(5,4), dpi=100)
+        self.event_f = Figure(figsize=(7,5), dpi=100)
         self.event_canvas = FigureCanvasTkAgg(self.event_f, master=parent)
         self.event_toolbar_frame = tk.Frame(parent)
         self.event_toolbar = NavigationToolbar2TkAgg(self.event_canvas, self.event_toolbar_frame)
@@ -49,6 +49,9 @@ class App(tk.Frame):
         
 
         #Single Event widgets
+        self.event_info_string = tk.StringVar()
+        self.event_info_string.set('Event Index:')
+        self.event_info_display = tk.Label(parent, textvariable=self.event_info_string)
         self.event_index = tk.IntVar()
         self.event_index.set(self.eventsdb_subset['id'][0])
         self.event_entry = tk.Entry(parent, textvariable=self.event_index)
@@ -60,11 +63,12 @@ class App(tk.Frame):
         parent.bind("<Left>", self.left_key_press)
         parent.bind("<Right>", self.right_key_press)        
 
-        self.event_entry.grid(row=2,column=8,columnspan=2)
-        self.plot_event_button.grid(row=3,column=8)
-        self.next_event_button.grid(row=2,column=10,sticky='E')
-        self.prev_event_button.grid(row=2,column=7,sticky='W')
-        self.delete_event_button.grid(row=3,column=9)
+        self.event_entry.grid(row=3,column=9)
+        self.plot_event_button.grid(row=4,column=8)
+        self.next_event_button.grid(row=3,column=10,sticky='E')
+        self.prev_event_button.grid(row=3,column=7,sticky='W')
+        self.delete_event_button.grid(row=4,column=9)
+        self.event_info_display.grid(row=3,column=8)
 
 
         #Datbase widgets
@@ -81,12 +85,12 @@ class App(tk.Frame):
         self.reset_button.grid(row=1,column=3)
         self.filter_entry = tk.Entry(parent)
         self.filter_label=tk.Label(parent,text='DB Filter String:')
-        self.save_subset_button.grid(row=4,column=8,columnspan=2)
+        self.save_subset_button.grid(row=2,column=5)
         self.filter_label.grid(row=2,column=0)
         self.filter_entry.grid(row=2,column=1)
         self.filter_button.grid(row=2,column=2)
-        self.reset_button.grid(row=2,column=3)
-        self.db_info_display.grid(row=2,column=4)
+        self.reset_button.grid(row=2,column=4)
+        self.db_info_display.grid(row=2,column=3)
 
 
         #Statistics plotting widgets
@@ -118,8 +122,8 @@ class App(tk.Frame):
         self.y_option.grid(row=4,column=1)
         self.plot_button.grid(row=3,column=5,rowspan=2)
 
-        self.plot_event()
-        self.update_plot()
+        #self.plot_event()
+        #self.update_plot()
         
     def filter_db(self):
         filterstring = self.filter_entry.get()
@@ -138,12 +142,14 @@ class App(tk.Frame):
         y_label = self.y_option.cget('text')
         x_col = self.parse_db_col(self.unalias_dict[x_label])
         y_col = self.parse_db_col(self.unalias_dict[y_label])
+        xsign = np.sign(np.average(x_col))
+        ysign = np.sign(np.average(y_col))
         self.f.clf()
         a = self.f.add_subplot(111)
         a.set_xlabel(x_label)
         a.set_ylabel(y_label)
         self.f.subplots_adjust(bottom=0.14,left=0.21)
-        a.plot(x_col,y_col,marker='.',linestyle='None')
+        a.plot(xsign*x_col,ysign*y_col,marker='.',linestyle='None')
         if logscale_x:
             a.set_xscale('log')
         if logscale_y:
