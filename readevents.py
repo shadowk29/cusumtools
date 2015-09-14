@@ -61,7 +61,7 @@ class App(tk.Frame):
         self.ybin_entry.insert(0,100)
 
 
-        self.stats_frame.grid(row=0,column=0,columnspan=6)
+        self.stats_frame.grid(row=0,column=0,columnspan=6,sticky=tk.N+tk.S)
         self.x_log_check.grid(row=3,column=2)
         self.y_log_check.grid(row=4,column=2)
         self.x_bins.grid(row=3,column=3)
@@ -101,7 +101,7 @@ class App(tk.Frame):
         parent.bind("<Left>", self.left_key_press)
         parent.bind("<Right>", self.right_key_press)        
 
-        self.events_frame.grid(row=0,column=6,columnspan=6)
+        self.events_frame.grid(row=0,column=6,columnspan=6,sticky=tk.N+tk.S)
         self.event_entry.grid(row=3,column=3)
         self.plot_event_button.grid(row=4,column=2)
         self.next_event_button.grid(row=3,column=4,sticky='E')
@@ -113,7 +113,7 @@ class App(tk.Frame):
         #Datbase widgets
 
         self.db_frame = tk.LabelFrame(parent,text='Database Controls')
-        self.db_frame.grid(row=3,column=0,columnspan=12)
+        
         self.filter_label=tk.Label(self.db_frame,text='DB Filter String:')
         self.filter_button = tk.Button(self.db_frame,text='Apply Filter',command=self.filter_db)
         self.reset_button = tk.Button(self.db_frame,text='Reset DB',command=self.reset_db)
@@ -126,7 +126,7 @@ class App(tk.Frame):
         self.filter_button.grid(row=1,column=2)
         self.reset_button.grid(row=1,column=3)
         
-        
+        self.db_frame.grid(row=3,column=0,columnspan=12)
         self.save_subset_button.grid(row=3,column=0)
         self.filter_label.grid(row=1,column=0)
         self.filter_entry.grid(row=1,column=1)
