@@ -28,7 +28,7 @@ class App(tk.Frame):
 
 
         
-        #Plotting widgets
+        #Statistics plotting widgets
         self.f = Figure(figsize=(7,5), dpi=100)
         self.canvas = FigureCanvasTkAgg(self.f, master=parent)
         self.toolbar_frame = tk.Frame(parent)
@@ -44,56 +44,8 @@ class App(tk.Frame):
         self.toolbar_frame.grid(row=1,column=0,columnspan=6)
         self.canvas.get_tk_widget().grid(row=0,column=0,columnspan=6)
 
-        self.event_toolbar_frame.grid(row=1,column=6,columnspan=6)
-        self.event_canvas.get_tk_widget().grid(row=0,column=6,columnspan=6)
-        
-
-        #Single Event widgets
-        self.event_info_string = tk.StringVar()
-        self.event_info_string.set('Event Index:')
-        self.event_info_display = tk.Label(parent, textvariable=self.event_info_string)
-        self.event_index = tk.IntVar()
-        self.event_index.set(self.eventsdb_subset['id'][0])
-        self.event_entry = tk.Entry(parent, textvariable=self.event_index)
-        self.plot_event_button = tk.Button(parent,text='Plot Event',command=self.plot_event)
-        self.next_event_button = tk.Button(parent,text='Next',command=self.next_event)
-        self.prev_event_button = tk.Button(parent,text='Prev',command=self.prev_event)
-        self.delete_event_button = tk.Button(parent,text='Delete',command=self.delete_event)
-        
-        parent.bind("<Left>", self.left_key_press)
-        parent.bind("<Right>", self.right_key_press)        
-
-        self.event_entry.grid(row=3,column=9)
-        self.plot_event_button.grid(row=4,column=8)
-        self.next_event_button.grid(row=3,column=10,sticky='E')
-        self.prev_event_button.grid(row=3,column=7,sticky='W')
-        self.delete_event_button.grid(row=4,column=9)
-        self.event_info_display.grid(row=3,column=8)
-
-
-        #Datbase widgets
-        
-        self.filter_button = tk.Button(parent,text='Apply Filter',command=self.filter_db)
-        self.reset_button = tk.Button(parent,text='Reset DB',command=self.reset_db)
-        self.db_info_string = tk.StringVar()
-        self.db_info_string.set('Number of events: ' +str(len(self.eventsdb_subset)))
-        self.db_info_display = tk.Label(parent, textvariable=self.db_info_string)
-        self.save_subset_button = tk.Button(parent,text='Save Subset',command=self.save_subset)
         
         
-        self.filter_button.grid(row=1,column=2)
-        self.reset_button.grid(row=1,column=3)
-        self.filter_entry = tk.Entry(parent)
-        self.filter_label=tk.Label(parent,text='DB Filter String:')
-        self.save_subset_button.grid(row=2,column=5)
-        self.filter_label.grid(row=2,column=0)
-        self.filter_entry.grid(row=2,column=1)
-        self.filter_button.grid(row=2,column=2)
-        self.reset_button.grid(row=2,column=4)
-        self.db_info_display.grid(row=2,column=3)
-
-
-        #Statistics plotting widgets
         self.plot_button = tk.Button(parent,text='Update Plot',command=self.update_plot)
         self.x_option = tk.OptionMenu(parent, self.x_col_options, *[self.alias_dict.get(option,option) for option in self.column_list])
         self.y_option = tk.OptionMenu(parent, self.y_col_options, *[self.alias_dict.get(option,option) for option in self.column_list])
@@ -121,6 +73,62 @@ class App(tk.Frame):
         self.x_option.grid(row=3,column=1)
         self.y_option.grid(row=4,column=1)
         self.plot_button.grid(row=3,column=5,rowspan=2)
+
+        
+        
+
+        #Single Event widgets
+        self.event_info_string = tk.StringVar()
+        self.event_info_string.set('Event Index:')
+        self.event_info_display = tk.Label(parent, textvariable=self.event_info_string)
+        self.event_index = tk.IntVar()
+        self.event_index.set(self.eventsdb_subset['id'][0])
+        self.event_entry = tk.Entry(parent, textvariable=self.event_index)
+        self.plot_event_button = tk.Button(parent,text='Plot Event',command=self.plot_event)
+        self.next_event_button = tk.Button(parent,text='Next',command=self.next_event)
+        self.prev_event_button = tk.Button(parent,text='Prev',command=self.prev_event)
+        self.delete_event_button = tk.Button(parent,text='Delete',command=self.delete_event)
+
+        self.event_toolbar_frame.grid(row=1,column=6,columnspan=6)
+        self.event_canvas.get_tk_widget().grid(row=0,column=6,columnspan=6)
+        
+        parent.bind("<Left>", self.left_key_press)
+        parent.bind("<Right>", self.right_key_press)        
+
+        self.event_entry.grid(row=3,column=9)
+        self.plot_event_button.grid(row=4,column=8)
+        self.next_event_button.grid(row=3,column=10,sticky='E')
+        self.prev_event_button.grid(row=3,column=7,sticky='W')
+        self.delete_event_button.grid(row=4,column=9)
+        self.event_info_display.grid(row=3,column=8)
+
+
+        #Datbase widgets
+
+        self.db_frame = tk.LabelFrame(parent,text='Database Controls')
+        self.db_frame.grid(row=5,column=0,columnspan=12)
+        self.filter_label=tk.Label(self.db_frame,text='DB Filter String:')
+        self.filter_button = tk.Button(self.db_frame,text='Apply Filter',command=self.filter_db)
+        self.reset_button = tk.Button(self.db_frame,text='Reset DB',command=self.reset_db)
+        self.db_info_string = tk.StringVar()
+        self.db_info_string.set('Number of events: ' +str(len(self.eventsdb_subset)))
+        self.db_info_display = tk.Label(self.db_frame, textvariable=self.db_info_string)
+        self.save_subset_button = tk.Button(self.db_frame,text='Save Subset',command=self.save_subset)
+        self.filter_entry = tk.Entry(self.db_frame)
+        
+        self.filter_button.grid(row=1,column=2)
+        self.reset_button.grid(row=1,column=3)
+        
+        
+        self.save_subset_button.grid(row=4,column=0)
+        self.filter_label.grid(row=2,column=0)
+        self.filter_entry.grid(row=2,column=1)
+        self.filter_button.grid(row=2,column=2)
+        self.reset_button.grid(row=4,column=1)
+        self.db_info_display.grid(row=3,column=1)
+
+
+
 
         #self.plot_event()
         #self.update_plot()
