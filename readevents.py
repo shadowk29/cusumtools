@@ -95,7 +95,11 @@ class App(tk.Frame):
         self.next_event_button = tk.Button(self.events_frame,text='Next',command=self.next_event)
         self.prev_event_button = tk.Button(self.events_frame,text='Prev',command=self.prev_event)
         self.delete_event_button = tk.Button(self.events_frame,text='Delete',command=self.delete_event)
+        self.event_info_string = tk.StringVar()
+        self.event_info_string.set('')
+        self.event_info_display = tk.Label(self.events_frame, textvariable=self.event_info_string)
 
+        
         self.event_toolbar_frame.grid(row=1,column=0,columnspan=5)
         self.event_canvas.get_tk_widget().grid(row=0,column=0,columnspan=5)
         
@@ -106,6 +110,7 @@ class App(tk.Frame):
         self.events_frame.grid(row=0,column=6,columnspan=5,sticky=tk.N+tk.S)
         self.event_entry.grid(row=3,column=2,sticky=tk.E+tk.W)
         self.plot_event_button.grid(row=4,column=2,sticky=tk.E+tk.W)
+        self.event_info_display.grid(row=4,column=3,sticky=tk.W+tk.E)
         self.next_event_button.grid(row=3,column=3,sticky=tk.W)
         self.prev_event_button.grid(row=3,column=1,sticky=tk.E)
         self.delete_event_button.grid(row=3,column=4,sticky=tk.E+tk.W)
@@ -139,8 +144,13 @@ class App(tk.Frame):
         filterstring = self.filter_entry.get()
         self.eventsdb_prev = self.eventsdb_subset
         eventsdb_subset = self.eventsdb_subset
-        self.eventsdb_subset = sqldf('SELECT * from eventsdb_subset WHERE %s' % filterstring,locals())
-        self.db_info_string.set('Number of events: ' +str(len(self.eventsdb_subset)))
+        tempdb = sqldf('SELECT * from eventsdb_subset WHERE %s' % filterstring,locals())
+        self.eventsdb_subset = tempdb
+        try:
+            self.db_info_string.set('Number of events: ' +str(len(self.eventsdb_subset)))
+        except TypeError:
+            self.db_info_string.set('Invalid Entry')
+            self.eventsdb_subset = self.eventsdb_prev
 
     def undo_filter_db(self):
         self.eventsdb_subset = self.eventsdb_prev
@@ -261,11 +271,15 @@ class App(tk.Frame):
             self.event_f.subplots_adjust(bottom=0.14,left=0.21)
             a.plot(event_file['time'],event_file['current'],event_file['time'],event_file['cusum'])
             self.event_canvas.show()
+            self.event_info_string.set('')
         else:
-            print 'No such event'
+            self.event_info_string.set('No such event!')
 
     def next_event(self):
-        current_index = self.eventsdb_subset[self.eventsdb_subset['id'] == self.event_index.get()].index.tolist()[0]
+        try:
+            current_index = self.eventsdb_subset[self.eventsdb_subset['id'] == self.event_index.get()].index.tolist()[0]
+        except IndexError:
+            current_index = -1
         if current_index < len(self.eventsdb_subset)-1:
             self.event_index.set(int(self.eventsdb_subset['id'][current_index + 1]))
             self.plot_event()
@@ -274,7 +288,10 @@ class App(tk.Frame):
             
 
     def prev_event(self):
-        current_index = self.eventsdb_subset[self.eventsdb_subset['id'] == self.event_index.get()].index.tolist()[0]
+        try:
+            current_index = self.eventsdb_subset[self.eventsdb_subset['id'] == self.event_index.get()].index.tolist()[0]
+        except IndexError:
+            current_index = 1
         if current_index > 0:
             self.event_index.set(int(self.eventsdb_subset['id'][current_index - 1]))
             self.plot_event()
