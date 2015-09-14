@@ -29,40 +29,39 @@ class App(tk.Frame):
 
         
         #Statistics plotting widgets
+        self.stats_frame = tk.LabelFrame(parent,text='Statistics View')
         self.f = Figure(figsize=(7,5), dpi=100)
-        self.canvas = FigureCanvasTkAgg(self.f, master=parent)
-        self.toolbar_frame = tk.Frame(parent)
+        self.canvas = FigureCanvasTkAgg(self.f, master=self.stats_frame)
+        self.toolbar_frame = tk.Frame(self.stats_frame)
         self.toolbar = NavigationToolbar2TkAgg(self.canvas, self.toolbar_frame)
         self.toolbar.update()
 
-        self.event_f = Figure(figsize=(7,5), dpi=100)
-        self.event_canvas = FigureCanvasTkAgg(self.event_f, master=parent)
-        self.event_toolbar_frame = tk.Frame(parent)
-        self.event_toolbar = NavigationToolbar2TkAgg(self.event_canvas, self.event_toolbar_frame)
-        self.event_toolbar.update()
+        
 
         self.toolbar_frame.grid(row=1,column=0,columnspan=6)
         self.canvas.get_tk_widget().grid(row=0,column=0,columnspan=6)
 
         
         
-        self.plot_button = tk.Button(parent,text='Update Plot',command=self.update_plot)
-        self.x_option = tk.OptionMenu(parent, self.x_col_options, *[self.alias_dict.get(option,option) for option in self.column_list])
-        self.y_option = tk.OptionMenu(parent, self.y_col_options, *[self.alias_dict.get(option,option) for option in self.column_list])
-        self.graph_option = tk.OptionMenu(parent, self.graph_list, 'XY Plot', '1D Histogram', '2D Histogram', command=self.disable_options)
+        self.plot_button = tk.Button(self.stats_frame,text='Update Plot',command=self.update_plot)
+        self.x_option = tk.OptionMenu(self.stats_frame, self.x_col_options, *[self.alias_dict.get(option,option) for option in self.column_list])
+        self.y_option = tk.OptionMenu(self.stats_frame, self.y_col_options, *[self.alias_dict.get(option,option) for option in self.column_list])
+        self.graph_option = tk.OptionMenu(self.stats_frame, self.graph_list, 'XY Plot', '1D Histogram', '2D Histogram', command=self.disable_options)
         self.x_log_var = tk.IntVar()
-        self.x_log_check = tk.Checkbutton(parent, text='Log X', variable = self.x_log_var)
+        self.x_log_check = tk.Checkbutton(self.stats_frame, text='Log X', variable = self.x_log_var)
         self.y_log_var = tk.IntVar()
-        self.y_log_check = tk.Checkbutton(parent, text='Log Y', variable = self.y_log_var)
+        self.y_log_check = tk.Checkbutton(self.stats_frame, text='Log Y', variable = self.y_log_var)
         
-        self.x_bins=tk.Label(parent,text='X Bins:')
-        self.y_bins=tk.Label(parent,text='Y Bins:')
+        self.x_bins=tk.Label(self.stats_frame,text='X Bins:')
+        self.y_bins=tk.Label(self.stats_frame,text='Y Bins:')
 
-        self.xbin_entry = tk.Entry(parent)
+        self.xbin_entry = tk.Entry(self.stats_frame)
         self.xbin_entry.insert(0,100)
-        self.ybin_entry = tk.Entry(parent)
+        self.ybin_entry = tk.Entry(self.stats_frame)
         self.ybin_entry.insert(0,100)
 
+
+        self.stats_frame.grid(row=0,column=0,columnspan=6)
         self.x_log_check.grid(row=3,column=2)
         self.y_log_check.grid(row=4,column=2)
         self.x_bins.grid(row=3,column=3)
@@ -78,35 +77,43 @@ class App(tk.Frame):
         
 
         #Single Event widgets
+
+        self.events_frame = tk.LabelFrame(parent,text='Single Event View')
+        self.event_f = Figure(figsize=(7,5), dpi=100)
+        self.event_canvas = FigureCanvasTkAgg(self.event_f, master=self.events_frame)
+        self.event_toolbar_frame = tk.Frame(self.events_frame)
+        self.event_toolbar = NavigationToolbar2TkAgg(self.event_canvas, self.event_toolbar_frame)
+        self.event_toolbar.update()
         self.event_info_string = tk.StringVar()
         self.event_info_string.set('Event Index:')
-        self.event_info_display = tk.Label(parent, textvariable=self.event_info_string)
+        self.event_info_display = tk.Label(self.events_frame, textvariable=self.event_info_string)
         self.event_index = tk.IntVar()
         self.event_index.set(self.eventsdb_subset['id'][0])
-        self.event_entry = tk.Entry(parent, textvariable=self.event_index)
-        self.plot_event_button = tk.Button(parent,text='Plot Event',command=self.plot_event)
-        self.next_event_button = tk.Button(parent,text='Next',command=self.next_event)
-        self.prev_event_button = tk.Button(parent,text='Prev',command=self.prev_event)
-        self.delete_event_button = tk.Button(parent,text='Delete',command=self.delete_event)
+        self.event_entry = tk.Entry(self.events_frame, textvariable=self.event_index)
+        self.plot_event_button = tk.Button(self.events_frame,text='Plot Event',command=self.plot_event)
+        self.next_event_button = tk.Button(self.events_frame,text='Next',command=self.next_event)
+        self.prev_event_button = tk.Button(self.events_frame,text='Prev',command=self.prev_event)
+        self.delete_event_button = tk.Button(self.events_frame,text='Delete',command=self.delete_event)
 
-        self.event_toolbar_frame.grid(row=1,column=6,columnspan=6)
-        self.event_canvas.get_tk_widget().grid(row=0,column=6,columnspan=6)
+        self.event_toolbar_frame.grid(row=1,column=0,columnspan=6)
+        self.event_canvas.get_tk_widget().grid(row=0,column=0,columnspan=6)
         
         parent.bind("<Left>", self.left_key_press)
         parent.bind("<Right>", self.right_key_press)        
 
-        self.event_entry.grid(row=3,column=9)
-        self.plot_event_button.grid(row=4,column=8)
-        self.next_event_button.grid(row=3,column=10,sticky='E')
-        self.prev_event_button.grid(row=3,column=7,sticky='W')
-        self.delete_event_button.grid(row=4,column=9)
-        self.event_info_display.grid(row=3,column=8)
+        self.events_frame.grid(row=0,column=6,columnspan=6)
+        self.event_entry.grid(row=3,column=3)
+        self.plot_event_button.grid(row=4,column=2)
+        self.next_event_button.grid(row=3,column=4,sticky='E')
+        self.prev_event_button.grid(row=3,column=1,sticky='W')
+        self.delete_event_button.grid(row=4,column=3)
+        self.event_info_display.grid(row=3,column=2)
 
 
         #Datbase widgets
 
         self.db_frame = tk.LabelFrame(parent,text='Database Controls')
-        self.db_frame.grid(row=5,column=0,columnspan=12)
+        self.db_frame.grid(row=3,column=0,columnspan=12)
         self.filter_label=tk.Label(self.db_frame,text='DB Filter String:')
         self.filter_button = tk.Button(self.db_frame,text='Apply Filter',command=self.filter_db)
         self.reset_button = tk.Button(self.db_frame,text='Reset DB',command=self.reset_db)
@@ -120,12 +127,12 @@ class App(tk.Frame):
         self.reset_button.grid(row=1,column=3)
         
         
-        self.save_subset_button.grid(row=4,column=0)
-        self.filter_label.grid(row=2,column=0)
-        self.filter_entry.grid(row=2,column=1)
-        self.filter_button.grid(row=2,column=2)
-        self.reset_button.grid(row=4,column=1)
-        self.db_info_display.grid(row=3,column=1)
+        self.save_subset_button.grid(row=3,column=0)
+        self.filter_label.grid(row=1,column=0)
+        self.filter_entry.grid(row=1,column=1)
+        self.filter_button.grid(row=1,column=2)
+        self.reset_button.grid(row=3,column=1)
+        self.db_info_display.grid(row=2,column=1)
 
 
 
