@@ -134,12 +134,6 @@ class App(tk.Frame):
         self.reset_button.grid(row=2,column=1,sticky=tk.E+tk.W)
         self.undo_button.grid(row=1,column=1,sticky=tk.E+tk.W)
         self.db_info_display.grid(row=1,column=0,sticky=tk.E+tk.W)
-
-
-
-
-        self.plot_event()
-        self.update_plot()
         
     def filter_db(self):
         filterstring = self.filter_entry.get()
