@@ -16,6 +16,7 @@ class App(tk.Frame):
         self.events_folder = events_folder
         self.eventsdb = eventsdb
         self.eventsdb_subset = eventsdb
+        self.eventsdb_prev = self.eventsdb_subset
         self.column_list = column_list
         self.x_col_options = tk.StringVar()
         self.x_col_options.set('Level Duration (us)')
@@ -62,16 +63,18 @@ class App(tk.Frame):
 
 
         self.stats_frame.grid(row=0,column=0,columnspan=6,sticky=tk.N+tk.S)
-        self.x_log_check.grid(row=3,column=2)
-        self.y_log_check.grid(row=4,column=2)
-        self.x_bins.grid(row=3,column=3)
-        self.y_bins.grid(row=4,column=3)
-        self.xbin_entry.grid(row=3,column=4)
-        self.ybin_entry.grid(row=4,column=4)
-        self.graph_option.grid(row=3,column=0,rowspan=2)
-        self.x_option.grid(row=3,column=1)
-        self.y_option.grid(row=4,column=1)
-        self.plot_button.grid(row=3,column=5,rowspan=2)
+        self.x_log_check.grid(row=3,column=2,sticky=tk.E+tk.W)
+        self.y_log_check.grid(row=4,column=2,sticky=tk.E+tk.W)
+        self.x_bins.grid(row=3,column=3,sticky=tk.E+tk.W)
+        self.y_bins.grid(row=4,column=3,sticky=tk.E+tk.W)
+        self.xbin_entry.grid(row=3,column=4,sticky=tk.E+tk.W)
+        self.ybin_entry.grid(row=4,column=4,sticky=tk.E+tk.W)
+        self.graph_option.grid(row=3,column=0,rowspan=2,sticky=tk.E+tk.W)
+        self.x_option.grid(row=3,column=1,sticky=tk.E+tk.W)
+        self.y_option.grid(row=4,column=1,sticky=tk.E+tk.W)
+        self.plot_button.grid(row=3,column=5,rowspan=2,sticky=tk.E+tk.W)
+
+        parent.bind("<Return>", self.enter_key_press)
 
         
         
@@ -85,8 +88,6 @@ class App(tk.Frame):
         self.event_toolbar = NavigationToolbar2TkAgg(self.event_canvas, self.event_toolbar_frame)
         self.event_toolbar.update()
         self.event_info_string = tk.StringVar()
-        self.event_info_string.set('Event Index:')
-        self.event_info_display = tk.Label(self.events_frame, textvariable=self.event_info_string)
         self.event_index = tk.IntVar()
         self.event_index.set(self.eventsdb_subset['id'][0])
         self.event_entry = tk.Entry(self.events_frame, textvariable=self.event_index)
@@ -95,28 +96,28 @@ class App(tk.Frame):
         self.prev_event_button = tk.Button(self.events_frame,text='Prev',command=self.prev_event)
         self.delete_event_button = tk.Button(self.events_frame,text='Delete',command=self.delete_event)
 
-        self.event_toolbar_frame.grid(row=1,column=0,columnspan=6)
-        self.event_canvas.get_tk_widget().grid(row=0,column=0,columnspan=6)
+        self.event_toolbar_frame.grid(row=1,column=0,columnspan=5)
+        self.event_canvas.get_tk_widget().grid(row=0,column=0,columnspan=5)
         
         parent.bind("<Left>", self.left_key_press)
-        parent.bind("<Right>", self.right_key_press)        
+        parent.bind("<Right>", self.right_key_press)
+        parent.bind("<Delete>", self.delete_key_press)
 
-        self.events_frame.grid(row=0,column=6,columnspan=6,sticky=tk.N+tk.S)
-        self.event_entry.grid(row=3,column=3)
-        self.plot_event_button.grid(row=4,column=2)
-        self.next_event_button.grid(row=3,column=4,sticky='E')
-        self.prev_event_button.grid(row=3,column=1,sticky='W')
-        self.delete_event_button.grid(row=4,column=3)
-        self.event_info_display.grid(row=3,column=2)
+        self.events_frame.grid(row=0,column=6,columnspan=5,sticky=tk.N+tk.S)
+        self.event_entry.grid(row=3,column=2,sticky=tk.E+tk.W)
+        self.plot_event_button.grid(row=4,column=2,sticky=tk.E+tk.W)
+        self.next_event_button.grid(row=3,column=3,sticky=tk.W)
+        self.prev_event_button.grid(row=3,column=1,sticky=tk.E)
+        self.delete_event_button.grid(row=3,column=4,sticky=tk.E+tk.W)
 
 
         #Datbase widgets
 
         self.db_frame = tk.LabelFrame(parent,text='Database Controls')
         
-        self.filter_label=tk.Label(self.db_frame,text='DB Filter String:')
         self.filter_button = tk.Button(self.db_frame,text='Apply Filter',command=self.filter_db)
         self.reset_button = tk.Button(self.db_frame,text='Reset DB',command=self.reset_db)
+        self.undo_button = tk.Button(self.db_frame,text='Undo Last',command=self.undo_filter_db)
         self.db_info_string = tk.StringVar()
         self.db_info_string.set('Number of events: ' +str(len(self.eventsdb_subset)))
         self.db_info_display = tk.Label(self.db_frame, textvariable=self.db_info_string)
@@ -126,24 +127,29 @@ class App(tk.Frame):
         self.filter_button.grid(row=1,column=2)
         self.reset_button.grid(row=1,column=3)
         
-        self.db_frame.grid(row=3,column=0,columnspan=12)
-        self.save_subset_button.grid(row=3,column=0)
-        self.filter_label.grid(row=1,column=0)
-        self.filter_entry.grid(row=1,column=1)
-        self.filter_button.grid(row=1,column=2)
-        self.reset_button.grid(row=3,column=1)
-        self.db_info_display.grid(row=2,column=1)
+        self.db_frame.grid(row=3,column=0,columnspan=11)
+        self.save_subset_button.grid(row=2,column=0,sticky=tk.E+tk.W)
+        self.filter_entry.grid(row=0,column=0,sticky=tk.E+tk.W)
+        self.filter_button.grid(row=0,column=1,sticky=tk.E+tk.W)
+        self.reset_button.grid(row=2,column=1,sticky=tk.E+tk.W)
+        self.undo_button.grid(row=1,column=1,sticky=tk.E+tk.W)
+        self.db_info_display.grid(row=1,column=0,sticky=tk.E+tk.W)
 
 
 
 
-        #self.plot_event()
-        #self.update_plot()
+        self.plot_event()
+        self.update_plot()
         
     def filter_db(self):
         filterstring = self.filter_entry.get()
+        self.eventsdb_prev = self.eventsdb_subset
         eventsdb_subset = self.eventsdb_subset
         self.eventsdb_subset = sqldf('SELECT * from eventsdb_subset WHERE %s' % filterstring,locals())
+        self.db_info_string.set('Number of events: ' +str(len(self.eventsdb_subset)))
+
+    def undo_filter_db(self):
+        self.eventsdb_subset = self.eventsdb_prev
         self.db_info_string.set('Number of events: ' +str(len(self.eventsdb_subset)))
 
     def reset_db(self):
@@ -300,6 +306,12 @@ class App(tk.Frame):
 
     def left_key_press(self, event):
         self.prev_event()
+
+    def delete_key_press(self,event):
+        self.delete_event()
+
+    def enter_key_press(self,event):
+        self.update_plot()
 
     def alias_columns(self):
         self.alias_dict = {'id': 'Event Number',
