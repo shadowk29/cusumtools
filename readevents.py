@@ -288,7 +288,11 @@ class App(tk.Frame):
         index = self.event_index.get()
         if any(self.eventsdb_subset['id']==index):
             event_file_path = self.events_folder+'/event_%05d.csv' % index
-            event_file = pd.read_csv(event_file_path,encoding='utf-8')
+            try:
+                event_file = pd.read_csv(event_file_path,encoding='utf-8')
+            except IOError:
+                self.event_info_string.set(event_file_path+' not found')
+                return
             event_file.columns = ['time','current','cusum']
             self.event_f.clf()
             a = self.event_f.add_subplot(111)
@@ -390,6 +394,7 @@ class App(tk.Frame):
         self.eventsdb = pd.read_csv(self.file_path_string,encoding='utf-8')
         self.eventsdb_subset = self.eventsdb
         self.eventsdb_prev = self.eventsdb
+        self.db_info_string.set('Number of events: ' +str(len(self.eventsdb_subset)))
         
 
     def set_events_folder(self):
