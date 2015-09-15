@@ -293,13 +293,21 @@ class App(tk.Frame):
             except IOError:
                 self.event_info_string.set(event_file_path+' not found')
                 return
-            event_file.columns = ['time','current','cusum']
+            eventsdb_subset = self.eventsdb_subset
+            event_type = sqldf('SELECT type from eventsdb_subset WHERE id=%d' % index,locals())['type'][0]
+            if event_type == 0:
+                event_file.columns = ['time','current','cusum']
+            elif event_type == 1:
+                event_file.columns = ['time','current','cusum','stepfit']
             self.event_f.clf()
             a = self.event_f.add_subplot(111)
             a.set_xlabel('Time (us)')
             a.set_ylabel('Current (pA)')
             self.event_f.subplots_adjust(bottom=0.14,left=0.21)
-            a.plot(event_file['time'],event_file['current'],event_file['time'],event_file['cusum'])
+            if event_type == 0:
+                a.plot(event_file['time'],event_file['current'],event_file['time'],event_file['cusum'])
+            elif event_type == 1:
+                a.plot(event_file['time'],event_file['current'],event_file['time'],event_file['cusum'],event_file['time'],event_file['stepfit'])
             self.event_canvas.show()
             self.event_info_string.set('')
         else:
