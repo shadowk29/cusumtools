@@ -3,6 +3,7 @@ from pandasql import sqldf
 import matplotlib
 matplotlib.use('TkAgg')
 import numpy as np
+import os
 import tkFileDialog
 import Tkinter as tk
 from matplotlib.figure import Figure
@@ -11,8 +12,9 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolb
 
     
 class App(tk.Frame):
-    def __init__(self, parent,eventsdb,column_list,events_folder):
+    def __init__(self, parent,eventsdb,column_list,events_folder,file_path_string):
         tk.Frame.__init__(self, parent)
+        self.file_path_string = file_path_string
         self.events_folder = events_folder
         self.eventsdb = eventsdb
         self.eventsdb_subset = eventsdb
@@ -132,13 +134,37 @@ class App(tk.Frame):
         self.filter_button.grid(row=1,column=2)
         self.reset_button.grid(row=1,column=3)
         
-        self.db_frame.grid(row=3,column=0,columnspan=11)
+        self.db_frame.grid(row=3,column=6,columnspan=5,sticky=tk.E+tk.W+tk.S+tk.N)
         self.save_subset_button.grid(row=2,column=0,sticky=tk.E+tk.W)
         self.filter_entry.grid(row=0,column=0,sticky=tk.E+tk.W)
         self.filter_button.grid(row=0,column=1,sticky=tk.E+tk.W)
         self.reset_button.grid(row=2,column=1,sticky=tk.E+tk.W)
         self.undo_button.grid(row=1,column=1,sticky=tk.E+tk.W)
         self.db_info_display.grid(row=1,column=0,sticky=tk.E+tk.W)
+
+        #Folder widgets
+        self.folder_frame = tk.LabelFrame(parent,text='Folder Options')
+
+        self.stats_file_path = tk.StringVar()
+        self.stats_file_path.set(self.file_path_string)
+        self.stats_file_display = tk.Label(self.folder_frame, textvariable=self.stats_file_path)
+        self.stats_file_label = tk.Label(self.folder_frame, text='Statistics File:')
+        self.stats_file_button = tk.Button(self.folder_frame,text='Browse',command=self.open_stats_file)
+
+        self.events_folder_path = tk.StringVar()
+        self.events_folder_path.set(self.events_folder)
+        self.events_folder_display = tk.Label(self.folder_frame, textvariable=self.events_folder_path)
+        self.events_folder_label = tk.Label(self.folder_frame, text='Events Folder:')
+        self.events_folder_button = tk.Button(self.folder_frame,text='Browse',command=self.set_events_folder)
+        
+
+        self.folder_frame.grid(row=3,column=0,columnspan=6,sticky=tk.E+tk.W+tk.S+tk.N)
+        self.stats_file_label.grid(row=0,column=0,sticky=tk.E+tk.W,columnspan=2)
+        self.events_folder_label.grid(row=1,column=0,sticky=tk.E+tk.W,columnspan=2)
+        self.stats_file_display.grid(row=0,column=2,sticky=tk.E+tk.W,columnspan=2)
+        self.events_folder_display.grid(row=1,column=2,sticky=tk.E+tk.W,columnspan=2)
+        self.stats_file_button.grid(row=0,column=4,sticky=tk.E+tk.W,columnspan=2)
+        self.events_folder_button.grid(row=1,column=4,sticky=tk.E+tk.W,columnspan=2)
         
     def filter_db(self):
         filterstring = self.filter_entry.get()
@@ -261,7 +287,7 @@ class App(tk.Frame):
     def plot_event(self):
         index = self.event_index.get()
         if any(self.eventsdb_subset['id']==index):
-            event_file_path = self.events_folder+'event_%05d.csv' % index
+            event_file_path = self.events_folder+'/event_%05d.csv' % index
             event_file = pd.read_csv(event_file_path,encoding='utf-8')
             event_file.columns = ['time','current','cusum']
             self.event_f.clf()
@@ -300,7 +326,11 @@ class App(tk.Frame):
 
     def delete_event(self):
         event_index = self.event_index.get()
-        current_index = self.eventsdb_subset[self.eventsdb_subset['id'] == self.event_index.get()].index.tolist()[0]
+        try:
+            current_index = self.eventsdb_subset[self.eventsdb_subset['id'] == self.event_index.get()].index.tolist()[0]
+        except IndexError:
+            self.event_info_string.set('No such event!')
+            current_index = -1
         if current_index < len(self.eventsdb_subset)-1:
             self.next_event()
         elif current_index > 0:
@@ -354,15 +384,28 @@ class App(tk.Frame):
         self.eventsdb_subset.to_csv(subset_file,index=False)
         subset_file.close()
 
+    def open_stats_file(self):
+        self.file_path_string = tkFileDialog.askopenfilename(initialdir='C:\Users\kbrig035\Analysis\CUSUM\output\\')
+        self.stats_file_path.set(self.file_path_string)
+        self.eventsdb = pd.read_csv(self.file_path_string,encoding='utf-8')
+        self.eventsdb_subset = self.eventsdb
+        self.eventsdb_prev = self.eventsdb
+        
+
+    def set_events_folder(self):
+        self.events_folder = tkFileDialog.askdirectory(initialdir='C:\Users\kbrig035\Analysis\CUSUM\output\\')
+        self.events_folder_path.set(self.events_folder)
+
 def main():
     root=tk.Tk()
     root.withdraw()
-    file_path_string = tkFileDialog.askopenfilename(initialdir='C:\Users\kbrig035\Analysis\CUSUM\output\\')
-    folder = file_path_string.replace('events.csv','events/')
+    file_path_string = tkFileDialog.askopenfilename(initialdir='C:/Users/kbrig035/Analysis/CUSUM/output/')
+    folder = os.path.dirname(os.path.abspath(file_path_string))
+    folder = folder + '\events\\'
     root.wm_title("CUSUM Tools")
     eventsdb = pd.read_csv(file_path_string,encoding='utf-8')
     column_list = list(eventsdb)
-    App(root,eventsdb,column_list,folder).grid(row=0,column=0)
+    App(root,eventsdb,column_list,folder,file_path_string).grid(row=0,column=0)
     root.mainloop()
 
 if __name__=="__main__":
