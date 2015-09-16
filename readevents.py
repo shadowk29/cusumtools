@@ -179,10 +179,13 @@ class App(tk.Frame):
             self.eventsdb_subset = self.eventsdb_prev
 
     def undo_filter_db(self):
+        temp = self.eventsdb_subset
         self.eventsdb_subset = self.eventsdb_prev
+        self.eventsdb_prev = temp
         self.db_info_string.set('Number of events: ' +str(len(self.eventsdb_subset)))
 
     def reset_db(self):
+        self.eventsdb_prev = self.eventsdb_subset
         self.eventsdb_subset = self.eventsdb
         self.db_info_string.set('Number of events: ' +str(len(self.eventsdb_subset)))
 
