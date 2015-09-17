@@ -394,7 +394,8 @@ class App(tk.Frame):
         self.unalias_dict = dict (zip(self.alias_dict.values(),self.alias_dict.keys()))
 
     def save_subset(self):
-        subset_file_path = self.events_folder.replace('events/','events-subset.csv')
+        folder = os.path.dirname(os.path.abspath(self.file_path_string))
+        subset_file_path = folder + '\eventsdb-subset.csv'
         subset_file = open(subset_file_path,'wb')
         self.eventsdb_subset.to_csv(subset_file,index=False)
         subset_file.close()
