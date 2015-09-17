@@ -223,7 +223,7 @@ class App(tk.Frame):
             a.set_ylabel('Count')
             self.f.subplots_adjust(bottom=0.14,left=0.21)
             sign = np.sign(np.average(col))
-            a.hist(np.log(sign*col),bins=int(numbins),log=bool(logscale_y))
+            a.hist(np.log10(sign*col),bins=int(numbins),log=bool(logscale_y))
         else:
             a.set_xlabel(x_label)
             a.set_ylabel('Count')
@@ -251,7 +251,7 @@ class App(tk.Frame):
         self.f.subplots_adjust(bottom=0.14,left=0.21)
         xsign = np.sign(np.average(x_col))
         ysign = np.sign(np.average(y_col))
-        a.hist2d(np.log(xsign*x_col) if bool(logscale_x) else x_col,np.log(ysign*y_col) if bool(logscale_y) else y_col,bins=[int(xbins),int(ybins)],norm=matplotlib.colors.LogNorm())
+        a.hist2d(np.log10(xsign*x_col) if bool(logscale_x) else x_col,np.log10(ysign*y_col) if bool(logscale_y) else y_col,bins=[int(xbins),int(ybins)],norm=matplotlib.colors.LogNorm())
         self.canvas.show()
 
     def disable_options(self, *args):
