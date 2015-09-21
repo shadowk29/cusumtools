@@ -390,7 +390,8 @@ class App(tk.Frame):
                       'rc_const2_us': 'RC Constant 2 (us)',
                       'level_current_pA': 'Level Current (pA)',
                       'level_duration_us': 'Level Duration (us)',
-                      'blockages_pA': 'Blockage Level (pA)'}
+                      'blockages_pA': 'Blockage Level (pA)',
+                      'residuals_pA': 'Residuals (pA)'}
         self.unalias_dict = dict (zip(self.alias_dict.values(),self.alias_dict.keys()))
 
     def save_subset(self):
