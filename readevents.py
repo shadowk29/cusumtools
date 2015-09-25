@@ -19,6 +19,7 @@ class App(tk.Frame):
         self.events_folder = events_folder
         self.eventsdb = eventsdb
         self.survival_probability()
+        self.delay_probability()
         self.eventsdb_subset = self.eventsdb
         self.eventsdb_prev = self.eventsdb_subset
 
@@ -173,14 +174,22 @@ class App(tk.Frame):
         self.stats_file_button.grid(row=0,column=4,sticky=tk.E+tk.W,columnspan=2)
         self.events_folder_button.grid(row=1,column=4,sticky=tk.E+tk.W,columnspan=2)
 
-    def survival_probability(self):
+    def delay_probability(self):
         eventsdb = self.eventsdb
         eventsdb_sorted = sqldf('SELECT * from eventsdb ORDER BY event_delay_s',locals())
+        numevents = len(eventsdb)
+        delay = [1.0 - float(i)/float(numevents) for i in range(0,numevents)]
+        eventsdb_sorted['delay_probability'] = delay
+        self.eventsdb = sqldf('SELECT * from eventsdb_sorted ORDER BY id',locals())
+        
+    def survival_probability(self):
+        eventsdb = self.eventsdb
+        eventsdb_sorted = sqldf('SELECT * from eventsdb ORDER BY duration_us',locals())
         numevents = len(eventsdb)
         survival = [1.0 - float(i)/float(numevents) for i in range(0,numevents)]
         eventsdb_sorted['survival_probability'] = survival
         self.eventsdb = sqldf('SELECT * from eventsdb_sorted ORDER BY id',locals())
-
+        
                 
     def filter_db(self):
         filterstring = self.filter_entry.get()
@@ -408,7 +417,8 @@ class App(tk.Frame):
                       'level_duration_us': 'Level Duration (us)',
                       'blockages_pA': 'Blockage Level (pA)',
                       'residuals_pA': 'Residuals (pA)',
-                      'survival_probability': 'Survival Probablity'}
+                      'survival_probability': 'Survival Probablity',
+                      'delay_probability': 'Delay Probablity'}
         self.unalias_dict = dict (zip(self.alias_dict.values(),self.alias_dict.keys()))
 
     def save_subset(self):
