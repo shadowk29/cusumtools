@@ -12,13 +12,18 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolb
 
     
 class App(tk.Frame):
-    def __init__(self, parent,eventsdb,column_list,events_folder,file_path_string):
+    def __init__(self, parent,eventsdb,events_folder,file_path_string):
         tk.Frame.__init__(self, parent)
+        
         self.file_path_string = file_path_string
         self.events_folder = events_folder
         self.eventsdb = eventsdb
-        self.eventsdb_subset = eventsdb
+        self.survival_probability()
+        self.eventsdb_subset = self.eventsdb
         self.eventsdb_prev = self.eventsdb_subset
+
+        
+        column_list = list(self.eventsdb)
         self.column_list = column_list
         self.x_col_options = tk.StringVar()
         self.x_col_options.set('Level Duration (us)')
@@ -28,6 +33,8 @@ class App(tk.Frame):
         self.graph_list.set('2D Histogram')
         self.alias_columns()
         parent.deiconify()
+
+        
 
 
         
@@ -165,7 +172,16 @@ class App(tk.Frame):
         self.events_folder_display.grid(row=1,column=2,sticky=tk.E+tk.W,columnspan=2)
         self.stats_file_button.grid(row=0,column=4,sticky=tk.E+tk.W,columnspan=2)
         self.events_folder_button.grid(row=1,column=4,sticky=tk.E+tk.W,columnspan=2)
-        
+
+    def survival_probability(self):
+        eventsdb = self.eventsdb
+        eventsdb_sorted = sqldf('SELECT * from eventsdb ORDER BY event_delay_s',locals())
+        numevents = len(eventsdb)
+        survival = [1.0 - float(i)/float(numevents) for i in range(0,numevents)]
+        eventsdb_sorted['survival_probability'] = survival
+        self.eventsdb = sqldf('SELECT * from eventsdb_sorted ORDER BY id',locals())
+
+                
     def filter_db(self):
         filterstring = self.filter_entry.get()
         self.eventsdb_prev = self.eventsdb_subset
@@ -391,7 +407,8 @@ class App(tk.Frame):
                       'level_current_pA': 'Level Current (pA)',
                       'level_duration_us': 'Level Duration (us)',
                       'blockages_pA': 'Blockage Level (pA)',
-                      'residuals_pA': 'Residuals (pA)'}
+                      'residuals_pA': 'Residuals (pA)',
+                      'survival_probability': 'Survival Probablity'}
         self.unalias_dict = dict (zip(self.alias_dict.values(),self.alias_dict.keys()))
 
     def save_subset(self):
@@ -422,8 +439,7 @@ def main():
     folder = folder + '\events\\'
     root.wm_title("CUSUM Tools")
     eventsdb = pd.read_csv(file_path_string,encoding='utf-8')
-    column_list = list(eventsdb)
-    App(root,eventsdb,column_list,folder,file_path_string).grid(row=0,column=0)
+    App(root,eventsdb,folder,file_path_string).grid(row=0,column=0)
     root.mainloop()
 
 if __name__=="__main__":
