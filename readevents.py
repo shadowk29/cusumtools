@@ -35,8 +35,14 @@ class App(tk.Frame):
         self.alias_columns()
         parent.deiconify()
 
-        
+        #Status Update widgets
+        self.status_frame = tk.LabelFrame(parent,text='Status')
+        self.status_string = tk.StringVar()
+        self.status_string.set('Ready')
+        self.status_display = tk.Label(self.status_frame, textvariable=self.status_string)
 
+        self.status_frame.grid(row=3,column=8,columnspan=2,sticky=tk.E+tk.W+tk.S+tk.N)
+        self.status_display.grid(row=0,column=0,sticky=tk.E+tk.W+tk.S+tk.N)
 
         
         #Statistics plotting widgets
@@ -105,7 +111,6 @@ class App(tk.Frame):
         self.next_event_button = tk.Button(self.events_frame,text='Next',command=self.next_event)
         self.prev_event_button = tk.Button(self.events_frame,text='Prev',command=self.prev_event)
         self.delete_event_button = tk.Button(self.events_frame,text='Delete',command=self.delete_event)
-        self.event_info_string = tk.StringVar()
         self.event_info_string.set('')
         self.event_info_display = tk.Label(self.events_frame, textvariable=self.event_info_string)
 
@@ -142,7 +147,7 @@ class App(tk.Frame):
         self.filter_button.grid(row=1,column=2)
         self.reset_button.grid(row=1,column=3)
         
-        self.db_frame.grid(row=3,column=6,columnspan=5,sticky=tk.E+tk.W+tk.S+tk.N)
+        self.db_frame.grid(row=3,column=6,columnspan=2,sticky=tk.E+tk.W+tk.S+tk.N)
         self.save_subset_button.grid(row=2,column=0,sticky=tk.E+tk.W)
         self.filter_entry.grid(row=0,column=0,sticky=tk.E+tk.W)
         self.filter_button.grid(row=0,column=1,sticky=tk.E+tk.W)
@@ -297,13 +302,25 @@ class App(tk.Frame):
     def update_plot(self):
         option = self.graph_option.cget('text')
         if option == 'XY Plot':
-            self.plot_xy()
+            try:
+                self.plot_xy()
+            except AttributeError:
+                self.status_string.set("X and Y must have the same length")
         elif option == '1D Histogram':
             self.plot_1d_histogram()
         elif option == '2D Histogram':
-            self.plot_2d_histogram()
+            try:
+                self.plot_2d_histogram()
+            except AttributeError:
+                self.status_string.set("X and Y must have the same length")
         else:
             pass
+
+    def get_weights(self):
+        weights = [np.array(a,dtype=float)[1:-1] for a in self.eventsdb_subset['level_duration_us'].str.split(';')]
+        for w in weights:
+            w /= np.sum(w)
+        return np.hstack(weights)
 
     def parse_db_col(self, col):
         if col in ['blockages_pA','level_current_pA','level_duration_us']:
@@ -345,6 +362,7 @@ class App(tk.Frame):
         try:
             current_index = self.eventsdb_subset[self.eventsdb_subset['id'] == self.event_index.get()].index.tolist()[0]
         except IndexError:
+            self.event_info_string.set('Event not found, resetting')
             current_index = -1
         if current_index < len(self.eventsdb_subset)-1:
             self.event_index.set(int(self.eventsdb_subset['id'][current_index + 1]))
@@ -357,6 +375,7 @@ class App(tk.Frame):
         try:
             current_index = self.eventsdb_subset[self.eventsdb_subset['id'] == self.event_index.get()].index.tolist()[0]
         except IndexError:
+            self.event_info_string.set('Event not found, resetting')
             current_index = 1
         if current_index > 0:
             self.event_index.set(int(self.eventsdb_subset['id'][current_index - 1]))
@@ -369,7 +388,7 @@ class App(tk.Frame):
         try:
             current_index = self.eventsdb_subset[self.eventsdb_subset['id'] == self.event_index.get()].index.tolist()[0]
         except IndexError:
-            self.event_info_string.set('No such event!')
+            self.event_info_string.set('Event not found, resetting')
             current_index = -1
         if current_index < len(self.eventsdb_subset)-1:
             self.next_event()
