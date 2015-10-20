@@ -44,6 +44,7 @@ class App(tk.Frame):
 
         
         column_list = list(self.eventsdb)
+        print column_list
         self.column_list = column_list
         self.x_col_options = tk.StringVar()
         self.x_col_options.set('Level Duration (us)')
@@ -342,7 +343,7 @@ class App(tk.Frame):
         return np.hstack(weights)
 
     def parse_db_col(self, col):
-        if col in ['blockages_pA','level_current_pA','level_duration_us']:
+        if col in ['blockages_pA','level_current_pA','level_duration_us','stdev_pA']:
             return_col = np.hstack([np.array(a,dtype=float)[1:-1] for a in self.eventsdb_subset[col].str.split(';')])
         else:
             return_col = self.eventsdb_subset[col]
@@ -454,9 +455,10 @@ class App(tk.Frame):
                       'level_current_pA': 'Level Current (pA)',
                       'level_duration_us': 'Level Duration (us)',
                       'blockages_pA': 'Blockage Level (pA)',
-                      'residuals_pA': 'Residuals (pA)',
+                      'residual_pA': 'Residuals (pA)',
                       'survival_probability': 'Survival Probablity',
-                      'delay_probability': 'Delay Probablity'}
+                      'delay_probability': 'Delay Probablity',
+                      'stdev_pA': 'Level Standard Deviation (pA)'}
         self.unalias_dict = dict (zip(self.alias_dict.values(),self.alias_dict.keys()))
 
     def save_subset(self):
