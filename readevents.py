@@ -44,7 +44,6 @@ class App(tk.Frame):
 
         
         column_list = list(self.eventsdb)
-        print column_list
         self.column_list = column_list
         self.x_col_options = tk.StringVar()
         self.x_col_options.set('Level Duration (us)')
