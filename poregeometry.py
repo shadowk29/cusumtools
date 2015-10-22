@@ -75,11 +75,14 @@ class App(tk.Frame):
         valid = [all_lengths > 0]
         diameters = diameters[valid]
         lengths = all_lengths[valid]
+        location = np.argmax(diameters)
+        diameter = diameters[location]
+        length = lengths[location]
         
         
-        self.diameter_string.set(np.around(diameters,1))
-        self.length_string.set(np.around(lengths,1))
-        self.status.set(str(len(diameters))+' physical options found')
+        self.diameter_string.set(round(diameter,1))
+        self.length_string.set(round(length,1))
+        self.status.set(str(len(diameters))+' physical options found, showing largest')
 
 def main():
     root=tk.Tk()
