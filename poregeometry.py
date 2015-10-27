@@ -11,13 +11,19 @@ class App(tk.Frame):
         self.param_frame = tk.LabelFrame(parent,text='Pore Parameters')
         self.open_conductance = tk.Entry(self.param_frame)
         self.blocked_conductance = tk.Entry(self.param_frame)
-        self.dna_diameter = tk.Entry(self.param_frame)
+        self.dna_diameter_default = tk.DoubleVar()
+        self.dna_diameter_default.set(2.2)
+        self.dna_diameter = tk.Entry(self.param_frame, textvariable=self.dna_diameter_default)
         self.conductivity = tk.Entry(self.param_frame)
         self.open_label=tk.Label(self.param_frame,text='Open Conductance (nS):')
         self.blocked_label=tk.Label(self.param_frame,text='Blocked Conductance (nS):')
         self.dna_label=tk.Label(self.param_frame,text='DNA diameter (nm):')
         self.guess_label=tk.Label(self.param_frame,text='Diameter Guess (nm):')
         self.conductivity_label = tk.Label(self.param_frame,text='Conductivity (nS/nm):')
+        self.surface_conductance_default = tk.DoubleVar()
+        self.surface_conductance_default.set(4.572)
+        self.surface_conductance = tk.Entry(self.param_frame, textvariable=self.surface_conductance_default)
+        self.surface_conductance_label = tk.Label(self.param_frame, text='Surface Conductance (nS):')
         
 
         self.param_frame.grid(row=0,column=0,columnspan=2,sticky=tk.N+tk.S+tk.E+tk.W)
@@ -29,6 +35,8 @@ class App(tk.Frame):
         self.blocked_label.grid(row=1,column=0,sticky=tk.E+tk.W)
         self.dna_label.grid(row=2,column=0,sticky=tk.E+tk.W)
         self.conductivity_label.grid(row=3,column=0,sticky=tk.E+tk.W)
+        self.surface_conductance_label.grid(row=4,column=0,sticky=tk.E+tk.W)
+        self.surface_conductance.grid(row=4,column=1,sticky=tk.E+tk.W)
 
 
         #pore calculation widgets
@@ -60,13 +68,14 @@ class App(tk.Frame):
             G = float(self.open_conductance.get())
             B = float(self.blocked_conductance.get())
             d_dna = float(self.dna_diameter.get())
+            k = float(self.surface_conductance.get())
         except ValueError:
             self.status.set('Fill in all fields')
             return
         g = sigma/G
         b = sigma/B
 
-        coefs = np.array([b-g, 0, -b*d_dna**2-np.pi/4.0*b*d_dna**2+np.pi/4.0*g*d_dna**2, d_dna**2*(1.0-np.pi/4.0), np.pi/4.0*b*d_dna**4, 0])
+        coefs = np.array([4*sigma*(g-b), 16*k*(g-b), sigma*d_dna**2*(4*b-np.pi*g+np.pi*b), 4*np.pi*k*d_dna**2*(b-g)+sigma*d_dna**2*(np.pi-4), -sigma*np.pi*b*d_dna**4+4*np.pi*d_dna**2*k])
         roots = np.roots(coefs)
         real_roots = roots[np.isreal(roots)]
         diameters = np.real(real_roots[real_roots > 0])
