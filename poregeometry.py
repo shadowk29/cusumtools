@@ -4,6 +4,35 @@ import os
 import tkFileDialog
 import Tkinter as tk
 
+class CreateToolTip(object):
+    '''
+    create a tooltip for a given widget
+    '''
+    def __init__(self, widget, text='widget info'):
+        self.widget = widget
+        self.text = text
+        self.widget.bind("<Enter>", self.enter)
+        self.widget.bind("<Leave>", self.close)
+
+    def enter(self, event=None):
+        x = y = 0
+        x, y, cx, cy = self.widget.bbox("insert")
+        x += self.widget.winfo_rootx() + 25
+        y += self.widget.winfo_rooty() + 20
+        # creates a toplevel window
+        self.tw = tk.Toplevel(self.widget)
+        # Leaves only the label and removes the app window
+        self.tw.wm_overrideredirect(True)
+        self.tw.wm_geometry("+%d+%d" % (x, y))
+        label = tk.Label(self.tw, text=self.text, justify='left',
+                       background='white', relief='solid', borderwidth=1,
+                       font=("times", "8", "normal"))
+        label.pack(ipadx=1)
+
+    def close(self, event=None):
+        if self.tw:
+            self.tw.destroy()
+
 
 class App(tk.Frame):
     def __init__(self, parent):
@@ -49,6 +78,14 @@ class App(tk.Frame):
         self.screening_factor_label.grid(row=6,column=0,sticky=tk.E+tk.W)
         self.screening_factor.grid(row=6,column=1,sticky=tk.E+tk.W)
 
+        CreateToolTip(self.open_conductance, 'Open pore conductance (nS)')
+        CreateToolTip(self.blocked_conductance, 'Residual conductance (nS)')
+        CreateToolTip(self.dna_diameter, 'Diameter of analyte (nm)')
+        CreateToolTip(self.conductivity, 'Electrolyte conductivity (nS/nm)')
+        CreateToolTip(self.surface_conductance, 'Product of pore surface charge and counterion mobility (nS)')
+        CreateToolTip(self.counterion_conductance_length, u'Product of linear charge density of analyte and counterion mobility (nS\u00B7nm)')
+        CreateToolTip(self.screening_factor, 'Fractional reduction in counterion cloud')
+
 
         #pore calculation widgets
         self.calc_frame = tk.LabelFrame(parent,text='Pore Geometry')
@@ -58,8 +95,8 @@ class App(tk.Frame):
         self.length_string.set('Waiting for Input')
         self.status = tk.StringVar()
         self.status.set('Waiting for Input')
-        self.diameter_label=tk.Label(self.calc_frame,text='Diameter (nm):')
-        self.length_label=tk.Label(self.calc_frame,text='Length (nm):')
+        self.diameter_label=tk.Label(self.calc_frame,text='Diameter:')
+        self.length_label=tk.Label(self.calc_frame,text='Length:')
         self.diameter_display = tk.Label(self.calc_frame,textvariable=self.diameter_string)
         self.length_display = tk.Label(self.calc_frame,textvariable=self.length_string)
         self.calculate_button = tk.Button(self.calc_frame,text='Calculate',command=self.pore_geometry)
@@ -72,6 +109,8 @@ class App(tk.Frame):
         self.length_display.grid(row=1,column=1,sticky=tk.E+tk.W)
         self.calculate_button.grid(row=2,column=0,columnspan=2,sticky=tk.N+tk.S+tk.E+tk.W)
         self.status_label.grid(row=3,column=0,columnspan=2,sticky=tk.N+tk.S+tk.E+tk.W)
+
+        CreateToolTip(self.calculate_button, 'Using model from Carlsen et al. ACS Nano (2014) 8(5)')
 
     def pore_geometry(self):
         try:
@@ -108,8 +147,8 @@ class App(tk.Frame):
         length = lengths[location]
         
         
-        self.diameter_string.set(round(diameter,1))
-        self.length_string.set(round(length,1))
+        self.diameter_string.set(str(round(diameter,1))+' nm')
+        self.length_string.set(str(round(length,1))+' nm')
         self.status.set(str(len(diameters))+' physical options found, showing largest')
 
 def main():
