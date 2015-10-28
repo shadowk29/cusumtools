@@ -50,7 +50,7 @@ class App(tk.Frame):
         self.guess_label=tk.Label(self.param_frame,text='Diameter Guess (nm):')
         self.conductivity_label = tk.Label(self.param_frame,text='Conductivity (nS/nm):')
         self.surface_conductance_default = tk.DoubleVar()
-        self.surface_conductance_default.set(4.572)
+        self.surface_conductance_default.set(2.34)
         self.surface_conductance = tk.Entry(self.param_frame, textvariable=self.surface_conductance_default)
         self.surface_conductance_label = tk.Label(self.param_frame, text='Surface Conductance (nS):')
         self.default_counterion_conductance_length = tk.DoubleVar()
@@ -82,7 +82,7 @@ class App(tk.Frame):
         CreateToolTip(self.blocked_conductance, 'Residual conductance (nS)')
         CreateToolTip(self.dna_diameter, 'Diameter of analyte (nm)')
         CreateToolTip(self.conductivity, 'Electrolyte conductivity (nS/nm)')
-        CreateToolTip(self.surface_conductance, 'Product of pore surface charge and counterion mobility (nS)')
+        CreateToolTip(self.surface_conductance, 'Product of pore surface charge and counterion mobility - 4.572 for KCl, 2.34 for LiCl (nS)')
         CreateToolTip(self.counterion_conductance_length, u'Product of linear charge density of analyte and counterion mobility (nS\u00B7nm)')
         CreateToolTip(self.screening_factor, 'Fractional reduction in counterion cloud')
 
@@ -128,11 +128,11 @@ class App(tk.Frame):
         g = sigma/G
         b = sigma/B
 
-        coefs = np.array([sigma**2*(g-b),\
-                          4*sigma*mu_S*(g-b),\
-                          sigma*beta*mu_q*(g-5*b) + sigma**2*D**2*(b+np.pi/4*(b-g)),\
-                          4*beta*mu_q*mu_S*(g-b) + np.pi*sigma*D**2*mu_S*(b-g) + (np.pi/4-1)*sigma**2*D**2 + 3*sigma*beta*mu_q,\
-                          np.pi*sigma*D**2*mu_S - 4*beta*mu_q*mu_S - np.pi/4*sigma**2*D**4*b + (np.pi+1)*sigma*b*D**2*beta*mu_q - 4*b*beta**2*mu_q**2])
+        coefs = np.array([sigma**2.0*(g-b),\
+                          4.0*sigma*mu_S*(g-b),\
+                          sigma*beta*mu_q*(g-5.0*b) + sigma**2.0*D**2.0*(b+np.pi/4.0*(b-g)),\
+                          4.0*beta*mu_q*mu_S*(g-b) + np.pi*sigma*D**2.0*mu_S*(b-g) + (np.pi/4.0-1.0)*sigma**2.0*D**2.0 + 3.0*sigma*beta*mu_q,\
+                          np.pi*sigma*D**2.0*mu_S - 4.0*beta*mu_q*mu_S - np.pi/4.0*sigma**2.0*D**4.0*b + (np.pi+1.0)*sigma*b*D**2.0*beta*mu_q - 4.0*b*beta**2.0*mu_q**2.0])
         
         roots = np.roots(coefs)
         real_roots = roots[np.isreal(roots)]
