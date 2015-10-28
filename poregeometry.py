@@ -25,7 +25,7 @@ class App(tk.Frame):
         self.surface_conductance = tk.Entry(self.param_frame, textvariable=self.surface_conductance_default)
         self.surface_conductance_label = tk.Label(self.param_frame, text='Surface Conductance (nS):')
         self.default_counterion_conductance_length = tk.DoubleVar()
-        self.default_counterion_conductance_length.set(0)
+        self.default_counterion_conductance_length.set(17.595)
         self.counterion_conductance_length = tk.Entry(self.param_frame, textvariable=self.default_counterion_conductance_length)
         self.default_counterion_conductance_length_label = tk.Label(self.param_frame, text=u'Counterion Conductance (nS\u00B7nm):')
         self.screening_factor_default = tk.DoubleVar()
