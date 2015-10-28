@@ -24,7 +24,14 @@ class App(tk.Frame):
         self.surface_conductance_default.set(4.572)
         self.surface_conductance = tk.Entry(self.param_frame, textvariable=self.surface_conductance_default)
         self.surface_conductance_label = tk.Label(self.param_frame, text='Surface Conductance (nS):')
-        
+        self.default_counterion_conductance_length = tk.DoubleVar()
+        self.default_counterion_conductance_length.set(0)
+        self.counterion_conductance_length = tk.Entry(self.param_frame, textvariable=self.default_counterion_conductance_length)
+        self.default_counterion_conductance_length_label = tk.Label(self.param_frame, text=u'Counterion Conductance (nS\u00B7nm):')
+        self.screening_factor_default = tk.DoubleVar()
+        self.screening_factor_default.set(0)
+        self.screening_factor = tk.Entry(self.param_frame, textvariable=self.screening_factor_default)
+        self.screening_factor_label = tk.Label(self.param_frame, text='Screening Factor:')
 
         self.param_frame.grid(row=0,column=0,columnspan=2,sticky=tk.N+tk.S+tk.E+tk.W)
         self.open_conductance.grid(row=0,column=1,sticky=tk.E+tk.W)
@@ -37,6 +44,10 @@ class App(tk.Frame):
         self.conductivity_label.grid(row=3,column=0,sticky=tk.E+tk.W)
         self.surface_conductance_label.grid(row=4,column=0,sticky=tk.E+tk.W)
         self.surface_conductance.grid(row=4,column=1,sticky=tk.E+tk.W)
+        self.default_counterion_conductance_length_label.grid(row=5,column=0,sticky=tk.E+tk.W)
+        self.counterion_conductance_length.grid(row=5,column=1,sticky=tk.E+tk.W)
+        self.screening_factor_label.grid(row=6,column=0,sticky=tk.E+tk.W)
+        self.screening_factor.grid(row=6,column=1,sticky=tk.E+tk.W)
 
 
         #pore calculation widgets
@@ -67,20 +78,28 @@ class App(tk.Frame):
             sigma = float(self.conductivity.get())
             G = float(self.open_conductance.get())
             B = float(self.blocked_conductance.get())
-            d_dna = float(self.dna_diameter.get())
-            k = float(self.surface_conductance.get())
+            D = float(self.dna_diameter.get())
+            mu_S = float(self.surface_conductance.get())
+            mu_q = float(self.counterion_conductance_length.get())
+            beta = float(self.screening_factor.get())
+        
         except ValueError:
             self.status.set('Fill in all fields')
             return
         g = sigma/G
         b = sigma/B
 
-        coefs = np.array([4*sigma*(g-b), 16*k*(g-b), sigma*d_dna**2*(4*b-np.pi*g+np.pi*b), 4*np.pi*k*d_dna**2*(b-g)+sigma*d_dna**2*(np.pi-4), -sigma*np.pi*b*d_dna**4+4*np.pi*d_dna**2*k])
+        coefs = np.array([sigma**2*(g-b),\
+                          4*sigma*mu_S*(g-b),\
+                          sigma*beta*mu_q*(g-5*b) + sigma**2*D**2*(b+np.pi/4*(b-g)),\
+                          4*beta*mu_q*mu_S*(g-b) + np.pi*sigma*D**2*mu_S*(b-g) + (np.pi/4-1)*sigma**2*D**2 + 3*sigma*beta*mu_q,\
+                          np.pi*sigma*D**2*mu_S - 4*beta*mu_q*mu_S - np.pi/4*sigma**2*D**4*b + (np.pi+1)*sigma*b*D**2*beta*mu_q - 4*b*beta**2*mu_q**2])
+        
         roots = np.roots(coefs)
         real_roots = roots[np.isreal(roots)]
         diameters = np.real(real_roots[real_roots > 0])
         
-        all_lengths = np.pi/4.0*(diameters**2*g-diameters)
+        all_lengths = np.pi/4.0*(diameters**2*g-diameters)*(1+4*mu_S/(sigma*diameters))
         valid = [all_lengths > 0]
         diameters = diameters[valid]
         lengths = all_lengths[valid]
