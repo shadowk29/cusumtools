@@ -27,7 +27,10 @@ import tkFileDialog
 import Tkinter as tk
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2TkAgg
+from scipy.optimize import curve_fit
 
+def exponential(x, A, tau): #define a fitting function form
+    return A * np.exp(-x/tau) 
 
     
 class App(tk.Frame):
@@ -80,6 +83,7 @@ class App(tk.Frame):
         
         
         self.plot_button = tk.Button(self.stats_frame,text='Update Plot',command=self.update_plot)
+        self.fit_button = tk.Button(self.stats_frame,text='Fit Exp',command=self.fit_data)
         self.x_option = tk.OptionMenu(self.stats_frame, self.x_col_options, *[self.alias_dict.get(option,option) for option in self.column_list])
         self.y_option = tk.OptionMenu(self.stats_frame, self.y_col_options, *[self.alias_dict.get(option,option) for option in self.column_list])
         self.graph_option = tk.OptionMenu(self.stats_frame, self.graph_list, 'XY Plot', '1D Histogram', '2D Histogram', command=self.disable_options)
@@ -107,7 +111,8 @@ class App(tk.Frame):
         self.graph_option.grid(row=3,column=0,rowspan=2,sticky=tk.E+tk.W)
         self.x_option.grid(row=3,column=1,sticky=tk.E+tk.W)
         self.y_option.grid(row=4,column=1,sticky=tk.E+tk.W)
-        self.plot_button.grid(row=3,column=5,rowspan=2,sticky=tk.E+tk.W)
+        self.plot_button.grid(row=3,column=5,sticky=tk.E+tk.W)
+        self.fit_button.grid(row=4,column=5,sticky=tk.E+tk.W)
 
         parent.bind("<Return>", self.enter_key_press)
 
@@ -205,6 +210,7 @@ class App(tk.Frame):
         delay = [1.0 - float(i)/float(numevents) for i in range(0,numevents)]
         eventsdb_sorted['delay_probability'] = delay
         self.eventsdb = sqldf('SELECT * from eventsdb_sorted ORDER BY id',locals())
+        self.eventsdb_subset = self.eventsdb
         
     def survival_probability(self):
         eventsdb = self.eventsdb
@@ -213,6 +219,7 @@ class App(tk.Frame):
         survival = [1.0 - float(i)/float(numevents) for i in range(0,numevents)]
         eventsdb_sorted['survival_probability'] = survival
         self.eventsdb = sqldf('SELECT * from eventsdb_sorted ORDER BY id',locals())
+        self.eventsdb_subset = self.eventsdb
         
                 
     def filter_db(self):
@@ -253,6 +260,29 @@ class App(tk.Frame):
         a.set_ylabel(y_label)
         self.f.subplots_adjust(bottom=0.14,left=0.21)
         a.plot(xsign*x_col,ysign*y_col,marker='.',linestyle='None')
+        if logscale_x:
+            a.set_xscale('log')
+        if logscale_y:
+            a.set_yscale('log')
+        self.canvas.show()
+        
+
+    def fit_data(self):
+        logscale_x = self.x_log_var.get()
+        logscale_y = self.y_log_var.get()
+        x_label = self.x_option.cget('text')
+        y_label = self.y_option.cget('text')
+        x_col = self.parse_db_col(self.unalias_dict.get(x_label,x_label))
+        y_col = self.parse_db_col(self.unalias_dict.get(y_label,y_label))
+        xsign = np.sign(np.average(x_col))
+        ysign = np.sign(np.average(y_col))
+        self.f.clf()
+        a = self.f.add_subplot(111)
+        a.set_xlabel(x_label)
+        a.set_ylabel(y_label)
+        self.f.subplots_adjust(bottom=0.14,left=0.21)
+        popt, pcov = curve_fit(exponential, xsign*x_col, ysign*y_col)
+        a.plot(xsign*x_col,ysign*y_col,'.',xsign*x_col, exponential(xsign*x_col,popt[0],popt[1]),'.')
         if logscale_x:
             a.set_xscale('log')
         if logscale_y:
@@ -474,6 +504,8 @@ class App(tk.Frame):
         self.eventsdb_subset = self.eventsdb
         self.eventsdb_prev = self.eventsdb
         self.db_info_string.set('Number of events: ' +str(len(self.eventsdb_subset)))
+        self.survival_probability()
+        self.delay_probability()
         
 
     def set_events_folder(self):
