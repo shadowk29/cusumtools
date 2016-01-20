@@ -42,6 +42,7 @@ class App(tk.Frame):
         self.eventsdb = eventsdb
         self.survival_probability()
         self.delay_probability()
+        self.count()
         self.eventsdb_subset = self.eventsdb
         self.eventsdb_prev = self.eventsdb_subset
 
@@ -218,6 +219,15 @@ class App(tk.Frame):
         numevents = len(eventsdb)
         survival = [1.0 - float(i)/float(numevents) for i in range(0,numevents)]
         eventsdb_sorted['survival_probability'] = survival
+        self.eventsdb = sqldf('SELECT * from eventsdb_sorted ORDER BY id',locals())
+        self.eventsdb_subset = self.eventsdb
+
+    def count(self):
+        eventsdb = self.eventsdb
+        eventsdb_sorted = sqldf('SELECT * from eventsdb ORDER BY id',locals())
+        numevents = len(eventsdb)
+        count = [i for i in range(0,numevents)]
+        eventsdb_sorted['count'] = count
         self.eventsdb = sqldf('SELECT * from eventsdb_sorted ORDER BY id',locals())
         self.eventsdb_subset = self.eventsdb
         
@@ -487,7 +497,8 @@ class App(tk.Frame):
                       'residual_pA': 'Residuals (pA)',
                       'survival_probability': 'Survival Probablity',
                       'delay_probability': 'Delay Probablity',
-                      'stdev_pA': 'Level Standard Deviation (pA)'}
+                      'stdev_pA': 'Level Standard Deviation (pA)',
+                      'count': 'Event Count'}
         self.unalias_dict = dict (zip(self.alias_dict.values(),self.alias_dict.keys()))
 
     def save_subset(self):
