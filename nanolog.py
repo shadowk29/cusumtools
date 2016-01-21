@@ -20,6 +20,8 @@ import os
 import tkFileDialog
 import Tkinter as tk
 import datetime
+import pandas as pd
+from collections import OrderedDict
 
 class LogGUI(tk.Frame):
     def __init__(self, parent):
@@ -103,8 +105,8 @@ class LogGUI(tk.Frame):
         self.cond_voltage = tk.Entry(self.cond_frame, textvariable=self.cond_voltage_set)
         self.cond_voltage_label = tk.Label(self.cond_frame,text='Voltage: ')
 
-        self.cond_duration = tk.Entry(self.cond_frame)
-        self.cond_duration_label = tk.Label(self.cond_frame,text='Duration: ')
+        self.cond_time = tk.Entry(self.cond_frame)
+        self.cond_time_label = tk.Label(self.cond_frame,text='Duration: ')
 
         
         self.cond_size = tk.Entry(self.cond_frame)
@@ -252,8 +254,8 @@ class LogGUI(tk.Frame):
         self.cond_pH_label.grid(row=2,column=0,sticky=tk.E+tk.W)
         self.cond_voltage.grid(row=3,column=1,sticky=tk.E+tk.W)
         self.cond_voltage_label.grid(row=3,column=0,sticky=tk.E+tk.W)
-        self.cond_duration.grid(row=4,column=1,sticky=tk.E+tk.W)
-        self.cond_duration_label.grid(row=4,column=0,sticky=tk.E+tk.W)
+        self.cond_time.grid(row=4,column=1,sticky=tk.E+tk.W)
+        self.cond_time_label.grid(row=4,column=0,sticky=tk.E+tk.W)
         self.cond_size.grid(row=5,column=1,sticky=tk.E+tk.W)
         self.cond_size_label.grid(row=5,column=0,sticky=tk.E+tk.W)
 
@@ -325,6 +327,9 @@ class LogGUI(tk.Frame):
         self.disable_frame(self.failure_frame)
         self.disable_frame(self.submit_frame)
 
+        entry_list = [child for child in self.fab_frame.winfo_children() if isinstance(child, tk.Entry)]
+        
+
     def set_date(self):
         now = datetime.datetime.now()
         self.date_string.set(now.strftime("%Y-%m-%d"))
@@ -348,8 +353,53 @@ class LogGUI(tk.Frame):
 
         self.status_string.set('Standard Configuration Loaded')
 
+    def prep_row(self):
+        pore_data = OrderedDict()
+        pore_data['name'] = [self.name.get()]
+        pore_data['date'] = [self.date.get()]
+        pore_data['id']   = [self.id.get()]
+        pore_data['supplier'] = [self.supplier.get()]
+        pore_data['batch'] = [self.batch.get()]
+        pore_data['fab_electrolyte'] = [self.fab_electrolyte.get()]
+        pore_data['fab_molarity'] = [self.fab_molarity.get()]
+        pore_data['fab_pH'] = [self.fab_pH.get()]
+        pore_data['fab_voltage'] = [self.fab_voltage.get()]
+        pore_data['thickness'] = [self.fab_thickness.get()]
+        pore_data['fab_time'] = [self.fab_time.get()]
+        pore_data['cond_electrolyte'] = [self.cond_electrolyte.get()]
+        pore_data['cond_molarity'] = [self.cond_molarity.get()]
+        pore_data['cond_pH'] = [self.cond_pH.get()]
+        pore_data['cond_voltage'] = [self.cond_voltage.get()]
+        pore_data['cond_time'] = [self.cond_time.get()]
+        pore_data['cond_size'] = [self.cond_time.get()]
+        pore_data['measure_electrolyte'] = [self.measure_electrolyte.get()]
+        pore_data['measure_molarity'] = [self.measure_molarity.get()]
+        pore_data['measure_pH'] = [self.measure_pH.get()]
+        pore_data['measure_size'] = [self.measure_size.get()]
+        pore_data['measure_noise'] = [self.measure_noise.get()]
+        pore_data['measure_rect'] = [self.measure_rect.get()]
+        pore_data['si_false_pos'] = [self.si_false_pos.get()]
+        pore_data['si_false_neg'] = [self.si_false_neg.get()]
+        pore_data['si_sw_crash'] = [self.si_sw_crash.get()]
+        pore_data['si_aging'] = [self.si_aging.get()]
+        pore_data['si_electrode'] = [self.si_electrode.get()]
+        pore_data['f_false_pos'] = [self.f_false_pos.get()]
+        pore_data['f_false_neg'] = [self.f_false_neg.get()]
+        pore_data['f_unstable'] = [self.f_unstable.get()]
+        pore_data['f_broken'] = [self.f_broken.get()]
+        pore_data['f_noise'] = [self.f_noise.get()]
+        pore_data['f_wet'] = [self.f_wet.get()]
+        pore_data['f_op_amp'] = [self.f_op_amp.get()]
+        pore_data['f_oversize'] = [self.f_oversize.get()]
+        pore_data['f_crash'] = [self.f_crash.get()]
         
+        self.df = pd.DataFrame(pore_data, index=None)
+        print self.df
 
+    def load_stats(self):
+        pass
+
+    
     def load_last(self):
         pass
 
@@ -375,7 +425,13 @@ class LogGUI(tk.Frame):
             child.configure(state='normal')
 
     def submit(self):
-        pass
+        self.prep_row()
+        if os.path.isfile('test.csv'):
+            with open('test.csv',mode='a') as f:
+                self.df.to_csv(f, header=False, index=False)
+        else:
+            with open('test.csv',mode='a') as f:
+                self.df.to_csv(f, index=False)
 
     def check_enable_submit(self):
         self.enable_frame(self.submit_frame)
