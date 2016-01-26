@@ -50,7 +50,7 @@ class LogGUI(tk.Frame):
 
 
         ##### define widgets for identification information ##########
-        self.id_info_list = ['Name', 'Date', 'Pore ID', 'Supplier', 'Batch', 'Instrument']
+        self.id_info_list = ['Name', 'Date', 'Pore_ID', 'Supplier', 'Batch', 'Instrument']
         self.id_entry = OrderedDict()
         self.id_label = OrderedDict()
         self.id_string = OrderedDict()
@@ -87,7 +87,7 @@ class LogGUI(tk.Frame):
 
 
         #####defines widgets for conditioning information##########
-        self.cond_info_list = ['Salt', 'Molarity', 'pH', 'Voltage', 'Target Size', 'Duration']
+        self.cond_info_list = ['Salt', 'Molarity', 'pH', 'Voltage', 'Target_Size', 'Duration']
         self.cond_entry = OrderedDict()
         self.cond_label = OrderedDict()
         self.cond_string = OrderedDict()
@@ -105,7 +105,7 @@ class LogGUI(tk.Frame):
 
 
         ########## defines widgets for measurement information ##########
-        self.measure_info_list = ['Salt', 'Molarity', 'pH', 'Final Size', '1Hz PSD', 'Rectification']
+        self.measure_info_list = ['Salt', 'Molarity', 'pH', 'Final_Size', '1Hz_PSD', 'Rectification']
         self.measure_entry = OrderedDict()
         self.measure_label = OrderedDict()
         self.measure_string = OrderedDict()
@@ -122,25 +122,26 @@ class LogGUI(tk.Frame):
 
 
         ##### widgets to describe details of the experimental outcome #######
+        self.outcome_list = ['Success', 'Salvaged', 'Failure']
+        self.outcome_radio = OrderedDict()
+        self.outcome = tk.IntVar()
+        self.outcome.set(-1)
         self.outcome_frame = tk.LabelFrame(parent,text='Outcome')
         self.outcome_frame.grid(row=2,column=0,columnspan=8,sticky=tk.N+tk.S+tk.E+tk.W) #place list of possible outcomes in GUI
+        
         self.outcome_frame.columnconfigure(0, weight=1)
         self.outcome_frame.columnconfigure(1, weight=1)
         self.outcome_frame.columnconfigure(2, weight=1)
-        
-        
-        self.outcome = tk.IntVar()
-        self.outcome.set(-1)
-        self.outcome_success = tk.Radiobutton(self.outcome_frame, text='Success', variable = self.outcome, value=0, indicatoron=0, command=self.grey_success)
-        self.outcome_salvage = tk.Radiobutton(self.outcome_frame, text='Salvaged', variable = self.outcome, value=1, indicatoron=0, command=self.grey_salvage)
-        self.outcome_failure = tk.Radiobutton(self.outcome_frame, text='Failure', variable = self.outcome, value=2, indicatoron=0, command=self.grey_failure)
-        self.outcome_success.grid(row=0,column=0,sticky=tk.E+tk.W)
-        self.outcome_salvage.grid(row=0,column=1,sticky=tk.E+tk.W)
-        self.outcome_failure.grid(row=0,column=2,sticky=tk.E+tk.W)
+
+        col=0
+        for var in self.outcome_list:
+            self.outcome_radio[var] = tk.Radiobutton(self.outcome_frame, text=var, variable = self.outcome, value=col, indicatoron=0, command=self.grey_outcome)
+            self.outcome_radio[var].grid(row=0,column=col,sticky=tk.E+tk.W)
+            col += 1
 
 
         ###### widgets to describe standard successful interventions ######
-        self.intervention_list = ['False Positive', 'False Negative', 'Software Error', 'Pore Aging - Noise', 'Pore Aging - IV', 'Electrode Fix', 'Op Amp Fix', 'Other - Comment']
+        self.intervention_list = ['False_Positive', 'False_Negative', 'Software_Error', 'Pore_Aging_Noise', 'Pore_Aging_Size', 'Electrode_Fix', 'Op_Amp_Fix', 'Other_Comment']
         self.intervention_check = OrderedDict()
         self.intervention_button = OrderedDict()
         self.intervention_frame = tk.LabelFrame(parent,text='Standard Interventions')
@@ -154,7 +155,7 @@ class LogGUI(tk.Frame):
         
 
         ##### widgets to describe standard modes of failure #######
-        self.failure_list = ['False Positive', 'False Negative', 'Unstable', 'Broken Membrane', 'High 1/f Noise', 'Unable to Wet', 'Overshot Size', 'User Error', 'Other - Comment']
+        self.failure_list = ['False_Positive', 'False_Negative', 'Unstable', 'Broken_Membrane', 'High_Noise', 'Not_Wet', 'Overshot_Size', 'User_Error', 'Other_Comment']
         self.failure_check = OrderedDict()
         self.failure_button = OrderedDict()
         self.failure_frame = tk.LabelFrame(parent,text='Reasons for Failure')
@@ -206,55 +207,28 @@ class LogGUI(tk.Frame):
         
         ##### Initial Book Keeping ####
         self.set_date()
+        self.run_log_path=''
         self.disable_frame(self.intervention_frame) #grey out unused frames
         self.disable_frame(self.failure_frame)
         self.submit_button.configure(state='disable')
 
-        
-    
-    def load_standard(self):
-        pass
-
-    def load_last(self):
-        pass
-
-    def read_run_log(self):
-        try:
-            self.run_log_path = tkFileDialog.askopenfilename()
-        except IOError:
-            self.status_string.set('Choose a valid log file')
-
-    def copy_run_log(self):
-        file_name = 'S:/Issue Tracking/'+self.id_entry['Name'].get() +'-'+ self.id_entry['Pore ID'].get() + '.log'
-        shutil.copy2(self.run_log_path, file_name)
-        if os.path.isfile (file_name):
-            self.status_string.set('Log file copied to '+file_name)
-            self.run_log_copied = 1
-        else:
-            self.status_string.set('Unable to copy log file to '+file_name)
-        
-    def grey_success(self):
-        self.disable_frame(self.intervention_frame)
-        self.disable_frame(self.failure_frame)
+    def prep_row(self):
+        pore_data = OrderedDict()
+        for var in self.id_info_list:
+            pore_data[var] = [self.id_entry[var].get()]
+        for var in self.fab_info_list:
+            pore_data[var] = [self.fab_entry[var].get()]
+        for var in self.cond_info_list:
+            pore_data[var] = [self.cond_entry[var].get()]
+        for var in self.measure_info_list:
+            pore_data[var] = [self.measure_entry[var].get()]
+        pore_data['Outcome'] = [self.outcome.get()]
         for var in self.intervention_list:
-            self.intervention_check[var].set(0)
+            pore_data[var] = [self.intervention_check[var].get()]
         for var in self.failure_list:
-            self.failure_check[var].set(0)
-
-    def grey_salvage(self):
-        self.enable_frame(self.intervention_frame)
-        self.disable_frame(self.failure_frame)
-        for var in self.failure_list:
-            self.failure_check[var].set(0)
-
-    def grey_failure(self):
-        self.disable_frame(self.intervention_frame)
-        self.enable_frame(self.failure_frame)
-        for var in self.intervention_list:
-            self.intervention_check[var].set(0)
-
-    def submit(self):
-        pass
+            pore_data[var] = [self.failure_check[var].get()]
+        pore_data['File_Path'] = self.file_name
+        self.df = pd.DataFrame(pore_data,index=None)
 
     def set_date(self):
         now = datetime.datetime.now()
@@ -266,63 +240,129 @@ class LogGUI(tk.Frame):
 
     def enable_frame(self, frame):
         for child in frame.winfo_children():
-            child.configure(state='normal')
+            child.configure(state='normal')   
+    
+    def load_standard(self):
+        pass
+
+    def load_last(self):
+        pass
+
+    def read_run_log(self):
+        self.run_log_path = tkFileDialog.askopenfilename()
+        if not self.run_log_path:
+            self.status_string.set('Choose a valid log file')
+        else:
+            self.status_string.set('Read run log: '+self.run_log_path)
+            
+    def copy_run_log(self):
+        try:
+            self.file_name = 'S:/Issue Tracking/Logs/'+self.id_entry['Name'].get() +'-'+ self.id_entry['Pore_ID'].get() + '.log'
+            shutil.copy2(self.run_log_path, self.file_name)
+            if os.path.isfile (self.file_name):
+                self.status_string.set('Log file copied to '+self.file_name)
+                self.run_log_copied = 1
+            else:
+                self.status_string.set('Unable to copy log file to '+self.file_name)
+        except IOError:
+            self.status_string.set('Could not open log file')
+        
+    def grey_outcome(self):
+        if self.outcome.get() == 0:
+            self.disable_frame(self.intervention_frame)
+            self.disable_frame(self.failure_frame)
+            for var in self.intervention_list:
+                self.intervention_check[var].set(0)
+            for var in self.failure_list:
+                self.failure_check[var].set(0)
+        elif self.outcome.get() == 1:
+            self.enable_frame(self.intervention_frame)
+            self.disable_frame(self.failure_frame)
+            for var in self.failure_list:
+                self.failure_check[var].set(0)
+        elif self.outcome.get() == 2:
+            self.disable_frame(self.intervention_frame)
+            self.enable_frame(self.failure_frame)
+            for var in self.intervention_list:
+                self.intervention_check[var].set(0)
+
+    def submit(self):
+        submitted = 1
+        self.copy_run_log()
+        self.prep_row()
+        try:
+            if os.path.isfile('S:/Issue Tracking/Fabrication-Statistics.csv'):
+                with open('S:/Issue Tracking/Fabrication-Statistics.csv',mode='a') as f:
+                    self.df.to_csv(f, header=False, index=False)
+            else:
+                with open('S:/Issue Tracking/Fabrication-Statistics.csv',mode='a') as f:
+                    self.df.to_csv(f, index=False)
+        except IOError:
+            self.status_string.set('Could not open statistics file - close it and try again')
+            submitted = 0
+        if submitted == 1:
+            self.status_string.set('Pore data submitted')
+            self.submit_button.configure(state='disable')
+
 
     def verify(self):
-        self.status_string.set('Ready')
+        self.status_string.set('')
         submit = 1
         for var in self.id_info_list:
             if not self.id_entry[var].get():
-                self.status_string.set('Please fill out all identification information fields')
+                self.status_string.set(self.status_string.get()+'Please fill out all identification information fields\n')
                 submit = 0
                 break
         for var in self.fab_info_list:
             if not self.fab_entry[var].get():
-                self.status_string.set('Please fill out all fabrication information fields')
+                self.status_string.set(self.status_string.get()+'Please fill out all fabrication information fields\n')
                 submit = 0
                 break
         for var in self.cond_info_list:
             if not self.cond_entry[var].get():
-                self.status_string.set('Please fill out all conditioning information fields')
+                self.status_string.set(self.status_string.get()+'Please fill out all conditioning information fields\n')
                 submit = 0
                 break
         for var in self.measure_info_list:
             if not self.measure_entry[var].get():
-                self.status_string.set('Please fill out all measurement information fields')
+                self.status_string.set(self.status_string.get()+'Please fill out all measurement information fields\n')
                 submit = 0
                 break
              
         if self.outcome.get() == -1:
-            self.status_string.set('Please select an experimental outcome')
+            self.status_string.set(self.status_string.get()+'Please select an experimental outcome\n')
             submit = 0 
         elif self.outcome.get() == 1:
             total = 0
             for var in self.intervention_list:
                 total += self.intervention_check[var].get()
             if total == 0:
-                self.status_string.set('Please select at least one standard intervention')
+                self.status_string.set(self.status_string.get()+'Please select at least one standard intervention\n')
                 submit = 0
         elif self.outcome.get() == 2:
             total = 0
             for var in self.failure_list:
                 total += self.failure_check[var].get()
             if total == 0:
-                self.status_string.set('Please select at least one failure mode')
+                self.status_string.set(self.status_string.get()+'Please select at least one failure mode\n')
                 submit = 0
 
-
-        if self.intervention_check['Other - Comment'].get() == 1:
+        if self.intervention_check['Other_Comment'].get() == 1 or self.failure_check['Other_Comment'].get() == 1:
             if not self.comments.get():
-                self.status_string.set('Please comment on the specifics of the non-standard intervention used')
+                self.status_string.set(self.status_string.get()+'Please comment on the specifics of the non-standard intervention used\n')
                 submit = 0
 
-        if self.failure_check['Other - Comment'].get() == 1:
-            if not self.comments.get():
-                self.status_string.set('Please comment on the specifics of the non-standard failure mode')
-                submit = 0
+        if not self.run_log_path:
+            self.status_string.set(self.status_string.get()+'Please load Record.log for your pore\n')
+            submit = 0
+        if not os.path.isfile(self.run_log_path):
+            self.status_string.set(self.status_string.get()+'Unable to locate log file: '+self.run_log_path+'\n')
+            self.run_log_path=''
+            submit = 0
 
         if submit == 1:
             self.submit_button.configure(state='normal')
+            self.status_string.set('Ready to submit, please review information for accuracy')
 
     
 def main():
