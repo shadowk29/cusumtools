@@ -140,7 +140,7 @@ class LogGUI(tk.Frame):
 
 
         ###### widgets to describe standard successful interventions ######
-        self.intervention_list = ['False Positive', 'False Negative', 'Software Error', 'Pore Aging - Noise', 'Pore Aging - IV', 'Electrode Fix', 'Op Amp Fix']
+        self.intervention_list = ['False Positive', 'False Negative', 'Software Error', 'Pore Aging - Noise', 'Pore Aging - IV', 'Electrode Fix', 'Op Amp Fix', 'Other - Comment']
         self.intervention_check = OrderedDict()
         self.intervention_button = OrderedDict()
         self.intervention_frame = tk.LabelFrame(parent,text='Standard Interventions')
@@ -154,7 +154,7 @@ class LogGUI(tk.Frame):
         
 
         ##### widgets to describe standard modes of failure #######
-        self.failure_list = ['False Positive', 'False Negative', 'Unstable', 'Broken Membrane', 'High 1/f Noise', 'Unable to Wet', 'Overshot Size', 'User Error']
+        self.failure_list = ['False Positive', 'False Negative', 'Unstable', 'Broken Membrane', 'High 1/f Noise', 'Unable to Wet', 'Overshot Size', 'User Error', 'Other - Comment']
         self.failure_check = OrderedDict()
         self.failure_button = OrderedDict()
         self.failure_frame = tk.LabelFrame(parent,text='Reasons for Failure')
@@ -191,7 +191,7 @@ class LogGUI(tk.Frame):
         self.status.grid(row=0,column=0,sticky=tk.E+tk.W)
 
 
-        ##### the submit button ######
+        ##### the verify and submit buttons ######
         self.submit_frame = tk.Frame(parent)
         self.submit_frame.grid(row=6,column=0,columnspan=8,sticky=tk.N+tk.S+tk.E+tk.W)
         
@@ -204,13 +204,14 @@ class LogGUI(tk.Frame):
         self.submit_button.grid(row=0,column=1,sticky=tk.E+tk.W)
 
         
-
+        ##### Initial Book Keeping ####
         self.set_date()
         self.disable_frame(self.intervention_frame) #grey out unused frames
         self.disable_frame(self.failure_frame)
-        self.disable_frame(self.submit_frame)
+        self.submit_button.configure(state='disable')
 
-
+        
+    
     def load_standard(self):
         pass
 
@@ -218,28 +219,110 @@ class LogGUI(tk.Frame):
         pass
 
     def read_run_log(self):
-        pass
+        try:
+            self.run_log_path = tkFileDialog.askopenfilename()
+        except IOError:
+            self.status_string.set('Choose a valid log file')
+
+    def copy_run_log(self):
+        file_name = 'S:/Issue Tracking/'+self.id_entry['Name'].get() +'-'+ self.id_entry['Pore ID'].get() + '.log'
+        shutil.copy2(self.run_log_path, file_name)
+        if os.path.isfile (file_name):
+            self.status_string.set('Log file copied to '+file_name)
+            self.run_log_copied = 1
+        else:
+            self.status_string.set('Unable to copy log file to '+file_name)
         
     def grey_success(self):
-        pass
+        self.disable_frame(self.intervention_frame)
+        self.disable_frame(self.failure_frame)
+        for var in self.intervention_list:
+            self.intervention_check[var].set(0)
+        for var in self.failure_list:
+            self.failure_check[var].set(0)
 
     def grey_salvage(self):
-        pass
+        self.enable_frame(self.intervention_frame)
+        self.disable_frame(self.failure_frame)
+        for var in self.failure_list:
+            self.failure_check[var].set(0)
 
     def grey_failure(self):
-        pass
+        self.disable_frame(self.intervention_frame)
+        self.enable_frame(self.failure_frame)
+        for var in self.intervention_list:
+            self.intervention_check[var].set(0)
 
     def submit(self):
         pass
 
     def set_date(self):
-        pass
+        now = datetime.datetime.now()
+        self.id_string['Date'].set(now.strftime("%Y-%m-%d"))
 
     def disable_frame(self, frame):
-        pass
+        for child in frame.winfo_children():
+            child.configure(state='disable')
+
+    def enable_frame(self, frame):
+        for child in frame.winfo_children():
+            child.configure(state='normal')
 
     def verify(self):
-        pass
+        self.status_string.set('Ready')
+        submit = 1
+        for var in self.id_info_list:
+            if not self.id_entry[var].get():
+                self.status_string.set('Please fill out all identification information fields')
+                submit = 0
+                break
+        for var in self.fab_info_list:
+            if not self.fab_entry[var].get():
+                self.status_string.set('Please fill out all fabrication information fields')
+                submit = 0
+                break
+        for var in self.cond_info_list:
+            if not self.cond_entry[var].get():
+                self.status_string.set('Please fill out all conditioning information fields')
+                submit = 0
+                break
+        for var in self.measure_info_list:
+            if not self.measure_entry[var].get():
+                self.status_string.set('Please fill out all measurement information fields')
+                submit = 0
+                break
+             
+        if self.outcome.get() == -1:
+            self.status_string.set('Please select an experimental outcome')
+            submit = 0 
+        elif self.outcome.get() == 1:
+            total = 0
+            for var in self.intervention_list:
+                total += self.intervention_check[var].get()
+            if total == 0:
+                self.status_string.set('Please select at least one standard intervention')
+                submit = 0
+        elif self.outcome.get() == 2:
+            total = 0
+            for var in self.failure_list:
+                total += self.failure_check[var].get()
+            if total == 0:
+                self.status_string.set('Please select at least one failure mode')
+                submit = 0
+
+
+        if self.intervention_check['Other - Comment'].get() == 1:
+            if not self.comments.get():
+                self.status_string.set('Please comment on the specifics of the non-standard intervention used')
+                submit = 0
+
+        if self.failure_check['Other - Comment'].get() == 1:
+            if not self.comments.get():
+                self.status_string.set('Please comment on the specifics of the non-standard failure mode')
+                submit = 0
+
+        if submit == 1:
+            self.submit_button.configure(state='normal')
 
     
 def main():
