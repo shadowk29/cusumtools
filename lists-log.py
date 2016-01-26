@@ -250,8 +250,9 @@ class LogGUI(tk.Frame):
 
     def read_run_log(self):
         self.run_log_path = tkFileDialog.askopenfilename()
-        if not self.run_log_path:
+        if not self.run_log_path or not os.path.isfile(self.run_log_path):
             self.status_string.set('Choose a valid log file')
+            self.read_run_log = ''
         else:
             self.status_string.set('Read run log: '+self.run_log_path)
             
@@ -285,25 +286,6 @@ class LogGUI(tk.Frame):
             self.enable_frame(self.failure_frame)
             for var in self.intervention_list:
                 self.intervention_check[var].set(0)
-
-    def submit(self):
-        submitted = 1
-        self.copy_run_log()
-        self.prep_row()
-        try:
-            if os.path.isfile('S:/Issue Tracking/Fabrication-Statistics.csv'):
-                with open('S:/Issue Tracking/Fabrication-Statistics.csv',mode='a') as f:
-                    self.df.to_csv(f, header=False, index=False)
-            else:
-                with open('S:/Issue Tracking/Fabrication-Statistics.csv',mode='a') as f:
-                    self.df.to_csv(f, index=False)
-        except IOError:
-            self.status_string.set('Could not open statistics file - close it and try again')
-            submitted = 0
-        if submitted == 1:
-            self.status_string.set('Pore data submitted')
-            self.submit_button.configure(state='disable')
-
 
     def verify(self):
         self.status_string.set('')
@@ -363,6 +345,25 @@ class LogGUI(tk.Frame):
         if submit == 1:
             self.submit_button.configure(state='normal')
             self.status_string.set('Ready to submit, please review information for accuracy')
+
+
+    def submit(self):
+        submitted = 1
+        self.copy_run_log()
+        self.prep_row()
+        try:
+            if os.path.isfile('S:/Issue Tracking/Fabrication-Statistics.csv'):
+                with open('S:/Issue Tracking/Fabrication-Statistics.csv',mode='a') as f:
+                    self.df.to_csv(f, header=False, index=False)
+            else:
+                with open('S:/Issue Tracking/Fabrication-Statistics.csv',mode='a') as f:
+                    self.df.to_csv(f, index=False)
+        except IOError:
+            self.status_string.set('Could not open statistics file - close it and try again')
+            submitted = 0
+        if submitted == 1:
+            self.status_string.set('Pore data submitted')
+            self.submit_button.configure(state='disable')
 
     
 def main():
