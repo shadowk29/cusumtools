@@ -21,6 +21,7 @@ import tkFileDialog
 import Tkinter as tk
 import datetime
 import pandas as pd
+from pandasql import sqldf
 from collections import OrderedDict
 import os
 import tkFileDialog
@@ -213,33 +214,23 @@ class LogGUI(tk.Frame):
                                                                 ]))
                                        ])
 
-        self.standard_dict = OrderedDict([('Identification', OrderedDict([('name', ''),
-                                                                       ('date', datetime.datetime.now().strftime("%Y-%m-%d")),
-                                                                       ('pore_id', ''),
-                                                                       ('supplier', 'Norcada'),
-                                                                       ('batch', ''),
-                                                                       ('instrument', '')
+        self.standard_dict = OrderedDict([('Identification', OrderedDict([('date', datetime.datetime.now().strftime("%Y-%m-%d")),
+                                                                       ('supplier', 'Norcada')
                                                                        ])),
                                        ('Fabrication', OrderedDict([('fab_salt', 'KCl'),
                                                                     ('fab_molarity', '1'),
                                                                     ('fab_pH', '10'),
                                                                     ('fab_voltage', '-6'),
-                                                                    ('thickness', '10'),
-                                                                    ('fab_time', '')
+                                                                    ('thickness', '10')
                                                                     ])),
                                        ('Conditioning', OrderedDict([('cond_salt', 'LiCl'),
                                                                     ('cond_molarity', '3.6'),
                                                                     ('cond_pH', '8'),
-                                                                    ('cond_voltage', '3'),
-                                                                    ('target_size', ''),
-                                                                    ('cond_time', '')
+                                                                    ('cond_voltage', '3')
                                                                     ])),
                                        ('Measurement', OrderedDict([('measure_salt', 'LiCl'),
                                                                     ('measure_molarity', '3.6'),
-                                                                    ('measure_pH', '8'),
-                                                                    ('final_size', ''),
-                                                                    ('1Hz_PSD_200mV', ''),
-                                                                    ('rectification', '')
+                                                                    ('measure_pH', '8')
                                                                     ]))
                                        ])
         
@@ -260,6 +251,7 @@ class LogGUI(tk.Frame):
 
     def set_date(self):
         now = datetime.datetime.now()
+        print now
         self.entry_strings['Identification']['date'].set(now.strftime("%Y-%m-%d"))
 
     def disable_frame(self, frame):
@@ -276,7 +268,15 @@ class LogGUI(tk.Frame):
                 self.entry_strings[frame][key].set(val)
 
     def load_last(self):
-        pass
+        if self.entries['Identification']['name'].get()=='':
+            self.status_string.set('Enter your name in order to load your last used configuration')
+        else:
+            statsdb = pd.read_csv('S:/Issue Tracking/Fabrication-Statistics.csv', encoding='utf-8')
+            last_config = sqldf('SELECT * from statsdb WHERE name="{0}" ORDER BY date LIMIT 1'.format(self.entries['Identification']['name'].get()),locals())
+            for frame, widgets in self.standard_dict.iteritems():
+                for key, val in widgets.iteritems():
+                    self.entry_strings[frame][key].set(last_config[key][0])
+                                   
 
     def read_run_log(self):
         self.run_log_path = tkFileDialog.askopenfilename()
