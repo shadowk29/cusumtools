@@ -49,6 +49,8 @@ class LogGUI(tk.Frame):
         self.load_last.grid(row=0,column=1,sticky=tk.E+tk.W)
         self.load_run_log.grid(row=0,column=2,sticky=tk.E+tk.W)
 
+
+        ##### Entry boxes for pore information ######
         self.entries = OrderedDict()
         self.entry_labels = OrderedDict()
         self.entry_strings = OrderedDict()
@@ -69,77 +71,6 @@ class LogGUI(tk.Frame):
                 self.entry_labels[frame][key].grid(row=row, column=0, sticky=tk.E+tk.W)
                 self.entries[frame][key].grid(row=row, column=1, sticky=tk.E+tk.W)
                 row += 1
-                
-##        ##### define widgets for identification information ##########
-##        self.id_info_list = ['Name', 'Date', 'Pore_ID', 'Supplier', 'Batch', 'Instrument']
-##        self.id_entry = OrderedDict()
-##        self.id_label = OrderedDict()
-##        self.id_string = OrderedDict()
-##        self.id_frame = tk.LabelFrame(parent,text='Identification Parameters')
-##        self.id_frame.grid(row=1,column=0,columnspan=2,sticky=tk.N+tk.S+tk.E+tk.W)
-##        row = 0
-##        for var in self.id_info_list:
-##            self.id_string[var] = tk.StringVar()
-##            self.id_label[var] = tk.Label(self.id_frame,text=var+': ')
-##            self.id_entry[var] = tk.Entry(self.id_frame, textvariable = self.id_string[var])
-##            self.id_label[var].grid(row=row, column=0, sticky = tk.E+tk.W)
-##            self.id_entry[var].grid(row=row, column=1, sticky = tk.E+tk.W)
-##            row += 1
-##            
-##
-##
-##
-##        ##### defines widgets for fabrication information ##########
-##        self.fab_info_list = ['Salt', 'Molarity', 'pH', 'Voltage', 'Thickness', 'Duration']
-##        self.fab_entry = OrderedDict()
-##        self.fab_label = OrderedDict()
-##        self.fab_string = OrderedDict()
-##        self.fab_frame = tk.LabelFrame(parent,text='Fabrication Parameters')
-##        self.fab_frame.grid(row=1,column=2,columnspan=2,sticky=tk.N+tk.S+tk.E+tk.W)
-##        row = 0
-##        for var in self.fab_info_list:
-##            self.fab_string[var] = tk.StringVar()
-##            self.fab_label[var] = tk.Label(self.fab_frame, text=var+': ')
-##            self.fab_entry[var] = tk.Entry(self.fab_frame, textvariable = self.fab_string[var])
-##            self.fab_label[var].grid(row=row, column=0, sticky = tk.E+tk.W)
-##            self.fab_entry[var].grid(row=row, column=1, sticky = tk.E+tk.W)
-##            row += 1
-##        
-##
-##
-##        #####defines widgets for conditioning information##########
-##        self.cond_info_list = ['Salt', 'Molarity', 'pH', 'Voltage', 'Target_Size', 'Duration']
-##        self.cond_entry = OrderedDict()
-##        self.cond_label = OrderedDict()
-##        self.cond_string = OrderedDict()
-##        self.cond_frame = tk.LabelFrame(parent,text='Conditioning Parameters')
-##        self.cond_frame.grid(row=1,column=4,columnspan=2,sticky=tk.N+tk.S+tk.E+tk.W)#place conditioning information widgets in the GUI
-##        row = 0
-##            
-##        for var in self.cond_info_list:
-##            self.cond_string[var] = tk.StringVar()
-##            self.cond_label[var] = tk.Label(self.cond_frame, text=var+': ')
-##            self.cond_entry[var] = tk.Entry(self.cond_frame, textvariable = self.cond_string[var])
-##            self.cond_label[var].grid(row=row, column=0, sticky = tk.E+tk.W)
-##            self.cond_entry[var].grid(row=row, column=1, sticky = tk.E+tk.W)
-##            row += 1
-##
-##
-##        ########## defines widgets for measurement information ##########
-##        self.measure_info_list = ['Salt', 'Molarity', 'pH', 'Final_Size', '1Hz_PSD', 'Rectification']
-##        self.measure_entry = OrderedDict()
-##        self.measure_label = OrderedDict()
-##        self.measure_string = OrderedDict()
-##        self.measure_frame = tk.LabelFrame(parent,text='Measurement Parameters')
-##        self.measure_frame.grid(row=1,column=6,columnspan=2,sticky=tk.N+tk.S+tk.E+tk.W)#place measurement information widgets in the GUI
-##        row = 0
-##        for var in self.measure_info_list:
-##            self.measure_string[var] = tk.StringVar()
-##            self.measure_label[var] = tk.Label(self.measure_frame, text=var+': ')
-##            self.measure_entry[var] = tk.Entry(self.measure_frame, textvariable = self.measure_string[var])
-##            self.measure_label[var].grid(row=row, column=0, sticky = tk.E+tk.W)
-##            self.measure_entry[var].grid(row=row, column=1, sticky = tk.E+tk.W)
-##            row += 1
 
 
         ##### widgets to describe details of the experimental outcome #######
@@ -160,35 +91,23 @@ class LogGUI(tk.Frame):
             self.outcome_radio[var].grid(row=0,column=col,sticky=tk.E+tk.W)
             col += 1
 
-
-        ###### widgets to describe standard successful interventions ######
-        self.intervention_list = ['False_Positive', 'False_Negative', 'Software_Error', 'Pore_Aging_Noise', 'Pore_Aging_Size', 'Electrode_Fix', 'Op_Amp_Fix', 'Other_Comment']
-        self.intervention_check = OrderedDict()
-        self.intervention_button = OrderedDict()
-        self.intervention_frame = tk.LabelFrame(parent,text='Standard Interventions')
-        self.intervention_frame.grid(row=3,column=0,columnspan=4,sticky=tk.N+tk.S+tk.E+tk.W) #place list of possible interventions in GUI
-        row = 0
-        for var in self.intervention_list:
-            self.intervention_check[var] = tk.IntVar()
-            self.intervention_button[var] = tk.Checkbutton(self.intervention_frame, text=var, variable = self.intervention_check[var])
-            self.intervention_button[var].grid(row=row, column=1, sticky = tk.E+tk.W)
-            row += 1
-        
-
-        ##### widgets to describe standard modes of failure #######
-        self.failure_list = ['False_Positive', 'False_Negative', 'Unstable', 'Broken_Membrane', 'High_Noise', 'Not_Wet', 'Overshot_Size', 'User_Error', 'Other_Comment']
-        self.failure_check = OrderedDict()
-        self.failure_button = OrderedDict()
-        self.failure_frame = tk.LabelFrame(parent,text='Reasons for Failure')
-        self.failure_frame.grid(row=3,column=4,columnspan=4,sticky=tk.N+tk.S+tk.E+tk.W) #place list of possible failures modes in GUI
-        row = 0
-        for var in self.failure_list:
-            self.failure_check[var] = tk.IntVar()
-            self.failure_button[var] = tk.Checkbutton(self.failure_frame, text=var, variable = self.failure_check[var])
-            self.failure_button[var].grid(row=row, column=1, sticky = tk.E+tk.W)
-            row += 1
-        
-        
+        ##### Entry boxes for pore information ######
+        self.checkbuttons = OrderedDict()
+        self.checkvars = OrderedDict()
+        self.failure_frames = OrderedDict()
+        framecol = 0
+        for frame, widgets in self.mode_dict.iteritems():
+            self.checkbuttons[frame] = OrderedDict()
+            self.checkvars[frame] = OrderedDict()
+            self.failure_frames[frame] = tk.LabelFrame(parent,text=frame)
+            self.failure_frames[frame].grid(row=3,column=framecol,columnspan=4,sticky=tk.N+tk.S+tk.E+tk.W)
+            framecol += 4
+            row = 0
+            for key, val in widgets.iteritems():
+                self.checkvars[frame][key] = tk.IntVar()
+                self.checkbuttons[frame][key] = tk.Checkbutton(self.failure_frames[frame], text=val, variable = self.checkvars[frame][key])
+                self.checkbuttons[frame][key].grid(row=row, column=0, sticky=tk.E+tk.W)
+                row += 1 
         
 
         ##### Free text entry box for comments and unhandled failures/interventions #####
@@ -225,13 +144,14 @@ class LogGUI(tk.Frame):
         self.verify_button.grid(row=0,column=0,sticky=tk.E+tk.W)
         self.submit_button.grid(row=0,column=1,sticky=tk.E+tk.W)
 
+
         
         ##### Initial Book Keeping ####
-##        self.set_date()
-##        self.run_log_path=''
-##        self.disable_frame(self.intervention_frame) #grey out unused frames
-##        self.disable_frame(self.failure_frame)
-##        self.submit_button.configure(state='disable')
+        self.set_date()
+        self.run_log_path=''
+        for frame, widgets in self.failure_frames.iteritems():
+                self.disable_frame(widgets)
+        self.submit_button.configure(state='disable')
 
     def intialize_alias_dict(self):
         self.entry_dict = OrderedDict([('Identification', OrderedDict([('name', 'Name'),
@@ -246,14 +166,14 @@ class LogGUI(tk.Frame):
                                                                     ('fab_pH', 'pH'),
                                                                     ('fab_voltage', 'Voltage'),
                                                                     ('thickness', 'Thickness'),
-                                                                    ('fab_duration', 'Duration')
+                                                                    ('fab_time', 'Fabrication Time')
                                                                     ])),
                                        ('Conditioning', OrderedDict([('cond_salt', 'Salt'),
                                                                     ('cond_molarity', 'Molarity'),
                                                                     ('cond_pH', 'pH'),
                                                                     ('cond_voltage', 'Voltage'),
                                                                     ('target_size', 'Target Size'),
-                                                                    ('cond_duration', 'Duration')
+                                                                    ('cond_time', 'Conditioning Time')
                                                                     ])),
                                        ('Measurement', OrderedDict([('measure_salt', 'Salt'),
                                                                     ('measure_molarity', 'Molarity'),
@@ -275,45 +195,67 @@ class LogGUI(tk.Frame):
                                                                      ])),
                                        ('Failure', OrderedDict([('f_false_pos', 'False Positive(s)'),
                                                                 ('f_false_neg', 'False Negastives(s)'),
-                                                                ('f_unstable', 'pH'),
-                                                                ('f_broken', 'Voltage'),
-                                                                ('f_noise', 'Thickness'),
-                                                                ('f_wet', 'Duration'),
+                                                                ('f_unstable', 'Unstable'),
+                                                                ('f_broken', 'Broken Membrane'),
+                                                                ('f_noise', 'High 1/f Noise'),
+                                                                ('f_wet', 'Unable to Wet'),
                                                                 ('f_oversize', 'Overshot Pore Size'),
                                                                 ('f_user', 'User Error'),
                                                                 ('f_duration', 'Too Long'),
                                                                 ('f_other', 'Other - Comment')
                                                                 ]))
                                        ])
+
+        self.standard_dict = OrderedDict([('Identification', OrderedDict([('name', ''),
+                                                                       ('date', datetime.datetime.now().strftime("%Y-%m-%d")),
+                                                                       ('pore_id', ''),
+                                                                       ('supplier', 'Norcada'),
+                                                                       ('batch', ''),
+                                                                       ('instrument', '')
+                                                                       ])),
+                                       ('Fabrication', OrderedDict([('fab_salt', 'KCl'),
+                                                                    ('fab_molarity', '1'),
+                                                                    ('fab_pH', '10'),
+                                                                    ('fab_voltage', '-6'),
+                                                                    ('thickness', '10'),
+                                                                    ('fab_time', '')
+                                                                    ])),
+                                       ('Conditioning', OrderedDict([('cond_salt', 'LiCl'),
+                                                                    ('cond_molarity', '3.6'),
+                                                                    ('cond_pH', '8'),
+                                                                    ('cond_voltage', '3'),
+                                                                    ('target_size', ''),
+                                                                    ('cond_time', '')
+                                                                    ])),
+                                       ('Measurement', OrderedDict([('measure_salt', 'LiCl'),
+                                                                    ('measure_molarity', '3.6'),
+                                                                    ('measure_pH', '8'),
+                                                                    ('final_size', ''),
+                                                                    ('1Hz_PSD_200mV', ''),
+                                                                    ('rectification', '')
+                                                                    ]))
+                                       ])
         
 
 
     def prep_row(self):
-        pass
         pore_data = OrderedDict()
-        for var in self.id_info_list:
-            pore_data[var] = [self.id_entry[var].get()]
-        for var in self.fab_info_list:
-            pore_data[var] = [self.fab_entry[var].get()]
-        for var in self.cond_info_list:
-            pore_data[var] = [self.cond_entry[var].get()]
-        for var in self.measure_info_list:
-            pore_data[var] = [self.measure_entry[var].get()]
+        for frame, widgets in self.entry_dict.iteritems():
+            for key, val in widgets.iteritems():
+                pore_data[key] = self.entries[frame][key].get()
         pore_data['Outcome'] = [self.outcome.get()]
-        for var in self.intervention_list:
-            pore_data[var] = [self.intervention_check[var].get()]
-        for var in self.failure_list:
-            pore_data[var] = [self.failure_check[var].get()]
+        for frame, widgets in self.mode_dict.iteritems():
+            for key, val in widgets.iteritems():
+                pore_data[key] = self.checkvars[frame][key].get()
         pore_data['File_Path'] = self.file_name
+        pore_data['Comments'] = self.comments.get().translate(None, ',\t;')
         self.df = pd.DataFrame(pore_data,index=None)
 
     def set_date(self):
-        pass
         now = datetime.datetime.now()
-        self.id_string['Date'].set(now.strftime("%Y-%m-%d"))
+        self.entry_strings['Identification']['date'].set(now.strftime("%Y-%m-%d"))
 
     def disable_frame(self, frame):
-        pass
         for child in frame.winfo_children():
             child.configure(state='disable')
 
@@ -322,24 +264,25 @@ class LogGUI(tk.Frame):
             child.configure(state='normal')   
     
     def load_standard(self):
-        pass
+        for frame, widgets in self.standard_dict.iteritems():
+            for key, val in widgets.iteritems():
+                self.entry_strings[frame][key].set(val)
 
     def load_last(self):
         pass
 
     def read_run_log(self):
-        pass
         self.run_log_path = tkFileDialog.askopenfilename()
         if not self.run_log_path or not os.path.isfile(self.run_log_path):
             self.status_string.set('Choose a valid log file')
             self.read_run_log = ''
         else:
+            
             self.status_string.set('Read run log: '+self.run_log_path)
             
     def copy_run_log(self):
-        pass
         try:
-            self.file_name = 'S:/Issue Tracking/Logs/'+self.id_entry['Name'].get() +'-'+ self.id_entry['Pore_ID'].get() + '.log'
+            self.file_name = 'S:/Issue Tracking/Logs/'+self.entries['Identification']['name'].get() +'-'+ self.entries['Identification']['pore_id'].get() + '.log'
             shutil.copy2(self.run_log_path, self.file_name)
             if os.path.isfile (self.file_name):
                 self.status_string.set('Log file copied to '+self.file_name)
@@ -350,69 +293,59 @@ class LogGUI(tk.Frame):
             self.status_string.set('Could not open log file')
         
     def grey_outcome(self):
-        pass
         if self.outcome.get() == 0:
-            self.disable_frame(self.intervention_frame)
-            self.disable_frame(self.failure_frame)
-            for var in self.intervention_list:
-                self.intervention_check[var].set(0)
-            for var in self.failure_list:
-                self.failure_check[var].set(0)
+            for frame, widgets in self.failure_frames.iteritems():
+                self.disable_frame(widgets)
+                for key, val in self.checkvars[frame].iteritems():
+                    val.set(0)           
         elif self.outcome.get() == 1:
-            self.enable_frame(self.intervention_frame)
-            self.disable_frame(self.failure_frame)
-            for var in self.failure_list:
-                self.failure_check[var].set(0)
+            for frame, widgets in self.failure_frames.iteritems():
+                if frame != 'Intervention':
+                    self.disable_frame(widgets)
+                    for key, val in self.checkvars[frame].iteritems():
+                        val.set(0)
+                else:
+                    self.enable_frame(widgets)
         elif self.outcome.get() == 2:
-            self.disable_frame(self.intervention_frame)
-            self.enable_frame(self.failure_frame)
-            for var in self.intervention_list:
-                self.intervention_check[var].set(0)
+            for frame, widgets in self.failure_frames.iteritems():
+                if frame != 'Failure':
+                    self.disable_frame(widgets)
+                    for key, val in self.checkvars[frame].iteritems():
+                        val.set(0)
+                else:
+                    self.enable_frame(widgets)
 
     def verify(self):
-        pass
         self.status_string.set('')
         submit = 1
-        for var in self.id_info_list:
-            if not self.id_entry[var].get():
-                self.status_string.set(self.status_string.get()+'Please fill out all identification information fields\n')
-                submit = 0
-                break
-        for var in self.fab_info_list:
-            if not self.fab_entry[var].get():
-                self.status_string.set(self.status_string.get()+'Please fill out all fabrication information fields\n')
-                submit = 0
-                break
-        for var in self.cond_info_list:
-            if not self.cond_entry[var].get():
-                self.status_string.set(self.status_string.get()+'Please fill out all conditioning information fields\n')
-                submit = 0
-                break
-        for var in self.measure_info_list:
-            if not self.measure_entry[var].get():
-                self.status_string.set(self.status_string.get()+'Please fill out all measurement information fields\n')
-                submit = 0
-                break
-             
+
+
+        for frame, widgets in self.entry_dict.iteritems():
+            for key, val in widgets.iteritems():
+                if not self.entries[frame][key].get():
+                    self.status_string.set(self.status_string.get()+'Please fill out all {0} information fields\n'.format(frame))
+                    submit = 0
+                    break
+                
         if self.outcome.get() == -1:
             self.status_string.set(self.status_string.get()+'Please select an experimental outcome\n')
             submit = 0 
         elif self.outcome.get() == 1:
             total = 0
-            for var in self.intervention_list:
-                total += self.intervention_check[var].get()
+            for key, val in self.checkvars['Intervention'].iteritems():
+                total += val.get()
             if total == 0:
                 self.status_string.set(self.status_string.get()+'Please select at least one standard intervention\n')
                 submit = 0
         elif self.outcome.get() == 2:
             total = 0
-            for var in self.failure_list:
-                total += self.failure_check[var].get()
+            for key, val in self.checkvars['Failure'].iteritems():
+                total += val.get()
             if total == 0:
                 self.status_string.set(self.status_string.get()+'Please select at least one failure mode\n')
                 submit = 0
 
-        if self.intervention_check['Other_Comment'].get() == 1 or self.failure_check['Other_Comment'].get() == 1:
+        if self.checkvars['Failure']['f_other'].get() == 1 or self.checkvars['Intervention']['i_other'].get() == 1:
             if not self.comments.get():
                 self.status_string.set(self.status_string.get()+'Please comment on the specifics of the non-standard intervention used\n')
                 submit = 0
@@ -431,7 +364,6 @@ class LogGUI(tk.Frame):
 
 
     def submit(self):
-        pass
         submitted = 1
         self.copy_run_log()
         self.prep_row()
