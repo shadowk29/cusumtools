@@ -103,11 +103,15 @@ class LogGUI(tk.Frame):
             self.failure_frames[frame].grid(row=3,column=framecol,columnspan=4,sticky=tk.N+tk.S+tk.E+tk.W)
             framecol += 4
             row = 0
+            col = 0
             for key, val in widgets.iteritems():
                 self.checkvars[frame][key] = tk.IntVar()
                 self.checkbuttons[frame][key] = tk.Checkbutton(self.failure_frames[frame], text=val, variable = self.checkvars[frame][key])
-                self.checkbuttons[frame][key].grid(row=row, column=0, sticky=tk.E+tk.W)
-                row += 1 
+                self.checkbuttons[frame][key].grid(row=row, column=col, sticky=tk.E+tk.W)
+                row += 1
+                if row == len(self.mode_dict[frame])/2:
+                    row = 0
+                    col += 1
         
 
         ##### Free text entry box for comments and unhandled failures/interventions #####
@@ -152,6 +156,9 @@ class LogGUI(tk.Frame):
         for frame, widgets in self.failure_frames.iteritems():
                 self.disable_frame(widgets)
         self.submit_button.configure(state='disable')
+
+
+
 
     def intialize_alias_dict(self):
         self.entry_dict = OrderedDict([('Identification', OrderedDict([('name', 'Name'),
@@ -353,7 +360,7 @@ class LogGUI(tk.Frame):
         if not self.run_log_path:
             self.status_string.set(self.status_string.get()+'Please load Record.log for your pore\n')
             submit = 0
-        if not os.path.isfile(self.run_log_path):
+        elif not os.path.isfile(self.run_log_path):
             self.status_string.set(self.status_string.get()+'Unable to locate log file: '+self.run_log_path+'\n')
             self.run_log_path=''
             submit = 0
