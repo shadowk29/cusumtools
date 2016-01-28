@@ -124,7 +124,7 @@ class LogGUI(tk.Frame):
                 self.checkbuttons[frame][key] = tk.Checkbutton(self.failure_frames[frame], text=val, variable = self.checkvars[frame][key])
                 self.checkbuttons[frame][key].grid(row=row, column=col, sticky=tk.W)
                 row += 1
-                if row >= 4:
+                if row > len(self.mode_dict[frame])/3:
                     row = 0
                     col += 1
         
@@ -183,7 +183,7 @@ class LogGUI(tk.Frame):
         self.entry_dict = OrderedDict([('Identification', OrderedDict([('name', 'Name'),
                                                                        ('date', 'Date'),
                                                                        ('pore_id', 'Pore ID'),
-                                                                       ('supplier', 'Supplier'),
+                                                                       ('software', 'Software Version'),
                                                                        ('batch', 'Membrane Batch'),
                                                                        ('instrument', 'Instrument')
                                                                        ])),
@@ -238,19 +238,19 @@ class LogGUI(tk.Frame):
         self.standard_dict = OrderedDict([('Identification', OrderedDict([('supplier', 'Norcada')
                                                                        ])),
                                        ('Fabrication', OrderedDict([('fab_salt', 'KCl'),
-                                                                    ('fab_molarity', '1'),
-                                                                    ('fab_pH', '10'),
-                                                                    ('fab_voltage', '-6'),
-                                                                    ('thickness', '10')
+                                                                    ('fab_molarity', '1.0'),
+                                                                    ('fab_pH', '10.0'),
+                                                                    ('fab_voltage', '-6.0'),
+                                                                    ('thickness', '10.0')
                                                                     ])),
                                        ('Conditioning', OrderedDict([('cond_salt', 'LiCl'),
                                                                     ('cond_molarity', '3.6'),
-                                                                    ('cond_pH', '8'),
-                                                                    ('cond_voltage', '3')
+                                                                    ('cond_pH', '8.0'),
+                                                                    ('cond_voltage', '3.0')
                                                                     ])),
                                        ('Measurement', OrderedDict([('measure_salt', 'LiCl'),
                                                                     ('measure_molarity', '3.6'),
-                                                                    ('measure_pH', '8')
+                                                                    ('measure_pH', '8.0')
                                                                     ]))
                                        ])
 
