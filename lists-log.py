@@ -214,8 +214,7 @@ class LogGUI(tk.Frame):
                                                                 ]))
                                        ])
 
-        self.standard_dict = OrderedDict([('Identification', OrderedDict([('date', datetime.datetime.now().strftime("%Y-%m-%d")),
-                                                                       ('supplier', 'Norcada')
+        self.standard_dict = OrderedDict([('Identification', OrderedDict([('supplier', 'Norcada')
                                                                        ])),
                                        ('Fabrication', OrderedDict([('fab_salt', 'KCl'),
                                                                     ('fab_molarity', '1'),
@@ -251,7 +250,6 @@ class LogGUI(tk.Frame):
 
     def set_date(self):
         now = datetime.datetime.now()
-        print now
         self.entry_strings['Identification']['date'].set(now.strftime("%Y-%m-%d"))
 
     def disable_frame(self, frame):
@@ -272,14 +270,14 @@ class LogGUI(tk.Frame):
             self.status_string.set('Enter your name in order to load your last used configuration')
         else:
             statsdb = pd.read_csv('S:/Issue Tracking/Fabrication-Statistics.csv', encoding='utf-8')
-            last_config = sqldf('SELECT * from statsdb WHERE name="{0}" ORDER BY date LIMIT 1'.format(self.entries['Identification']['name'].get()),locals())
+            last_config = sqldf('SELECT * from statsdb WHERE name="{0}" GROUP BY name'.format(self.entries['Identification']['name'].get()),locals())
             for frame, widgets in self.standard_dict.iteritems():
                 for key, val in widgets.iteritems():
                     self.entry_strings[frame][key].set(last_config[key][0])
                                    
 
     def read_run_log(self):
-        self.run_log_path = tkFileDialog.askopenfilename()
+        self.run_log_path = tkFileDialog.askopenfilename(initialdir='C:/Data/')
         if not self.run_log_path or not os.path.isfile(self.run_log_path):
             self.status_string.set('Choose a valid log file')
             self.read_run_log = ''
