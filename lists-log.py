@@ -272,7 +272,7 @@ class LogGUI(tk.Frame):
         pore_data = OrderedDict()
         for frame, widgets in self.entry_dict.iteritems():
             for key, val in widgets.iteritems():
-                pore_data[key] = self.entries[frame][key].get()
+                pore_data[key] = self.entries[frame][key].get().translate(None, ',')
         for key, val in self.prep_dict.iteritems():
             pore_data[key] = self.prepvars[key].get()
         pore_data['Outcome'] = [self.outcome.get()]
@@ -280,7 +280,7 @@ class LogGUI(tk.Frame):
             for key, val in widgets.iteritems():
                 pore_data[key] = self.checkvars[frame][key].get()
         pore_data['File_Path'] = self.file_name
-        pore_data['Comments'] = self.comments.get().translate(None, ',\t;')
+        pore_data['Comments'] = self.comments.get().translate(None, ',')
         self.df = pd.DataFrame(pore_data,index=None)
 
     def set_date(self):
@@ -334,7 +334,7 @@ class LogGUI(tk.Frame):
             
     def copy_run_log(self):
         try:
-            self.file_name = 'S:/Issue Tracking/Logs/'+self.entries['Identification']['name'].get() +'-'+ self.entries['Identification']['pore_id'].get() + '.log'
+            self.file_name = 'S:/Issue Tracking/Logs/'+self.entries['Identification']['name'].get().translate(None, ',') +'-'+ self.entries['Identification']['pore_id'].get().translate(None, ',') + '.log'
             shutil.copy2(self.run_log_path, self.file_name)
             if os.path.isfile (self.file_name):
                 self.status_string.set('Log file copied to '+self.file_name)
