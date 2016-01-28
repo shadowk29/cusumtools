@@ -43,12 +43,26 @@ class LogGUI(tk.Frame):
         self.loadopts_frame.columnconfigure(2, weight=1)
         
         self.load_default = tk.Button(self.loadopts_frame, text='Load Standard',command=self.load_standard)
-        self.load_last = tk.Button(self.loadopts_frame, text='Load Last',command=self.load_last)
+        self.load_last = tk.Button(self.loadopts_frame, text='Load Previous',command=self.load_last)
         self.load_run_log = tk.Button(self.loadopts_frame, text='Load Run Log', command=self.read_run_log)
+        
+        
 
         self.load_default.grid(row=0,column=0,sticky=tk.E+tk.W)
         self.load_last.grid(row=0,column=1,sticky=tk.E+tk.W)
         self.load_run_log.grid(row=0,column=2,sticky=tk.E+tk.W)
+
+        self.prepbuttons = OrderedDict()
+        self.prepvars = OrderedDict()
+        self.prep_frame = tk.LabelFrame(parent,text='Preparation')
+        self.prep_frame.grid(row=1,column=0,columnspan=8,sticky=tk.N+tk.S+tk.E+tk.W)  
+        col = 0
+        for key, val in self.prep_dict.iteritems():
+            self.prepvars[key] = tk.IntVar()
+            self.prepbuttons[key] = tk.Checkbutton(self.prep_frame, text=val, variable = self.prepvars[key])
+            self.prepbuttons[key].grid(row=0, column=col, sticky=tk.E+tk.W)
+            self.prep_frame.columnconfigure(col, weight=1)
+            col += 1
 
 
         ##### Entry boxes for pore information ######
@@ -62,7 +76,7 @@ class LogGUI(tk.Frame):
             self.entry_labels[frame] = OrderedDict()
             self.entry_strings[frame] = OrderedDict()
             self.entry_frames[frame] = tk.LabelFrame(parent,text=frame)
-            self.entry_frames[frame].grid(row=1,column=framecol,columnspan=2,sticky=tk.N+tk.S+tk.E+tk.W)
+            self.entry_frames[frame].grid(row=2,column=framecol,columnspan=2,sticky=tk.N+tk.S+tk.E+tk.W)
             framecol += 2
             row = 0
             for key, val in widgets.iteritems():
@@ -80,7 +94,7 @@ class LogGUI(tk.Frame):
         self.outcome = tk.IntVar()
         self.outcome.set(-1)
         self.outcome_frame = tk.LabelFrame(parent,text='Outcome')
-        self.outcome_frame.grid(row=2,column=0,columnspan=8,sticky=tk.N+tk.S+tk.E+tk.W) #place list of possible outcomes in GUI
+        self.outcome_frame.grid(row=3,column=0,columnspan=8,sticky=tk.N+tk.S+tk.E+tk.W) #place list of possible outcomes in GUI
         
         self.outcome_frame.columnconfigure(0, weight=1)
         self.outcome_frame.columnconfigure(1, weight=1)
@@ -101,32 +115,33 @@ class LogGUI(tk.Frame):
             self.checkbuttons[frame] = OrderedDict()
             self.checkvars[frame] = OrderedDict()
             self.failure_frames[frame] = tk.LabelFrame(parent,text=frame)
-            self.failure_frames[frame].grid(row=3,column=framecol,columnspan=4,sticky=tk.N+tk.S+tk.E+tk.W)
+            self.failure_frames[frame].grid(row=4,column=framecol,columnspan=4,sticky=tk.N+tk.S+tk.E+tk.W)
             framecol += 4
             row = 0
             col = 0
             for key, val in widgets.iteritems():
                 self.checkvars[frame][key] = tk.IntVar()
                 self.checkbuttons[frame][key] = tk.Checkbutton(self.failure_frames[frame], text=val, variable = self.checkvars[frame][key])
-                self.checkbuttons[frame][key].grid(row=row, column=col, sticky=tk.E+tk.W)
+                self.checkbuttons[frame][key].grid(row=row, column=col, sticky=tk.W)
                 row += 1
-                if row == len(self.mode_dict[frame])/2:
+                if row >= 4:
                     row = 0
                     col += 1
         
 
         ##### Free text entry box for comments and unhandled failures/interventions #####
         self.comments_frame = tk.LabelFrame(parent, text='Comments')
-        self.comments_frame.grid(row=4,column=0,columnspan=8,sticky=tk.N+tk.S+tk.E+tk.W)
+        self.comments_frame.grid(row=5,column=0,columnspan=8,sticky=tk.N+tk.S+tk.E+tk.W)
         
         self.comments_frame.columnconfigure(0, weight=1)
+        self.comments_string = tk.StringVar()
         
-        self.comments = tk.Entry(self.comments_frame)
+        self.comments = tk.Entry(self.comments_frame, textvariable=self.comments_string)
         self.comments.grid(row=0,column=0,sticky=tk.E+tk.W)
 
         ##### Status display to guide users in filling out the fields #####
         self.status_frame = tk.LabelFrame(parent, text='Status')
-        self.status_frame.grid(row=5,column=0,columnspan=8,sticky=tk.N+tk.S+tk.E+tk.W)
+        self.status_frame.grid(row=6,column=0,columnspan=8,sticky=tk.N+tk.S+tk.E+tk.W)
         
         self.status_frame.columnconfigure(0, weight=1)
         
@@ -137,17 +152,20 @@ class LogGUI(tk.Frame):
         self.status.grid(row=0,column=0,sticky=tk.E+tk.W)
 
 
-        ##### the verify and submit buttons ######
+        ##### the verify and submit  and clear buttons ######
         self.submit_frame = tk.Frame(parent)
-        self.submit_frame.grid(row=6,column=0,columnspan=8,sticky=tk.N+tk.S+tk.E+tk.W)
+        self.submit_frame.grid(row=7,column=0,columnspan=8,sticky=tk.N+tk.S+tk.E+tk.W)
         
         self.submit_frame.columnconfigure(0, weight=1)
         self.submit_frame.columnconfigure(1, weight=1)
+        self.submit_frame.columnconfigure(2, weight=1)
 
         self.verify_button = tk.Button(self.submit_frame, text='Verify', command = self.verify)
         self.submit_button = tk.Button(self.submit_frame, text='Submit', command = self.submit)
+        self.clear_button = tk.Button(self.submit_frame, text='Clear Data', command=self.clear_data)
         self.verify_button.grid(row=0,column=0,sticky=tk.E+tk.W)
         self.submit_button.grid(row=0,column=1,sticky=tk.E+tk.W)
+        self.clear_button.grid(row=0,column=2,sticky=tk.E+tk.W)
 
 
         
@@ -170,24 +188,24 @@ class LogGUI(tk.Frame):
                                                                        ('instrument', 'Instrument')
                                                                        ])),
                                        ('Fabrication', OrderedDict([('fab_salt', 'Salt'),
-                                                                    ('fab_molarity', 'Molarity'),
+                                                                    ('fab_molarity', 'Molarity (M)'),
                                                                     ('fab_pH', 'pH'),
-                                                                    ('fab_voltage', 'Voltage'),
-                                                                    ('thickness', 'Thickness'),
-                                                                    ('fab_time', 'Fabrication Time')
+                                                                    ('fab_voltage', 'Voltage (V)'),
+                                                                    ('thickness', 'Thickness (nm)'),
+                                                                    ('fab_time', 'Fabrication Time (s)')
                                                                     ])),
                                        ('Conditioning', OrderedDict([('cond_salt', 'Salt'),
-                                                                    ('cond_molarity', 'Molarity'),
+                                                                    ('cond_molarity', 'Molarity (M)'),
                                                                     ('cond_pH', 'pH'),
-                                                                    ('cond_voltage', 'Voltage'),
-                                                                    ('target_size', 'Target Size'),
-                                                                    ('cond_time', 'Conditioning Time')
+                                                                    ('cond_voltage', 'Voltage (V)'),
+                                                                    ('target_size', 'Target Size (nm)'),
+                                                                    ('cond_time', 'Conditioning Time (s)')
                                                                     ])),
                                        ('Measurement', OrderedDict([('measure_salt', 'Salt'),
-                                                                    ('measure_molarity', 'Molarity'),
+                                                                    ('measure_molarity', 'Molarity (M)'),
                                                                     ('measure_pH', 'pH'),
-                                                                    ('final_size', 'Final Size'),
-                                                                    ('1Hz_PSD_200mV', '1Hz PSD at 200mV'),
+                                                                    ('final_size', 'Final Size (nm)'),
+                                                                    ('1Hz_PSD_200mV', '1Hz PSD at 200mV (pA^2/Hz)'),
                                                                     ('rectification', 'Rectification')
                                                                     ]))
                                        ])
@@ -199,6 +217,8 @@ class LogGUI(tk.Frame):
                                                                      ('i_aging_rect', 'Pore Aging - Rectification'),
                                                                      ('i_electrode', 'Electrode Fix'),
                                                                      ('i_op_amp', 'Op Amp Fix'),
+                                                                     ('i_threshold', 'Manual Threshold Adjustment'),
+                                                                     ('i_voltage', 'Manual Voltage Adjustment'),
                                                                      ('i_other', 'Other - Comment')
                                                                      ])),
                                        ('Failure', OrderedDict([('f_false_pos', 'False Positive(s)'),
@@ -213,6 +233,7 @@ class LogGUI(tk.Frame):
                                                                 ('f_other', 'Other - Comment')
                                                                 ]))
                                        ])
+        
 
         self.standard_dict = OrderedDict([('Identification', OrderedDict([('supplier', 'Norcada')
                                                                        ])),
@@ -232,6 +253,18 @@ class LogGUI(tk.Frame):
                                                                     ('measure_pH', '8')
                                                                     ]))
                                        ])
+
+        self.prep_dict = OrderedDict([('plasma', 'Plasma Cleaned'),
+                                      ('piranha', 'Piranha Cleaned'),
+                                      ('degas', 'Solutions Degassed'),
+                                      ('immediate_use', 'Immediate Pore Fabrication')
+                                      ])
+        
+        self.standard_prep_dict = OrderedDict([('plasma', 1),
+                                      ('piranha', 0),
+                                      ('degas', 1),
+                                      ('immediate_use', 1)
+                                      ])
         
 
 
@@ -240,6 +273,8 @@ class LogGUI(tk.Frame):
         for frame, widgets in self.entry_dict.iteritems():
             for key, val in widgets.iteritems():
                 pore_data[key] = self.entries[frame][key].get()
+        for key, val in self.prep_dict.iteritems():
+            pore_data[key] = self.prepvars[key].get()
         pore_data['Outcome'] = [self.outcome.get()]
         for frame, widgets in self.mode_dict.iteritems():
             for key, val in widgets.iteritems():
@@ -264,25 +299,37 @@ class LogGUI(tk.Frame):
         for frame, widgets in self.standard_dict.iteritems():
             for key, val in widgets.iteritems():
                 self.entry_strings[frame][key].set(val)
+        for key, val in self.standard_prep_dict.iteritems():
+            self.prepvars[key].set(val)
 
     def load_last(self):
-        if self.entries['Identification']['name'].get()=='':
-            self.status_string.set('Enter your name in order to load your last used configuration')
+        self.status_string.set('Ready')
+        if self.entries['Identification']['name'].get()=='' and self.entries['Identification']['pore_id'].get()=='':
+            self.status_string.set('Enter your name or the ID of a previous pore in order to load a configuration')
         else:
-            statsdb = pd.read_csv('S:/Issue Tracking/Fabrication-Statistics.csv', encoding='utf-8')
-            last_config = sqldf('SELECT * from statsdb WHERE name="{0}" GROUP BY name'.format(self.entries['Identification']['name'].get()),locals())
-            for frame, widgets in self.standard_dict.iteritems():
-                for key, val in widgets.iteritems():
-                    self.entry_strings[frame][key].set(last_config[key][0])
-                                   
+            try:
+                statsdb = pd.read_csv('S:/Issue Tracking/Fabrication-Statistics.csv', encoding='utf-8')
+                if not self.entries['Identification']['pore_id'].get()=='':
+                    last_config = sqldf('SELECT * from statsdb WHERE pore_id="{0}" GROUP BY name'.format(self.entries['Identification']['pore_id'].get()),locals())
+                elif not self.entries['Identification']['name'].get()=='':
+                    last_config = sqldf('SELECT * from statsdb WHERE name="{0}" GROUP BY name'.format(self.entries['Identification']['name'].get()),locals())
+
+                for frame, widgets in self.standard_dict.iteritems():
+                    for key, val in widgets.iteritems():
+                        self.entry_strings[frame][key].set(last_config[key][0])
+                for key, val in self.standard_prep_dict.iteritems():
+                    self.prepvars[key].set(int(last_config[key][0]))
+                self.status_string.set('Read configuration for pore {0}'.format(str(last_config['pore_id'][0])))
+            except IndexError:
+                self.status_string.set('Unable to locate matching record. Check your name or pore ID spelling.')
+        
 
     def read_run_log(self):
         self.run_log_path = tkFileDialog.askopenfilename(initialdir='C:/Data/')
         if not self.run_log_path or not os.path.isfile(self.run_log_path):
             self.status_string.set('Choose a valid log file')
-            self.read_run_log = ''
+            self.run_log_path = ''
         else:
-            
             self.status_string.set('Read run log: '+self.run_log_path)
             
     def copy_run_log(self):
@@ -385,6 +432,20 @@ class LogGUI(tk.Frame):
         if submitted == 1:
             self.status_string.set('Pore data submitted')
             self.submit_button.configure(state='disable')
+
+    def clear_data(self):
+        for frame, widgets in self.entry_dict.iteritems():
+            for key, val in widgets.iteritems():
+                self.entry_strings[frame][key].set('')
+        for key, val in self.prep_dict.iteritems():
+            self.prepvars[key].set(0)
+        self.outcome.set(-1)
+        for frame, widgets in self.mode_dict.iteritems():
+            for key, val in widgets.iteritems():
+                self.checkvars[frame][key].set(0)
+        self.run_log_path = ''
+        self.file_name = ''
+        self.comments_string.set('')
 
     
 def main():
