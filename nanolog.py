@@ -306,6 +306,7 @@ class LogGUI(tk.Frame):
                 self.entry_strings[frame][key].set(val)
         for key, val in self.standard_prep_dict.iteritems():
             self.prepvars[key].set(val)
+        self.status_string.set('Standard condiguration loaded.')
 
     def load_last(self):
         self.status_string.set('Ready')
@@ -380,44 +381,44 @@ class LogGUI(tk.Frame):
         for frame, widgets in self.entry_dict.iteritems():
             for key, val in widgets.iteritems():
                 if not self.entries[frame][key].get():
-                    self.status_string.set(self.status_string.get()+'Please fill out all {0} information fields\n'.format(frame))
+                    self.status_string.set(self.status_string.get()+'Please fill out all {0} information fields. If a field was not measured, enter 0.\n'.format(frame))
                     submit = 0
                     break
                 
         if self.outcome.get() == -1:
-            self.status_string.set(self.status_string.get()+'Please select an experimental outcome\n')
+            self.status_string.set(self.status_string.get()+'Please select an experimental outcome.\n')
             submit = 0 
         elif self.outcome.get() == 1:
             total = 0
             for key, val in self.checkvars['Intervention'].iteritems():
                 total += val.get()
             if total == 0:
-                self.status_string.set(self.status_string.get()+'Please select at least one standard intervention\n')
+                self.status_string.set(self.status_string.get()+'Please select at least one standard intervention.\n')
                 submit = 0
         elif self.outcome.get() == 2:
             total = 0
             for key, val in self.checkvars['Failure'].iteritems():
                 total += val.get()
             if total == 0:
-                self.status_string.set(self.status_string.get()+'Please select at least one failure mode\n')
+                self.status_string.set(self.status_string.get()+'Please select at least one failure mode.\n')
                 submit = 0
 
         if self.checkvars['Failure']['f_other'].get() == 1 or self.checkvars['Intervention']['i_other'].get() == 1:
             if not self.comments.get():
-                self.status_string.set(self.status_string.get()+'Please comment on the specifics of the non-standard intervention used\n')
+                self.status_string.set(self.status_string.get()+'Please comment on the specifics of the non-standard failure mode.\n')
                 submit = 0
 
         if not self.run_log_path:
-            self.status_string.set(self.status_string.get()+'Please load Record.log for your pore\n')
+            self.status_string.set(self.status_string.get()+'Please load Record.log for your pore.\n')
             submit = 0
         elif not os.path.isfile(self.run_log_path):
-            self.status_string.set(self.status_string.get()+'Unable to locate log file: '+self.run_log_path+'\n')
+            self.status_string.set(self.status_string.get()+'Unable to locate log file: '+self.run_log_path+'.\n')
             self.run_log_path=''
             submit = 0
 
         if submit == 1:
             self.submit_button.configure(state='normal')
-            self.status_string.set('Ready to submit, please review information for accuracy')
+            self.status_string.set('Ready to submit, please review information for accuracy.')
 
 
     def submit(self):
