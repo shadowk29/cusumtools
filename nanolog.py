@@ -219,6 +219,9 @@ class LogGUI(tk.Frame):
                                                                      ('i_op_amp', 'Op Amp Fix'),
                                                                      ('i_threshold', 'Manual Threshold Adjustment'),
                                                                      ('i_voltage', 'Manual Voltage Adjustment'),
+                                                                     ('i_DAQ', 'Unresponsive DAQ Card'),
+                                                                     ('i_fab_noise', 'Unusual Noise in Blank Membrane Current'),
+                                                                     ('i_leak', 'Leaking Gasket/Fluid Short'),
                                                                      ('i_other', 'Other - Comment')
                                                                      ])),
                                        ('Failure', OrderedDict([('f_false_pos', 'False Positive(s)'),
@@ -230,12 +233,14 @@ class LogGUI(tk.Frame):
                                                                 ('f_oversize', 'Overshot Pore Size'),
                                                                 ('f_user', 'User Error'),
                                                                 ('f_duration', 'Too Long'),
+                                                                ('f_leak', 'Leaking Gasket/Fluid Short'),
+                                                                ('f_fab_noise', 'Unusual Noise in Blank Membrane Current'),
                                                                 ('f_other', 'Other - Comment')
                                                                 ]))
                                        ])
         
 
-        self.standard_dict = OrderedDict([('Identification', OrderedDict([('supplier', 'Norcada')
+        self.standard_dict = OrderedDict([('Identification', OrderedDict([
                                                                        ])),
                                        ('Fabrication', OrderedDict([('fab_salt', 'KCl'),
                                                                     ('fab_molarity', '1.0'),
