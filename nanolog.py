@@ -37,7 +37,7 @@ class LogGUI(tk.Frame):
         
         ##### defines widgets for loading presets ##########
         self.loadopts_frame = tk.LabelFrame(parent,text='Options')
-        self.loadopts_frame.grid(row=0,column=0,columnspan=8,sticky=tk.N+tk.S+tk.E+tk.W)
+        self.loadopts_frame.grid(row=0,column=0,columnspan=10,sticky=tk.N+tk.S+tk.E+tk.W)
         self.loadopts_frame.columnconfigure(0, weight=1)
         self.loadopts_frame.columnconfigure(1, weight=1)
         self.loadopts_frame.columnconfigure(2, weight=1)
@@ -55,7 +55,7 @@ class LogGUI(tk.Frame):
         self.prepbuttons = OrderedDict()
         self.prepvars = OrderedDict()
         self.prep_frame = tk.LabelFrame(parent,text='Preparation')
-        self.prep_frame.grid(row=1,column=0,columnspan=8,sticky=tk.N+tk.S+tk.E+tk.W)  
+        self.prep_frame.grid(row=1,column=0,columnspan=10,sticky=tk.N+tk.S+tk.E+tk.W)  
         col = 0
         for key, val in self.prep_dict.iteritems():
             self.prepvars[key] = tk.IntVar()
@@ -94,7 +94,7 @@ class LogGUI(tk.Frame):
         self.outcome = tk.IntVar()
         self.outcome.set(-1)
         self.outcome_frame = tk.LabelFrame(parent,text='Outcome')
-        self.outcome_frame.grid(row=3,column=0,columnspan=8,sticky=tk.N+tk.S+tk.E+tk.W) #place list of possible outcomes in GUI
+        self.outcome_frame.grid(row=3,column=0,columnspan=10,sticky=tk.N+tk.S+tk.E+tk.W) #place list of possible outcomes in GUI
         
         self.outcome_frame.columnconfigure(0, weight=1)
         self.outcome_frame.columnconfigure(1, weight=1)
@@ -115,8 +115,8 @@ class LogGUI(tk.Frame):
             self.checkbuttons[frame] = OrderedDict()
             self.checkvars[frame] = OrderedDict()
             self.failure_frames[frame] = tk.LabelFrame(parent,text=frame)
-            self.failure_frames[frame].grid(row=4,column=framecol,columnspan=4,sticky=tk.N+tk.S+tk.E+tk.W)
-            framecol += 4
+            self.failure_frames[frame].grid(row=4,column=framecol,columnspan=5,sticky=tk.N+tk.S+tk.E+tk.W)
+            framecol += 5
             row = 0
             col = 0
             for key, val in widgets.iteritems():
@@ -131,7 +131,7 @@ class LogGUI(tk.Frame):
 
         ##### Free text entry box for comments and unhandled failures/interventions #####
         self.comments_frame = tk.LabelFrame(parent, text='Comments')
-        self.comments_frame.grid(row=5,column=0,columnspan=8,sticky=tk.N+tk.S+tk.E+tk.W)
+        self.comments_frame.grid(row=5,column=0,columnspan=10,sticky=tk.N+tk.S+tk.E+tk.W)
         
         self.comments_frame.columnconfigure(0, weight=1)
         self.comments_string = tk.StringVar()
@@ -141,7 +141,7 @@ class LogGUI(tk.Frame):
 
         ##### Status display to guide users in filling out the fields #####
         self.status_frame = tk.LabelFrame(parent, text='Status')
-        self.status_frame.grid(row=6,column=0,columnspan=8,sticky=tk.N+tk.S+tk.E+tk.W)
+        self.status_frame.grid(row=6,column=0,columnspan=10,sticky=tk.N+tk.S+tk.E+tk.W)
         
         self.status_frame.columnconfigure(0, weight=1)
         
@@ -154,7 +154,7 @@ class LogGUI(tk.Frame):
 
         ##### the verify and submit  and clear buttons ######
         self.submit_frame = tk.Frame(parent)
-        self.submit_frame.grid(row=7,column=0,columnspan=8,sticky=tk.N+tk.S+tk.E+tk.W)
+        self.submit_frame.grid(row=7,column=0,columnspan=10,sticky=tk.N+tk.S+tk.E+tk.W)
         
         self.submit_frame.columnconfigure(0, weight=1)
         self.submit_frame.columnconfigure(1, weight=1)
@@ -187,26 +187,38 @@ class LogGUI(tk.Frame):
                                                                        ('batch', 'Membrane Batch'),
                                                                        ('instrument', 'Instrument')
                                                                        ])),
+                                       ('Software', OrderedDict([('threshold_ratio', 'Threshold Ratio'),
+                                                                    ('threshold_npoints', 'Threshold Points'),
+                                                                    ('threshold_offset', 'Threshold Offset (nA)'),
+                                                                    ('refresh_rate', 'Refresh Rate (Hz)'),
+                                                                    ('ac_dc', 'Mode (AC/DC)')
+                                                                    ])),
                                        ('Fabrication', OrderedDict([('fab_salt', 'Salt'),
                                                                     ('fab_molarity', 'Molarity (M)'),
                                                                     ('fab_pH', 'pH'),
+                                                                    ('fab_conductivity', 'Conductivity (S/m)'),
                                                                     ('fab_voltage', 'Voltage (V)'),
+                                                                    ('fab_pulse_time', 'Pulse Length (ms) (AC only)'),
                                                                     ('thickness', 'Thickness (nm)'),
                                                                     ('fab_time', 'Fabrication Time (s)')
                                                                     ])),
                                        ('Conditioning', OrderedDict([('cond_salt', 'Salt'),
                                                                     ('cond_molarity', 'Molarity (M)'),
                                                                     ('cond_pH', 'pH'),
+                                                                    ('cond_conductivity', 'Conductivity (S/m)'),
                                                                     ('cond_voltage', 'Voltage (V)'),
+                                                                    ('cond_pulse_time', 'Pulse Time (s)'),
+                                                                    ('cond_freq', 'Measure Frequency (pulse)'),
                                                                     ('target_size', 'Target Size (nm)'),
                                                                     ('cond_time', 'Conditioning Time (s)')
                                                                     ])),
                                        ('Measurement', OrderedDict([('measure_salt', 'Salt'),
                                                                     ('measure_molarity', 'Molarity (M)'),
                                                                     ('measure_pH', 'pH'),
+                                                                    ('measure_conductivity', 'Conductivity (S/m)'),
                                                                     ('final_size', 'Final Size (nm)'),
                                                                     ('1Hz_PSD_200mV', '1Hz PSD at 200mV (pA^2/Hz)'),
-                                                                    ('rectification', 'Rectification')
+                                                                    ('rectification', 'Rectification Ratio')
                                                                     ]))
                                        ])
         self.mode_dict = OrderedDict([('Intervention', OrderedDict([('i_false_pos', 'False Positive(s)'),
@@ -242,16 +254,25 @@ class LogGUI(tk.Frame):
 
         self.standard_dict = OrderedDict([('Identification', OrderedDict([
                                                                        ])),
+                                       ('Software', OrderedDict([('threshold_ratio', '1.0'),
+                                                                    ('threshold_npoints', '100'),
+                                                                    ('threshold_offset', '5'),
+                                                                    ('refresh_rate', '10'),
+                                                                    ('ac_dc', 'DC')
+                                                                    ])),
                                        ('Fabrication', OrderedDict([('fab_salt', 'KCl'),
                                                                     ('fab_molarity', '1.0'),
                                                                     ('fab_pH', '10.0'),
                                                                     ('fab_voltage', '-6.0'),
+                                                                    ('fab_pulse_time', '0.0'),
                                                                     ('thickness', '10.0')
                                                                     ])),
                                        ('Conditioning', OrderedDict([('cond_salt', 'LiCl'),
                                                                     ('cond_molarity', '3.6'),
                                                                     ('cond_pH', '8.0'),
-                                                                    ('cond_voltage', '3.0')
+                                                                    ('cond_voltage', '3.0'),
+                                                                    ('cond_pulse_time', '4.0'),
+                                                                    ('cond_freq', '5')
                                                                     ])),
                                        ('Measurement', OrderedDict([('measure_salt', 'LiCl'),
                                                                     ('measure_molarity', '3.6'),
@@ -328,6 +349,8 @@ class LogGUI(tk.Frame):
                 self.status_string.set('Read configuration for pore {0}'.format(str(last_config['pore_id'][0])))
             except IndexError:
                 self.status_string.set('Unable to locate matching record. Check your name or pore ID spelling.')
+            except IOError:
+                self.status_string.set('Unable to locate statistics file.')
         
 
     def read_run_log(self):
