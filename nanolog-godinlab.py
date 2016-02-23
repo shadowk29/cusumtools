@@ -31,7 +31,7 @@ class LogGUI(tk.Frame):
     def __init__(self, parent):
         tk.Frame.__init__(self, parent)
         self.intialize_alias_dict()
-        self.folder = 'S:/Issue Tracking/'
+        self.folder = 'T:/'
         
         ##### Define all widgets and frames displayed in the GUI, and bind appropriate variables ######
 
