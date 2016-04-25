@@ -383,7 +383,7 @@ class App(tk.Frame):
 
     def parse_db_col(self, col):
         if col in ['blockages_pA','level_current_pA','level_duration_us','stdev_pA']:
-            return_col = np.hstack([np.array(a,dtype=float)[1:-1] for a in self.eventsdb_subset[col].str.split(';')])
+            return_col = np.hstack([np.array(a,dtype=float) for a in self.eventsdb_subset[col].str.split(';')])
         else:
             return_col = self.eventsdb_subset[col]
         return return_col
