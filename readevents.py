@@ -88,6 +88,8 @@ class App(tk.Frame):
         self.x_option = tk.OptionMenu(self.stats_frame, self.x_col_options, *[self.alias_dict.get(option,option) for option in self.column_list])
         self.y_option = tk.OptionMenu(self.stats_frame, self.y_col_options, *[self.alias_dict.get(option,option) for option in self.column_list])
         self.graph_option = tk.OptionMenu(self.stats_frame, self.graph_list, 'XY Plot', '1D Histogram', '2D Histogram', command=self.disable_options)
+        self.include_baseline=tk.IntVar()
+        self.include_baseline_check = tk.Checkbutton(self.stats_frame, text='Include Baseline', variable=self.include_baseline)
         self.x_log_var = tk.IntVar()
         self.x_log_check = tk.Checkbutton(self.stats_frame, text='Log X', variable = self.x_log_var)
         self.y_log_var = tk.IntVar()
@@ -109,7 +111,8 @@ class App(tk.Frame):
         self.y_bins.grid(row=4,column=3,sticky=tk.E+tk.W)
         self.xbin_entry.grid(row=3,column=4,sticky=tk.E+tk.W)
         self.ybin_entry.grid(row=4,column=4,sticky=tk.E+tk.W)
-        self.graph_option.grid(row=3,column=0,rowspan=2,sticky=tk.E+tk.W)
+        self.graph_option.grid(row=3,column=0,sticky=tk.E+tk.W)
+        self.include_baseline_check.grid(row=4,column=0,sticky=tk.E+tk.W)
         self.x_option.grid(row=3,column=1,sticky=tk.E+tk.W)
         self.y_option.grid(row=4,column=1,sticky=tk.E+tk.W)
         self.plot_button.grid(row=3,column=5,sticky=tk.E+tk.W)
@@ -383,7 +386,10 @@ class App(tk.Frame):
 
     def parse_db_col(self, col):
         if col in ['blockages_pA','level_current_pA','level_duration_us','stdev_pA']:
-            return_col = np.hstack([np.array(a,dtype=float) for a in self.eventsdb_subset[col].str.split(';')])
+            if self.include_baseline.get():
+                return_col = np.hstack([np.array(a,dtype=float) for a in self.eventsdb_subset[col].str.split(';')])
+            else:
+                return_col = np.hstack([np.array(a,dtype=float)[1:-1] for a in self.eventsdb_subset[col].str.split(';')])
         else:
             return_col = self.eventsdb_subset[col]
         return return_col
