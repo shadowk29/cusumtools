@@ -1,8 +1,3 @@
-import glob
-import shutil
-import os
-import tkFileDialog
-import Tkinter as tk
 ##                                COPYRIGHT
 ##    Copyright (C) 2015 Kyle Briggs (kbrig035<at>uottawa.ca)
 ##
@@ -22,7 +17,11 @@ import Tkinter as tk
 ##    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-
+import glob
+import shutil
+import os
+import tkFileDialog
+import Tkinter as tk
 import time
 import scipy.io as sio
 import numpy as np
