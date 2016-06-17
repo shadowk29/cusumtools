@@ -45,6 +45,7 @@ class App(tk.Frame):
         self.count()
         self.eventsdb_subset = self.eventsdb
         self.eventsdb_prev = self.eventsdb_subset
+        self.export_type = None
 
         
         column_list = list(self.eventsdb)
@@ -84,7 +85,7 @@ class App(tk.Frame):
         
         
         self.plot_button = tk.Button(self.stats_frame,text='Update Plot',command=self.update_plot)
-        self.fit_button = tk.Button(self.stats_frame,text='Fit Exp',command=self.fit_data)
+        self.export_plot_button = tk.Button(self.stats_frame,text='Export Data',command=self.export_plot_data)
         self.x_option = tk.OptionMenu(self.stats_frame, self.x_col_options, *[self.alias_dict.get(option,option) for option in self.column_list])
         self.y_option = tk.OptionMenu(self.stats_frame, self.y_col_options, *[self.alias_dict.get(option,option) for option in self.column_list])
         self.graph_option = tk.OptionMenu(self.stats_frame, self.graph_list, 'XY Plot', '1D Histogram', '2D Histogram', command=self.disable_options)
@@ -116,7 +117,7 @@ class App(tk.Frame):
         self.x_option.grid(row=3,column=1,sticky=tk.E+tk.W)
         self.y_option.grid(row=4,column=1,sticky=tk.E+tk.W)
         self.plot_button.grid(row=3,column=5,sticky=tk.E+tk.W)
-        self.fit_button.grid(row=4,column=5,sticky=tk.E+tk.W)
+        self.export_plot_button.grid(row=4,column=5,sticky=tk.E+tk.W)
 
         parent.bind("<Return>", self.enter_key_press)
 
@@ -259,6 +260,7 @@ class App(tk.Frame):
         self.db_info_string.set('Number of events: ' +str(len(self.eventsdb_subset)))
 
     def plot_xy(self):
+        self.export_type = 'scatter'
         logscale_x = self.x_log_var.get()
         logscale_y = self.y_log_var.get()
         x_label = self.x_option.cget('text')
@@ -272,6 +274,8 @@ class App(tk.Frame):
         a.set_xlabel(x_label)
         a.set_ylabel(y_label)
         self.f.subplots_adjust(bottom=0.14,left=0.21)
+        self.xdata = xsign*x_col
+        self.ydata = ysign*y_col
         a.plot(xsign*x_col,ysign*y_col,marker='.',linestyle='None')
         if logscale_x:
             a.set_xscale('log')
@@ -302,7 +306,18 @@ class App(tk.Frame):
             a.set_yscale('log')
         self.canvas.show()
 
+    def export_plot_data(self):
+        if self.export_type == 'hist1d' or self.export_type == 'scatter':
+            data_path = tkFileDialog.asksaveasfilename(defaultextension='.csv')
+            np.savetxt(data_path,np.c_[self.xdata,self.ydata],delimiter=',')
+        elif self.export_type == 'hist2d':
+            self.status_string.set("2d histogram exporting not yet supported")
+        else:
+            self.status_string.set("Unable to export plot")
+            
+
     def plot_1d_histogram(self):
+        self.export_type = 'hist1d'
         logscale_x = self.x_log_var.get()
         logscale_y = self.y_log_var.get()
         x_label = self.x_option.cget('text')
@@ -315,15 +330,17 @@ class App(tk.Frame):
             a.set_ylabel('Count')
             self.f.subplots_adjust(bottom=0.14,left=0.21)
             sign = np.sign(np.average(col))
-            a.hist(np.log10(sign*col),bins=int(numbins),log=bool(logscale_y))
+            self.ydata, self.xdata, patches = a.hist(np.log10(sign*col),bins=int(numbins),log=bool(logscale_y))
         else:
             a.set_xlabel(x_label)
             a.set_ylabel('Count')
             self.f.subplots_adjust(bottom=0.14,left=0.16)
-            a.hist(col,bins=int(numbins),log=bool(logscale_y))
+            self.ydata, self.xdata, patches = a.hist(col,bins=int(numbins),log=bool(logscale_y))
+        self.xdata = self.xdata[:-1]
         self.canvas.show()
         
     def plot_2d_histogram(self):
+        self.export_type = 'hist2d'
         logscale_x = self.x_log_var.get()
         logscale_y = self.y_log_var.get()
         x_label = self.x_option.cget('text')
@@ -343,7 +360,7 @@ class App(tk.Frame):
         self.f.subplots_adjust(bottom=0.14,left=0.21)
         xsign = np.sign(np.average(x_col))
         ysign = np.sign(np.average(y_col))
-        a.hist2d(np.log10(xsign*x_col) if bool(logscale_x) else x_col,np.log10(ysign*y_col) if bool(logscale_y) else y_col,bins=[int(xbins),int(ybins)],norm=matplotlib.colors.LogNorm())
+        self.zdata, self.xdata, self.ydata, image = a.hist2d(np.log10(xsign*x_col) if bool(logscale_x) else x_col,np.log10(ysign*y_col) if bool(logscale_y) else y_col,bins=[int(xbins),int(ybins)],norm=matplotlib.colors.LogNorm())
         self.canvas.show()
 
     def disable_options(self, *args):
