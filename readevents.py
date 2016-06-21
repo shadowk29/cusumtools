@@ -307,9 +307,12 @@ class App(tk.Frame):
         self.canvas.show()
 
     def export_plot_data(self):
-        if self.export_type == 'hist1d' or self.export_type == 'scatter' or self.export_type == 'hist2d':
+        if self.export_type == 'hist1d' or self.export_type == 'scatter':
             data_path = tkFileDialog.asksaveasfilename(defaultextension='.csv')
             np.savetxt(data_path,np.c_[self.xdata,self.ydata],delimiter=',')
+        elif self.export_type == 'hist2d':
+            data_path = tkFileDialog.asksaveasfilename(defaultextension='.csv')
+            np.savetxt(data_path,np.c_[self.xdata,self.ydata,self.zdata],delimiter=',')
         else:
             self.status_string.set("Unable to export plot")
             
@@ -358,9 +361,15 @@ class App(tk.Frame):
         self.f.subplots_adjust(bottom=0.14,left=0.21)
         xsign = np.sign(np.average(x_col))
         ysign = np.sign(np.average(y_col))
-        self.zdata, self.xdata, self.ydata, image = a.hist2d(np.log10(xsign*x_col) if bool(logscale_x) else x_col,np.log10(ysign*y_col) if bool(logscale_y) else y_col,bins=[int(xbins),int(ybins)],norm=matplotlib.colors.LogNorm())
-        self.xdata = xsign*x_col
-        self.ydata = ysign*y_col
+        z, x, y, image = a.hist2d(np.log10(xsign*x_col) if bool(logscale_x) else x_col,np.log10(ysign*y_col) if bool(logscale_y) else y_col,bins=[int(xbins),int(ybins)],norm=matplotlib.colors.LogNorm())
+        x = x[:-1] + np.diff(x)/2.0
+        y = y[:-1] + np.diff(y)/2.0
+        xy = [zip([a]*len(y),y) for a in x]
+        z = np.ravel(z)
+        xy = np.reshape(xy,(len(z),2))
+        self.xdata = xy[:,0]
+        self.ydata = xy[:,1]
+        self.zdata = z
         self.canvas.show()
 
     def disable_options(self, *args):
