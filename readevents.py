@@ -307,11 +307,9 @@ class App(tk.Frame):
         self.canvas.show()
 
     def export_plot_data(self):
-        if self.export_type == 'hist1d' or self.export_type == 'scatter':
+        if self.export_type == 'hist1d' or self.export_type == 'scatter' or self.export_type == 'hist2d':
             data_path = tkFileDialog.asksaveasfilename(defaultextension='.csv')
             np.savetxt(data_path,np.c_[self.xdata,self.ydata],delimiter=',')
-        elif self.export_type == 'hist2d':
-            self.status_string.set("2d histogram exporting not yet supported")
         else:
             self.status_string.set("Unable to export plot")
             
@@ -336,7 +334,7 @@ class App(tk.Frame):
             a.set_ylabel('Count')
             self.f.subplots_adjust(bottom=0.14,left=0.16)
             self.ydata, self.xdata, patches = a.hist(col,bins=int(numbins),log=bool(logscale_y))
-        self.xdata = self.xdata[:-1]
+        self.xdata = self.xdata[:-1] + np.diff(self.xdata)/2.0
         self.canvas.show()
         
     def plot_2d_histogram(self):
@@ -361,6 +359,8 @@ class App(tk.Frame):
         xsign = np.sign(np.average(x_col))
         ysign = np.sign(np.average(y_col))
         self.zdata, self.xdata, self.ydata, image = a.hist2d(np.log10(xsign*x_col) if bool(logscale_x) else x_col,np.log10(ysign*y_col) if bool(logscale_y) else y_col,bins=[int(xbins),int(ybins)],norm=matplotlib.colors.LogNorm())
+        self.xdata = xsign*x_col
+        self.ydata = ysign*y_col
         self.canvas.show()
 
     def disable_options(self, *args):
