@@ -31,7 +31,9 @@ from scipy.optimize import curve_fit
 import itertools
 
 def exponential(x, A, tau): #define a fitting function form
-    return A * np.exp(-x/tau) 
+    return A * np.exp(-x/tau)
+
+
 
     
 class App(tk.Frame):
@@ -49,6 +51,7 @@ class App(tk.Frame):
         self.eventsdb_subset = self.eventsdb
         self.eventsdb_prev = self.eventsdb_subset
         self.export_type = None
+        self.clicks_remaining = 0
 
         
         column_list = list(self.eventsdb)
@@ -107,6 +110,11 @@ class App(tk.Frame):
         self.ybin_entry = tk.Entry(self.stats_frame)
         self.ybin_entry.insert(0,100)
 
+        self.n_states=tk.Label(self.stats_frame,text='Num States:')
+        self.n_states_entry = tk.Entry(self.stats_frame)
+        self.define_state_button = tk.Button(self.stats_frame,text='Redefine Blockage States',command=self.define_states)
+        self.define_event_shapes_button = tk.Button(self.stats_frame,text='Redefine Event Shapes',command=self.define_shapes)
+
 
         self.stats_frame.grid(row=0,column=0,columnspan=6,sticky=tk.N+tk.S)
         self.x_log_check.grid(row=3,column=2,sticky=tk.E+tk.W)
@@ -123,6 +131,12 @@ class App(tk.Frame):
         self.export_plot_button.grid(row=4,column=5,sticky=tk.E+tk.W)
 
         parent.bind("<Return>", self.enter_key_press)
+
+
+        self.n_states.grid(row=5,column=0,sticky=tk.E+tk.W)
+        self.n_states_entry.grid(row=5,column=1,sticky=tk.E+tk.W)
+        self.define_state_button.grid(row=5,column=2,sticky=tk.E+tk.W)
+        self.define_event_shapes_button.grid(row=5,column=3,sticky=tk.E+tk.W)
 
         
         
@@ -210,6 +224,9 @@ class App(tk.Frame):
         self.events_folder_display.grid(row=1,column=2,sticky=tk.E+tk.W,columnspan=2)
         self.stats_file_button.grid(row=0,column=4,sticky=tk.E+tk.W,columnspan=2)
         self.events_folder_button.grid(row=1,column=4,sticky=tk.E+tk.W,columnspan=2)
+        
+    
+
 
     def delay_probability(self):
         eventsdb = self.eventsdb
@@ -230,20 +247,11 @@ class App(tk.Frame):
         self.eventsdb_subset = self.eventsdb
 
     def folding_distribution(self):
-        x = self.eventsdb['max_blockage_duration_us']/self.eventsdb['duration_us']
+        x = self.eventsdb['max_blockage_duration_us']/(self.eventsdb['duration_us']+self.eventsdb['max_blockage_duration_us'])
         self.eventsdb['folding'] = x
         self.eventsdb_subset = self.eventsdb
 
-    def type_id(self):
-        blockage_levels = [np.array(a,dtype=float)[1:-1] for a in self.eventsdb_subset['blockages_pA'].str.split(';')]
-        sorted_levels = [np.sort(a) for a in blockage_levels]
-        event_type = []
-        for s, b in itertools.izip(sorted_levels, blockage_levels):
-            type_array = [1+(np.abs(s - blevel)).argmin() for blevel in b]
-            typestr = ''.join(map(str, type_array))
-            event_type.append(int(typestr))
-        self.eventsdb['event_shape'] = event_type
-        self.eventsdb_subset = self.eventsdb
+    
         
 
     def count(self):
@@ -335,7 +343,70 @@ class App(tk.Frame):
             np.savetxt(data_path,np.c_[self.xdata,self.ydata,self.zdata],delimiter=',')
         else:
             self.status_string.set("Unable to export plot")
+
+
+    def on_click(self, event):
+        if self.clicks_remaining > 0:
+            if event.inaxes is not None:
+                self.state_array[self.num_states*2 - self.clicks_remaining] = event.xdata
+                self.clicks_remaining -= 1
+                if self.clicks_remaining == 0:
+                    self.define_state_array_flag = 0
+                self.status_string.set('State Boundaries Defined: {0}'.format(self.state_array))
+            else:
+                print 'Clicked ouside axes bounds but inside plot window'
+
+
+
+    def define_states(self):
+        self.num_states = int(self.n_states_entry.get())
+        self.clicks_remaining = self.num_states*2
+        self.status_string.set('Click on the 1D blockage level histogram {0} times'.format(self.clicks_remaining))
+        self.state_array = np.zeros(self.num_states*2)
+
+    def define_shapes(self): 
+        if self.clicks_remaining > 0:
+            self.status_string.set('Complete State Array First')
+        else:
+            type_array = []
+            state_means = np.zeros(self.num_states)
+            i = 0
+            while i < self.num_states*2:
+                state_means[i/2] = 0.5*(self.state_array[i]+self.state_array[i+1])
+                i += 2
+            blockage_levels = [np.array(a,dtype=float)[1:-1] for a in self.eventsdb_subset['blockages_pA'].str.split(';')]
+            for b in blockage_levels:
+                event_type = []
+                indices = [(np.abs(state_means - blevel)).argmin() for blevel in b]
+                for level,index in itertools.izip(b,indices):
+                    if level > self.state_array[2*index] and level < self.state_array[2*index+1]:
+                        event_type.append(index+1)
+                    else:
+                        event_type = [-1]
+                        break
+                typenum = int(''.join(map(str, event_type)))
+                if typenum > 999999999:
+                    typenum = -1
+                type_array.append(typenum)
+            self.eventsdb_subset['event_shape'] = type_array
+            self.status_string.set('Event shapes recalculated. \nThis applies only to the current subset')
+            self.eventsdb_subset.loc[self.eventsdb_subset['event_shape'] == 1, 'folding'] = 0
+            self.eventsdb_subset.loc[self.eventsdb_subset['event_shape'] == 2, 'folding'] = 0.5
             
+        
+    def type_id(self):
+        blockage_levels = [np.array(a,dtype=float)[1:-1] for a in self.eventsdb_subset['blockages_pA'].str.split(';')]
+        sorted_levels = [np.sort(a) for a in blockage_levels]
+        event_type = []
+        for s, b in itertools.izip(sorted_levels, blockage_levels):
+            type_array = [1+(np.abs(s - blevel)).argmin() for blevel in b]
+            typestr = ''.join(map(str, type_array))
+            typenum = int(typestr)
+            if typenum > 999999999:
+                typenum = 0
+            event_type.append(typenum)
+        self.eventsdb['event_shape'] = event_type
+        self.eventsdb_subset = self.eventsdb    
 
     def plot_1d_histogram(self):
         self.export_type = 'hist1d'
@@ -359,6 +430,7 @@ class App(tk.Frame):
             self.ydata, self.xdata, patches = a.hist(col,bins=int(numbins),log=bool(logscale_y))
         self.xdata = self.xdata[:-1] + np.diff(self.xdata)/2.0
         self.canvas.show()
+        self.canvas.callbacks.connect('button_press_event', self.on_click)
         
     def plot_2d_histogram(self):
         self.export_type = 'hist2d'
@@ -391,6 +463,7 @@ class App(tk.Frame):
         self.ydata = xy[:,1]
         self.zdata = z
         self.canvas.show()
+        
 
     def disable_options(self, *args):
         option = self.graph_option.cget('text')
@@ -576,6 +649,9 @@ class App(tk.Frame):
     def set_events_folder(self):
         self.events_folder = tkFileDialog.askdirectory(initialdir='C:\Users\kbrig035\Analysis\CUSUM\output\\')
         self.events_folder_path.set(self.events_folder)
+
+    def onclick(event):
+        self.status_string.set('button=%d, x=%d, y=%d, xdata=%f, ydata=%f' % (event.button, event.x, event.y, event.xdata, event.ydata))
 
 def main():
     root=tk.Tk()
