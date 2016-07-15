@@ -28,6 +28,7 @@ import Tkinter as tk
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2TkAgg
 from scipy.optimize import curve_fit
+import itertools
 
 def exponential(x, A, tau): #define a fitting function form
     return A * np.exp(-x/tau) 
@@ -42,6 +43,8 @@ class App(tk.Frame):
         self.eventsdb = eventsdb
         self.survival_probability()
         self.delay_probability()
+        self.folding_distribution()
+        self.type_id()
         self.count()
         self.eventsdb_subset = self.eventsdb
         self.eventsdb_prev = self.eventsdb_subset
@@ -225,6 +228,23 @@ class App(tk.Frame):
         eventsdb_sorted['survival_probability'] = survival
         self.eventsdb = sqldf('SELECT * from eventsdb_sorted ORDER BY id',locals())
         self.eventsdb_subset = self.eventsdb
+
+    def folding_distribution(self):
+        x = self.eventsdb['max_blockage_duration_us']/self.eventsdb['duration_us']
+        self.eventsdb['folding'] = x
+        self.eventsdb_subset = self.eventsdb
+
+    def type_id(self):
+        blockage_levels = [np.array(a,dtype=float)[1:-1] for a in self.eventsdb_subset['blockages_pA'].str.split(';')]
+        sorted_levels = [np.sort(a) for a in blockage_levels]
+        event_type = []
+        for s, b in itertools.izip(sorted_levels, blockage_levels):
+            type_array = [1+(np.abs(s - blevel)).argmin() for blevel in b]
+            typestr = ''.join(map(str, type_array))
+            event_type.append(int(typestr))
+        self.eventsdb['event_shape'] = event_type
+        self.eventsdb_subset = self.eventsdb
+        
 
     def count(self):
         eventsdb = self.eventsdb
@@ -530,7 +550,9 @@ class App(tk.Frame):
                       'survival_probability': 'Survival Probablity',
                       'delay_probability': 'Delay Probablity',
                       'stdev_pA': 'Level Standard Deviation (pA)',
-                      'count': 'Event Count'}
+                      'count': 'Event Count',
+                      'folding': 'Fold Fraction',
+                      'event_shape': 'Event Shape'}
         self.unalias_dict = dict (zip(self.alias_dict.values(),self.alias_dict.keys()))
 
     def save_subset(self):
