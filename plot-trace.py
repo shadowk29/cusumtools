@@ -162,11 +162,11 @@ class App(tk.Frame):
         end_f = int(end_index / filesize)
 
         if start_f == end_f:
-            tempdata = self.maps[start_f][np.floor(start_index % filesize):np.floor(end_index % filesize)]
+            tempdata = self.maps[start_f][int(np.floor(start_index % filesize)):int(np.floor(end_index % filesize))]
             settings = self.settings[start_f]
             data = self.scale_raw_data(tempdata,settings)     
         else:
-            tempdata = self.maps[start_f][np.floor(start_index % filesize):]
+            tempdata = self.maps[start_f][int(np.floor(start_index % filesize)):]
             settings = self.settings[start_f]
             data = self.scale_raw_data(tempdata,settings)
             for i in range(start_f+1,end_f):
@@ -175,7 +175,7 @@ class App(tk.Frame):
                 data = np.concatenate((data,self.scale_raw_data(tempdata,settings)))
             tempdata = self.maps[end_f]
             settings = self.settings[end_f]
-            data = np.concatenate((data, self.scale_raw_data(self.maps[end_f][:np.floor(end_index % filesize)],settings)))
+            data = np.concatenate((data, self.scale_raw_data(self.maps[end_f][:int(np.floor(end_index % filesize))],settings)))
         self.data = data
 
     def scale_raw_data(self,tempdata,settings):
@@ -279,7 +279,7 @@ class App(tk.Frame):
                 length = len(self.filtered_data)
         else:
             length = np.minimum(2**20,len(self.filtered_data))
-        end_index = np.floor(len(self.filtered_data)/length)*length
+        end_index = int(np.floor(len(self.filtered_data)/length)*length)
         
         f, Pxx = welch(self.filtered_data[:end_index], plot_samplerate,nperseg=length)
         rms = self.integrate_noise(f, Pxx)
