@@ -122,11 +122,11 @@ class App(tk.Frame):
         self.plot_trace = tk.Button(self.control_frame, text='Update Trace', command=self.update_trace)
         self.plot_trace.grid(row=2,column=0,columnspan=2,sticky=tk.E+tk.W)
 
-        self.plot_trace = tk.Button(self.control_frame, text='Update PSD', command=self.update_psd)
-        self.plot_trace.grid(row=2,column=2,columnspan=2,sticky=tk.E+tk.W)
+        self.plot_psd = tk.Button(self.control_frame, text='Update PSD', command=self.update_psd)
+        self.plot_psd.grid(row=2,column=2,columnspan=2,sticky=tk.E+tk.W)
 
-        self.plot_trace = tk.Button(self.control_frame, text='Update All', command=self.update_all)
-        self.plot_trace.grid(row=2,column=4,columnspan=2,sticky=tk.E+tk.W)
+        self.update_data = tk.Button(self.control_frame, text='Update Data', command=self.update_data)
+        self.update_data.grid(row=2,column=4,columnspan=2,sticky=tk.E+tk.W)
         
 
         ##### Feedback Widgets #####
@@ -312,10 +312,10 @@ class App(tk.Frame):
         
         self.psd_canvas.show()
         
-    def update_all(self):
-        self.update_trace()
-        self.update_psd()
-
+    def update_data(self):
+        self.get_filenames(self.file_path)
+        self.load_memmaps()
+        self.initialize_samplerate()
 
 
 def main():
