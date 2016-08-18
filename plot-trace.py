@@ -136,11 +136,21 @@ class App(tk.Frame):
         self.wildcard = tk.StringVar()
         self.wildcard_label = tk.Label(self.feedback_frame, textvariable=self.wildcard)
         self.wildcard_label.grid(row=0,column=0,columnspan=6,sticky=tk.E+tk.W)
+        self.export_psd = tk.Button(self.feedback_frame, text='Export PSD',command=self.export_psd)
+        self.export_psd.grid(row=1,column=0,columnspan=6,sticky=tk.E+tk.W)
         self.get_filenames(self.file_path)
         self.load_memmaps()
         self.initialize_samplerate()
 
     ##### utility functions #####
+
+    def export_psd(self):
+        try:
+            data_path = tkFileDialog.asksaveasfilename(defaultextension='.csv')
+            np.savetxt(data_path,np.c_[self.f, self.Pxx],delimiter=',')
+        except AttributeError:
+            self.wildcard.set('Plot the PSD first')
+        
     def load_mapped_data(self):
         if self.start_entry.get()!='':
             self.start_time = float(self.start_entry.get())
@@ -282,6 +292,8 @@ class App(tk.Frame):
         end_index = int(np.floor(len(self.filtered_data)/length)*length)
         
         f, Pxx = welch(self.filtered_data[:end_index], plot_samplerate,nperseg=length)
+        self.f = f
+        self.Pxx = Pxx
         rms = self.integrate_noise(f, Pxx)
         minf = 1  
         BW_index = np.searchsorted(f, maxf/2)

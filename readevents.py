@@ -516,12 +516,16 @@ class App(tk.Frame):
     def plot_event(self):
         index = self.event_index.get()
         if any(self.eventsdb_subset['id']==index):
-            event_file_path = self.events_folder+'/event_%05d.csv' % index
             try:
+                event_file_path = self.events_folder+'/event_%05d.csv' % index
                 event_file = pd.read_csv(event_file_path,encoding='utf-8')
             except IOError:
-                self.event_info_string.set(event_file_path+' not found')
-                return
+                try:
+                    event_file_path = self.events_folder+'/event_%08d.csv' % index
+                    event_file = pd.read_csv(event_file_path,encoding='utf-8')
+                except IOError:
+                    self.event_info_string.set(event_file_path+' not found')
+                    return
             eventsdb_subset = self.eventsdb_subset
             event_type = sqldf('SELECT type from eventsdb_subset WHERE id=%d' % index,locals())['type'][0]
             if event_type == 0:
