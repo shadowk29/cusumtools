@@ -90,11 +90,13 @@ class App(tk.Frame):
 
 
         self.start_entry = tk.Entry(self.control_frame)
+        self.start_entry.insert(0,'0')
         self.start_label = tk.Label(self.control_frame, text='Start Time (s)')
         self.start_label.grid(row=0,column=0,sticky=tk.E+tk.W)
         self.start_entry.grid(row=0,column=1,sticky=tk.E+tk.W)
 
         self.end_entry = tk.Entry(self.control_frame)
+        self.end_entry.insert(0,'10')
         self.end_label = tk.Label(self.control_frame, text='End Time (s)')
         self.end_label.grid(row=0,column=2,sticky=tk.E+tk.W)
         self.end_entry.grid(row=0,column=3,sticky=tk.E+tk.W)
@@ -105,11 +107,13 @@ class App(tk.Frame):
         self.psd_length_entry.grid(row=0,column=5,sticky=tk.E+tk.W)
 
         self.cutoff_entry = tk.Entry(self.control_frame)
+        self.cutoff_entry.insert(0,'900000')
         self.cutoff_label = tk.Label(self.control_frame, text='Cutoff Frequency (Hz)')
         self.cutoff_label.grid(row=1,column=0,sticky=tk.E+tk.W)
         self.cutoff_entry.grid(row=1,column=1,sticky=tk.E+tk.W)
 
         self.order_entry = tk.Entry(self.control_frame)
+        self.order_entry.insert(0,'8')
         self.order_label = tk.Label(self.control_frame, text='Filter Order')
         self.order_label.grid(row=1,column=2,sticky=tk.E+tk.W)
         self.order_entry.grid(row=1,column=3,sticky=tk.E+tk.W)
@@ -146,7 +150,7 @@ class App(tk.Frame):
 
     def export_psd(self):
         try:
-            data_path = tkFileDialog.asksaveasfilename(defaultextension='.csv')
+            data_path = tkFileDialog.asksaveasfilename(defaultextension='.csv',initialdir='G:\Analysis\Pores\NPN\PSDs')
             np.savetxt(data_path,np.c_[self.f, self.Pxx],delimiter=',')
         except AttributeError:
             self.wildcard.set('Plot the PSD first')
