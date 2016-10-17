@@ -46,7 +46,7 @@ class App(tk.Frame):
         self.survival_probability()
         self.delay_probability()
         self.folding_distribution()
-        self.type_id()
+        #self.type_id()
         self.count()
         self.eventsdb_subset = self.eventsdb
         self.eventsdb_prev = self.eventsdb_subset
