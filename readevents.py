@@ -48,6 +48,7 @@ class App(tk.Frame):
         self.folding_distribution()
         #self.type_id()
         self.count()
+        #self.max_deviation()
         self.eventsdb_subset = self.eventsdb
         self.eventsdb_prev = self.eventsdb_subset
         self.export_type = None
@@ -252,7 +253,34 @@ class App(tk.Frame):
         self.eventsdb_subset = self.eventsdb
 
     
-        
+##    def max_deviation(self):
+##        eventsdb = self.eventsdb
+##        id_list = self.eventsdb['id']
+##        maxdev = np.empty_like(id_list)
+##        i = 0
+##        for index in id_list:
+##            try:
+##                event_file_path = self.events_folder+'/event_%05d.csv' % index
+##                event_file = pd.read_csv(event_file_path,encoding='utf-8')
+##            except IOError:
+##                try:
+##                    event_file_path = self.events_folder+'/event_%08d.csv' % index
+##                    event_file = pd.read_csv(event_file_path,encoding='utf-8')
+##                except IOError:
+##                    self.event_info_string.set(event_file_path+' not found')
+##                    return
+##            event_type = sqldf('SELECT type from eventsdb WHERE id=%d' % index,locals())['type'][0]
+##            if event_type == 0:
+##                event_file.columns = ['time','current','cusum']
+##            elif event_type == 1:
+##                event_file.columns = ['time','current','cusum','stepfit']
+##            baseline = sqldf('SELECT effective_baseline_pA from eventsdb WHERE id=%d' % index,locals())['effective_baseline_pA'][0]
+##            deviation = np.abs(event_file['current'] - baseline)            
+##            maxdev[i] = deviation.max()
+##            print maxdev[i]
+##        eventsdb['max_deviation_pA'] = maxdev
+##        print eventsdb['max_deviation_pA']
+##            
 
     def count(self):
         eventsdb = self.eventsdb
@@ -427,7 +455,10 @@ class App(tk.Frame):
             a.set_xlabel(x_label)
             a.set_ylabel('Count')
             self.f.subplots_adjust(bottom=0.14,left=0.16)
-            self.ydata, self.xdata, patches = a.hist(col,bins=int(numbins),log=bool(logscale_y))
+            if x_label == 'Fold Fraction':
+                self.ydata, self.xdata, patches = a.hist(col,range=(0,0.5),bins=(0,0.1,0.2,0.3,0.4,0.5),log=bool(logscale_y))
+            else:
+                self.ydata, self.xdata, patches = a.hist(col,bins=int(numbins),log=bool(logscale_y))
         self.xdata = self.xdata[:-1] + np.diff(self.xdata)/2.0
         self.canvas.show()
         self.canvas.callbacks.connect('button_press_event', self.on_click)
@@ -629,7 +660,8 @@ class App(tk.Frame):
                       'stdev_pA': 'Level Standard Deviation (pA)',
                       'count': 'Event Count',
                       'folding': 'Fold Fraction',
-                      'event_shape': 'Event Shape'}
+                      'event_shape': 'Event Shape',
+                      'max_deviation_pA': 'Maximum Deviation (pA)'}
         self.unalias_dict = dict (zip(self.alias_dict.values(),self.alias_dict.keys()))
 
     def save_subset(self):
