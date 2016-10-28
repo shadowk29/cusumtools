@@ -46,16 +46,16 @@ class App(tk.Frame):
         self.survival_probability()
         self.delay_probability()
         self.folding_distribution()
-        #self.type_id()
         self.count()
-        #self.max_deviation()
         self.eventsdb_subset = self.eventsdb
         self.eventsdb_prev = self.eventsdb_subset
         self.export_type = None
         self.clicks_remaining = 0
+        eventsdb['event_shape']=""
+        eventsdb['trimmed_shape']=""
+        eventsdb['trimmed_n_levels']=""
 
-        
-        column_list = list(self.eventsdb)
+        column_list = list(eventsdb)
         self.column_list = column_list
         self.x_col_options = tk.StringVar()
         self.x_col_options.set('Level Duration (us)')
@@ -64,6 +64,7 @@ class App(tk.Frame):
         self.graph_list = tk.StringVar()
         self.graph_list.set('2D Histogram')
         self.alias_columns()
+        
         parent.deiconify()
 
         #Status Update widgets
@@ -252,35 +253,6 @@ class App(tk.Frame):
         self.eventsdb['folding'] = x
         self.eventsdb_subset = self.eventsdb
 
-    
-##    def max_deviation(self):
-##        eventsdb = self.eventsdb
-##        id_list = self.eventsdb['id']
-##        maxdev = np.empty_like(id_list)
-##        i = 0
-##        for index in id_list:
-##            try:
-##                event_file_path = self.events_folder+'/event_%05d.csv' % index
-##                event_file = pd.read_csv(event_file_path,encoding='utf-8')
-##            except IOError:
-##                try:
-##                    event_file_path = self.events_folder+'/event_%08d.csv' % index
-##                    event_file = pd.read_csv(event_file_path,encoding='utf-8')
-##                except IOError:
-##                    self.event_info_string.set(event_file_path+' not found')
-##                    return
-##            event_type = sqldf('SELECT type from eventsdb WHERE id=%d' % index,locals())['type'][0]
-##            if event_type == 0:
-##                event_file.columns = ['time','current','cusum']
-##            elif event_type == 1:
-##                event_file.columns = ['time','current','cusum','stepfit']
-##            baseline = sqldf('SELECT effective_baseline_pA from eventsdb WHERE id=%d' % index,locals())['effective_baseline_pA'][0]
-##            deviation = np.abs(event_file['current'] - baseline)            
-##            maxdev[i] = deviation.max()
-##            print maxdev[i]
-##        eventsdb['max_deviation_pA'] = maxdev
-##        print eventsdb['max_deviation_pA']
-##            
 
     def count(self):
         eventsdb = self.eventsdb
@@ -392,11 +364,42 @@ class App(tk.Frame):
         self.status_string.set('Click on the 1D blockage level histogram {0} times'.format(self.clicks_remaining))
         self.state_array = np.zeros(self.num_states*2)
 
+##    def define_shapes(self): 
+##        if self.clicks_remaining > 0:
+##            self.status_string.set('Complete State Array First')
+##        else:
+##            type_array = []
+##            state_means = np.zeros(self.num_states)
+##            i = 0
+##            while i < self.num_states*2:
+##                state_means[i/2] = 0.5*(self.state_array[i]+self.state_array[i+1])
+##                i += 2
+##            blockage_levels = [np.array(a,dtype=float)[1:-1] for a in self.eventsdb_subset['blockages_pA'].str.split(';')]
+##            for b in blockage_levels:
+##                event_type = []
+##                indices = [(np.abs(state_means - blevel)).argmin() for blevel in b]
+##                for level,index in itertools.izip(b,indices):
+##                    if level > self.state_array[2*index] and level < self.state_array[2*index+1]:
+##                        event_type.append(index+1)
+##                    else:
+##                        event_type = [-1]
+##                        break
+##                typenum = int(''.join(map(str, event_type)))
+##                if typenum > 999999999:
+##                    typenum = -1
+##                type_array.append(typenum)
+##            self.eventsdb_subset['event_shape'] = type_array
+##            self.status_string.set('Event shapes recalculated. \nThis applies only to the current subset')
+##            self.eventsdb_subset.loc[self.eventsdb_subset['event_shape'] == 1, 'folding'] = 0
+##            self.eventsdb_subset.loc[self.eventsdb_subset['event_shape'] == 2, 'folding'] = 0.5
+            
     def define_shapes(self): 
         if self.clicks_remaining > 0:
             self.status_string.set('Complete State Array First')
         else:
             type_array = []
+            trimmed_type = []
+            trimmed_Nlev = []
             state_means = np.zeros(self.num_states)
             i = 0
             while i < self.num_states*2:
@@ -413,14 +416,29 @@ class App(tk.Frame):
                         event_type = [-1]
                         break
                 typenum = int(''.join(map(str, event_type)))
+                trim_type = []
+                if typenum == -1:
+                    trim_type.append('-1')
+                    trim_type = int(''.join(map(str, trim_type)))
+                    trimmed_Nlev.append(0)
+                else:
+                    str_typenum = str(typenum)
+                    for i in range(len(str_typenum)-1):
+                        if int(str_typenum[i]) != int(str_typenum[i+1]):
+                            trim_type.append(str_typenum[i])
+                    trim_type.append(str_typenum[-1])
+                    trimmed_Nlev.append(len(trim_type))
+                    trim_type = int(''.join(map(str, trim_type)))
+                trimmed_type.append(trim_type)
                 if typenum > 999999999:
                     typenum = -1
                 type_array.append(typenum)
             self.eventsdb_subset['event_shape'] = type_array
+            self.eventsdb_subset['trimmed_shape'] = trimmed_type
+            self.eventsdb_subset['trimmed_n_levels'] = trimmed_Nlev
             self.status_string.set('Event shapes recalculated. \nThis applies only to the current subset')
             self.eventsdb_subset.loc[self.eventsdb_subset['event_shape'] == 1, 'folding'] = 0
-            self.eventsdb_subset.loc[self.eventsdb_subset['event_shape'] == 2, 'folding'] = 0.5
-            
+            self.eventsdb_subset.loc[self.eventsdb_subset['event_shape'] == 2, 'folding'] = 0.5        
         
     def type_id(self):
         blockage_levels = [np.array(a,dtype=float)[1:-1] for a in self.eventsdb_subset['blockages_pA'].str.split(';')]
@@ -661,7 +679,9 @@ class App(tk.Frame):
                       'count': 'Event Count',
                       'folding': 'Fold Fraction',
                       'event_shape': 'Event Shape',
-                      'max_deviation_pA': 'Maximum Deviation (pA)'}
+                      'max_deviation_pA': 'Maximum Deviation (pA)',
+                      'trimmed_shape': 'Trimmed Shape',
+                      'trimmed_n_levels':'Trimmed N Levels'}
         self.unalias_dict = dict (zip(self.alias_dict.values(),self.alias_dict.keys()))
 
     def save_subset(self):
