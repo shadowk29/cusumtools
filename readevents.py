@@ -159,6 +159,7 @@ class App(tk.Frame):
         self.next_event_button = tk.Button(self.events_frame,text='Next',command=self.next_event)
         self.prev_event_button = tk.Button(self.events_frame,text='Prev',command=self.prev_event)
         self.delete_event_button = tk.Button(self.events_frame,text='Delete',command=self.delete_event)
+        self.save_event_button = tk.Button(self.events_frame,text='Export Data',command=self.export_event_data)
         self.event_info_string.set('')
         self.event_info_display = tk.Label(self.events_frame, textvariable=self.event_info_string)
 
@@ -177,6 +178,7 @@ class App(tk.Frame):
         self.next_event_button.grid(row=3,column=3,sticky=tk.W)
         self.prev_event_button.grid(row=3,column=1,sticky=tk.E)
         self.delete_event_button.grid(row=3,column=4,sticky=tk.E+tk.W)
+        self.save_event_button.grid(row=4,column=4,sticky=tk.E+tk.W)
 
 
         #Datbase widgets
@@ -343,6 +345,8 @@ class App(tk.Frame):
             np.savetxt(data_path,np.c_[self.xdata,self.ydata,self.zdata],delimiter=',')
         else:
             self.status_string.set("Unable to export plot")
+
+    
 
 
     def on_click(self, event):
@@ -576,7 +580,9 @@ class App(tk.Frame):
                     self.event_info_string.set(event_file_path+' not found')
                     return
             eventsdb_subset = self.eventsdb_subset
+            self.event_export_file = event_file
             event_type = sqldf('SELECT type from eventsdb_subset WHERE id=%d' % index,locals())['type'][0]
+            self.event_export_type = event_type
             if event_type == 0:
                 event_file.columns = ['time','current','cusum']
             elif event_type == 1:
@@ -594,6 +600,13 @@ class App(tk.Frame):
             self.event_info_string.set('')
         else:
             self.event_info_string.set('No such event!')
+
+    def export_event_data(self):
+        data_path = tkFileDialog.asksaveasfilename(defaultextension='.csv')
+        if self.event_export_type == 0:
+            np.savetxt(data_path,np.c_[self.event_export_file['time'],self.event_export_file['current'],self.event_export_file['cusum']],delimiter=',')
+        elif self.event_export_type == 1:
+            np.savetxt(data_path,np.c_[self.event_export_file['time'],self.event_export_file['current'],self.event_export_file['cusum'], self.event_export_file['stepfit']],delimiter=',')
 
     def next_event(self):
         try:
