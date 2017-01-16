@@ -142,6 +142,8 @@ class App(tk.Frame):
         self.wildcard_label.grid(row=0,column=0,columnspan=6,sticky=tk.E+tk.W)
         self.export_psd = tk.Button(self.feedback_frame, text='Export PSD',command=self.export_psd)
         self.export_psd.grid(row=1,column=0,columnspan=6,sticky=tk.E+tk.W)
+        self.export_trace = tk.Button(self.feedback_frame, text='Export Trace',command=self.export_trace)
+        self.export_trace.grid(row=2,column=0,columnspan=6,sticky=tk.E+tk.W)
         self.get_filenames(self.file_path)
         self.load_memmaps()
         self.initialize_samplerate()
@@ -151,9 +153,16 @@ class App(tk.Frame):
     def export_psd(self):
         try:
             data_path = tkFileDialog.asksaveasfilename(defaultextension='.csv',initialdir='G:\Analysis\Pores\NPN\PSDs')
-            np.savetxt(data_path,np.c_[self.f, self.Pxx],delimiter=',')
+            np.savetxt(data_path,np.c_[self.f, self.Pxx, self.rms],delimiter=',')
         except AttributeError:
             self.wildcard.set('Plot the PSD first')
+
+    def export_trace(self):
+        try:
+            data_path = tkFileDialog.asksaveasfilename(defaultextension='.csv',initialdir='G:\Analysis\Pores\NPN\PSDs')
+            np.savetxt(data_path,self.plot_data,delimiter=',')
+        except AttributeError:
+            self.wildcard.set('Plot the trace first')
         
     def load_mapped_data(self):
         if self.start_entry.get()!='':
@@ -298,7 +307,7 @@ class App(tk.Frame):
         f, Pxx = welch(self.filtered_data[:end_index], plot_samplerate,nperseg=length)
         self.f = f
         self.Pxx = Pxx
-        rms = self.integrate_noise(f, Pxx)
+        self.rms = self.integrate_noise(f, Pxx)
         minf = 1  
         BW_index = np.searchsorted(f, maxf/2)
         logPxx = np.log10(Pxx[0:BW_index])
@@ -319,7 +328,7 @@ class App(tk.Frame):
 
         
         a2 = a.twinx()
-        a2.semilogx(f, rms, 'r-')
+        a2.semilogx(f, self.rms, 'r-')
         a2.set_ylabel('RMS Noise (pA)')
         a2.set_xlim(minf, maxf)
         for tick in a2.get_yticklabels():
