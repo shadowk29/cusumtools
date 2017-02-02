@@ -61,7 +61,10 @@ class App(tk.Frame):
         self.fit_report_label.grid(row=0,column=0,columnspan=6,sticky=tk.E+tk.W)
 
     def update_report(self):
-        self.fit_report.set('Rise time for this filter is {:0.2f} +/- {:0.2f} samples, or {:0.2f} +/- {:0.2f} us'.format(self.popt[1],self.errors[1],self.popt[1]*1.0e6/self.fs,self.errors[1]*1.0e6/self.fs))
+        if np.abs(self.filtered_data[-1] - 1) > 0.01:
+            self.fit_report.set('The filter is unstable with these parameters, try reducing the number of poles')
+        else:
+            self.fit_report.set('Rise time for this filter is {:0.2f} +/- {:0.2f} samples, or {:0.2f} +/- {:0.2f} us'.format(self.popt[1],self.errors[1],self.popt[1]*1.0e6/self.fs,self.errors[1]*1.0e6/self.fs))
 
     def bessel_shape(self, t, t0, tau):
         return 1.0 / (1.0 + np.exp(-(t-t0)/tau))
