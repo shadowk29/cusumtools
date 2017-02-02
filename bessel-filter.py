@@ -50,7 +50,12 @@ class App(tk.Frame):
         self.pole_option.grid(row=0,column=5,sticky=tk.E+tk.W)
 
         self.fit_button = tk.Button(self.control_frame, text='Fit Filter', command=self.update_filter)
-        self.fit_button.grid(row=1,column=2,sticky=tk.E+tk.W)
+        self.fit_button.grid(row=1,column=1,sticky=tk.E+tk.W)
+
+        self.loglog = tk.IntVar()
+        self.loglog.set(0)
+        self.loglog_button = tk.Checkbutton(self.control_frame, text='Logscale', variable=self.loglog)
+        self.loglog_button.grid(row=1,column=2,sticky=tk.E+tk.W)
 
         #Feedback Widgets
         self.feedback_frame = tk.LabelFrame(parent, text='Fit Parameters')
@@ -88,8 +93,10 @@ class App(tk.Frame):
         a = self.plot_fig.add_subplot(111)
         a.set_xlabel('Sample Number')
         a.set_ylabel('Amplitude (Arb. Units)')
-        a.set_ylim(-0.05,1.05)
-        a.plot(samples,self.filtered_data,samples,self.filter_fit)
+        if (self.loglog.get()):
+            a.loglog(samples,self.filtered_data,samples,self.filter_fit,marker='.')
+        else:
+            a.plot(samples,self.filtered_data,samples,self.filter_fit,marker='.')
         self.plot_canvas.show()
 
         self.update_report()
