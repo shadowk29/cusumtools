@@ -278,7 +278,10 @@ class App(tk.Frame):
         a.set_xlabel(r'Time ($\mu s$)')
         a.set_ylabel('Current (pA)')
         self.trace_fig.subplots_adjust(bottom=0.14,left=0.21)
-        a.plot(time*1e6,self.plot_data,'.',markersize=1)
+        a.plot(time*1e6,self.plot_data,'.',markersize=1,alpha=0.1)
+        #a.axhline(y=np.average(self.filtered_data),color='g')
+        #a.axhline(y=np.average(self.filtered_data)+3.0 * np.std(self.filtered_data),color='r')
+        #a.axhline(y=np.average(self.filtered_data)-3.0 * np.std(self.filtered_data),color='r')
         self.trace_canvas.show()
 
     def update_psd(self):
@@ -336,6 +339,8 @@ class App(tk.Frame):
         a2.format_coord = make_format(a2, a)
         
         self.psd_canvas.show()
+
+        self.wildcard.set('Standard deviation is {:0.2f} pA'.format(np.std(self.filtered_data)))
         
     def update_data(self):
         self.get_filenames(self.file_path)
