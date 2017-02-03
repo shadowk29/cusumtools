@@ -1,3 +1,21 @@
+##                                COPYRIGHT
+##    Copyright (C) 2015 Kyle Briggs (kbrig035<at>uottawa.ca)
+##
+##    This file is part of cusumtools.
+##
+##    This program is free software: you can redistribute it and/or modify
+##    it under the terms of the GNU General Public License as published by
+##    the Free Software Foundation, either version 3 of the License, or
+##    (at your option) any later version.
+##
+##    This program is distributed in the hope that it will be useful,
+##    but WITHOUT ANY WARRANTY; without even the implied warranty of
+##    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+##    GNU General Public License for more details.
+##
+##    You should have received a copy of the GNU General Public License
+##    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 import matplotlib
 matplotlib.use('TkAgg')
 import numpy as np
@@ -52,10 +70,10 @@ class App(tk.Frame):
         self.fit_button = tk.Button(self.control_frame, text='Fit Filter', command=self.update_filter)
         self.fit_button.grid(row=1,column=1,sticky=tk.E+tk.W)
 
-        self.loglog = tk.IntVar()
-        self.loglog.set(0)
-        self.loglog_button = tk.Checkbutton(self.control_frame, text='Logscale', variable=self.loglog)
-        self.loglog_button.grid(row=1,column=2,sticky=tk.E+tk.W)
+        self.residuals = tk.IntVar()
+        self.residuals.set(0)
+        self.residuals_check = tk.Checkbutton(self.control_frame, text='Plot Residuals', variable=self.residuals)
+        self.residuals_check.grid(row=1,column=2,sticky=tk.E+tk.W)
 
         #Feedback Widgets
         self.feedback_frame = tk.LabelFrame(parent, text='Fit Parameters')
@@ -93,9 +111,10 @@ class App(tk.Frame):
         a = self.plot_fig.add_subplot(111)
         a.set_xlabel('Sample Number')
         a.set_ylabel('Amplitude (Arb. Units)')
-        if (self.loglog.get()):
-            a.loglog(samples,self.filtered_data,samples,self.filter_fit,marker='.')
+        if (self.residuals.get()):
+            a.loglog(samples,np.abs(self.filtered_data-self.filter_fit),marker='.')
         else:
+            a.set_ylim(-0.05,1.05)
             a.plot(samples,self.filtered_data,samples,self.filter_fit,marker='.')
         self.plot_canvas.show()
 
