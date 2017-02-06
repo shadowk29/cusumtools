@@ -245,7 +245,7 @@ class App(tk.Frame):
         Wn = 2.0 * cutoff/float(self.samplerate)
         b, a = bessel(order,Wn,'low')
         padding = 1000
-        padded = np.pad(self.filtered_data, pad_width=padding, mode='median')
+        padded = np.pad(self.data, pad_width=padding, mode='median')
         self.filtered_data = filtfilt(b, a, padded, padtype=None)[padding:-padding]
 
     def downsample_data(self):
@@ -293,10 +293,7 @@ class App(tk.Frame):
         if self.cutoff_entry.get()!='' and self.order_entry!='':
             self.filter_data()
             self.plot_data = self.filtered_data
-        
-        if self.cutoff_entry.get()!='' and self.order_entry!='':
-            self.filter_data()
-            maxf = 2*float(self.cutoff_entry.get())
+            maxf = 2*float(self.cutoff_entry.get())       
         else:
             maxf = 2e6
         if (self.psd_length_entry.get()!=''):
@@ -341,6 +338,7 @@ class App(tk.Frame):
         self.psd_canvas.show()
 
         self.wildcard.set('Standard deviation is {:0.2f} pA'.format(np.std(self.filtered_data)))
+        
         
     def update_data(self):
         self.get_filenames(self.file_path)
