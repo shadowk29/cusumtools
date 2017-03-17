@@ -694,7 +694,10 @@ class App(tk.Frame):
                       'event_shape': 'Event Shape',
                       'max_deviation_pA': 'Maximum Deviation (pA)',
                       'trimmed_shape': 'Trimmed Shape',
-                      'trimmed_n_levels':'Trimmed N Levels'}
+                      'trimmed_n_levels':'Trimmed N Levels',
+                      'min_blockage_pA': 'Minimum Blockage (pA)',
+                      'relative_min_blockage': 'Relative Minimum Blockage (unitless)',
+                      'min_blockage_duration_us': 'Minimum Blockage Duration (us)'}
         self.unalias_dict = dict (zip(self.alias_dict.values(),self.alias_dict.keys()))
 
     def save_subset(self):
