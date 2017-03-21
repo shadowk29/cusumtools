@@ -35,7 +35,7 @@ def main():
         current = np.memmap(f, dtype=columntypes, mode='r')['curr_pA']
         index = file_path_string.find('.bin')
         outname = file_path_string[:index]+'_'+str(start_s)+'_'+str(length_s)+'.csv'
-        np.savetxt(outname,current[start_s+samplingfreq:(start_s+length_s)*samplingfreq])
+        np.savetxt(outname,current[start_s*samplingfreq:(start_s+length_s)*samplingfreq])
 
     
 if __name__=='__main__':
