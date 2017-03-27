@@ -26,15 +26,15 @@ def main():
     root.withdraw()
     file_path_string = tkFileDialog.askopenfilename(initialdir='C:/Data/')
     root.destroy()
-    length_s = 9
-    start_s = 10
+    length_s = 50
+    start_s = 1150
     samplingfreq = 500000
     start = start_s * samplingfreq
     with open(file_path_string, 'rb') as f:
         columntypes = np.dtype([('curr_pA', '>f8'), ('volt_mV', '>f8')])
-        current = np.memmap(f, dtype=columntypes, mode='r')['curr_pA']
+        current = np.memmap(f, dtype=columntypes, mode='r')['volt_mV']
         index = file_path_string.find('.bin')
-        outname = file_path_string[:index]+'_'+str(start_s)+'_'+str(length_s)+'.csv'
+        outname = file_path_string[:index]+'_'+str(start_s)+'_'+str(length_s)+'_voltage.csv'
         np.savetxt(outname,current[start_s*samplingfreq:(start_s+length_s)*samplingfreq])
 
     

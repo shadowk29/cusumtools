@@ -48,9 +48,9 @@ class App(tk.Frame):
         self.folding_distribution()
         self.count()
         self.eventsdb_subset = self.eventsdb
-        self.eventsdb_prev = self.eventsdb_subset
         self.export_type = None
         self.clicks_remaining = 0
+        self.filter_list = []
         eventsdb['event_shape']=""
         eventsdb['trimmed_shape']=""
         eventsdb['trimmed_n_levels']=""
@@ -67,14 +67,7 @@ class App(tk.Frame):
         
         parent.deiconify()
 
-        #Status Update widgets
-        self.status_frame = tk.LabelFrame(parent,text='Status')
-        self.status_string = tk.StringVar()
-        self.status_string.set('Ready')
-        self.status_display = tk.Label(self.status_frame, textvariable=self.status_string)
-
-        self.status_frame.grid(row=3,column=8,columnspan=2,sticky=tk.E+tk.W+tk.S+tk.N)
-        self.status_display.grid(row=0,column=0,sticky=tk.E+tk.W+tk.S+tk.N)
+        
 
         
         #Statistics plotting widgets
@@ -164,14 +157,14 @@ class App(tk.Frame):
         self.event_info_display = tk.Label(self.events_frame, textvariable=self.event_info_string)
 
         
-        self.event_toolbar_frame.grid(row=1,column=0,columnspan=5)
-        self.event_canvas.get_tk_widget().grid(row=0,column=0,columnspan=5)
+        self.event_toolbar_frame.grid(row=1,column=0,columnspan=6)
+        self.event_canvas.get_tk_widget().grid(row=0,column=0,columnspan=6)
         
         parent.bind("<Left>", self.left_key_press)
         parent.bind("<Right>", self.right_key_press)
         parent.bind("<Delete>", self.delete_key_press)
 
-        self.events_frame.grid(row=0,column=6,columnspan=5,sticky=tk.N+tk.S)
+        self.events_frame.grid(row=0,column=6,columnspan=6,sticky=tk.N+tk.S)
         self.event_entry.grid(row=3,column=2,sticky=tk.E+tk.W)
         self.plot_event_button.grid(row=4,column=2,sticky=tk.E+tk.W)
         self.event_info_display.grid(row=4,column=3,sticky=tk.W+tk.E)
@@ -184,53 +177,63 @@ class App(tk.Frame):
         #Datbase widgets
 
         self.db_frame = tk.LabelFrame(parent,text='Database Controls')
-        
-        self.filter_button = tk.Button(self.db_frame,text='Apply Filter',command=self.filter_db)
-        self.reset_button = tk.Button(self.db_frame,text='Reset DB',command=self.reset_db)
-        self.undo_button = tk.Button(self.db_frame,text='Undo Last',command=self.undo_filter_db)
+        self.db_frame.columnconfigure(0, weight=1)
+        self.db_frame.columnconfigure(2, weight=1)
+        self.db_frame.columnconfigure(4, weight=1)
+
+        default_subset = tk.StringVar()
+        default_subset.set('1')
+        self.subset_option = tk.OptionMenu(self.db_frame, default_subset, '1')
+        self.filter_button = tk.Button(self.db_frame,text='Filter Subset',command=self.filter_db)
+        self.reset_button = tk.Button(self.db_frame,text='Reset Subset',command=self.reset_db)
+        self.show_subset_details_button = tk.Button(self.db_frame, text='Display Filters', command=self.display_filters)
         self.db_info_string = tk.StringVar()
-        self.db_info_string.set('Number of events: ' +str(len(self.eventsdb_subset)))
+        self.db_info_string.set('Count: ' +str(len(self.eventsdb_subset)))
         self.db_info_display = tk.Label(self.db_frame, textvariable=self.db_info_string)
         self.save_subset_button = tk.Button(self.db_frame,text='Save Subset',command=self.save_subset)
         self.filter_entry = tk.Entry(self.db_frame)
+
         
-        self.filter_button.grid(row=1,column=2)
-        self.reset_button.grid(row=1,column=3)
+        self.db_frame.grid(row=2,column=0,columnspan=6,sticky=tk.E+tk.W+tk.S+tk.N)
+        self.filter_entry.grid(row=0,column=0,columnspan=6,sticky=tk.E+tk.W)
+        self.subset_option.grid(row=1,column=0,columnspan=2,sticky=tk.E+tk.W)
+        self.filter_button.grid(row=1,column=2,columnspan=2,sticky=tk.E+tk.W)
+        self.reset_button.grid(row=1,column=4,columnspan=2,sticky=tk.E+tk.W)
         
-        self.db_frame.grid(row=3,column=6,columnspan=2,sticky=tk.E+tk.W+tk.S+tk.N)
-        self.save_subset_button.grid(row=2,column=0,sticky=tk.E+tk.W)
-        self.filter_entry.grid(row=0,column=0,sticky=tk.E+tk.W)
-        self.filter_button.grid(row=0,column=1,sticky=tk.E+tk.W)
-        self.reset_button.grid(row=2,column=1,sticky=tk.E+tk.W)
-        self.undo_button.grid(row=1,column=1,sticky=tk.E+tk.W)
-        self.db_info_display.grid(row=1,column=0,sticky=tk.E+tk.W)
+        self.save_subset_button.grid(row=2,column=0,columnspan=2,sticky=tk.E+tk.W)
+        self.show_subset_details_button.grid(row=2,column=2,columnspan=2,sticky=tk.E+tk.W)
+        self.db_info_display.grid(row=2,column=4,columnspan=2,sticky=tk.E+tk.W)
 
         #Folder widgets
-        self.folder_frame = tk.LabelFrame(parent,text='Folder Options')
 
-        self.stats_file_path = tk.StringVar()
-        self.stats_file_path.set(self.file_path_string)
-        self.stats_file_display = tk.Label(self.folder_frame, textvariable=self.stats_file_path)
-        self.stats_file_label = tk.Label(self.folder_frame, text='Statistics File:')
-        self.stats_file_button = tk.Button(self.folder_frame,text='Browse',command=self.open_stats_file)
+        #Status Update widgets
+        self.status_frame = tk.LabelFrame(parent,text='Status')
+        self.status_frame.grid(row=2,column=6,columnspan=6,sticky=tk.E+tk.W+tk.S+tk.N)
+        self.status_string = tk.StringVar()
+        self.status_string.set('Ready')
+        self.status_display = tk.Label(self.status_frame, textvariable=self.status_string)
 
-        self.events_folder_path = tk.StringVar()
-        self.events_folder_path.set(self.events_folder)
-        self.events_folder_display = tk.Label(self.folder_frame, textvariable=self.events_folder_path)
-        self.events_folder_label = tk.Label(self.folder_frame, text='Events Folder:')
-        self.events_folder_button = tk.Button(self.folder_frame,text='Browse',command=self.set_events_folder)
+        self.status_display.grid(row=0,column=0,sticky=tk.E+tk.W+tk.S+tk.N)
+
         
-
-        self.folder_frame.grid(row=3,column=0,columnspan=6,sticky=tk.E+tk.W+tk.S+tk.N)
-        self.stats_file_label.grid(row=0,column=0,sticky=tk.E+tk.W,columnspan=2)
-        self.events_folder_label.grid(row=1,column=0,sticky=tk.E+tk.W,columnspan=2)
-        self.stats_file_display.grid(row=0,column=2,sticky=tk.E+tk.W,columnspan=2)
-        self.events_folder_display.grid(row=1,column=2,sticky=tk.E+tk.W,columnspan=2)
-        self.stats_file_button.grid(row=0,column=4,sticky=tk.E+tk.W,columnspan=2)
-        self.events_folder_button.grid(row=1,column=4,sticky=tk.E+tk.W,columnspan=2)
         
     
+    def display_filters(self):
+        top = tk.Toplevel()
+        top.title('Filters Used')
+        filters = tk.StringVar()
+        if (len(self.filter_list) > 0):
+            filters.set('%s' % '\n'.join(self.filter_list))
+        else:
+            filters.set('None')
 
+            
+        msg = tk.Label(top, textvariable=filters)
+        destroy = tk.Button(top, text='Exit', command=top.destroy)
+
+        top.columnconfigure(0,minsize=500)
+        msg.grid(row=0,column=0,stick=tk.E+tk.W)
+        destroy.grid(row=1,column=0,sticky=tk.E+tk.W)
 
     def delay_probability(self):
         eventsdb = self.eventsdb
@@ -274,15 +277,10 @@ class App(tk.Frame):
         self.eventsdb_subset = tempdb
         try:
             self.db_info_string.set('Number of events: ' +str(len(self.eventsdb_subset)))
+            self.filter_list.append(filterstring)
         except TypeError:
             self.db_info_string.set('Invalid Entry')
             self.eventsdb_subset = self.eventsdb_prev
-
-    def undo_filter_db(self):
-        temp = self.eventsdb_subset
-        self.eventsdb_subset = self.eventsdb_prev
-        self.eventsdb_prev = temp
-        self.db_info_string.set('Number of events: ' +str(len(self.eventsdb_subset)))
 
     def reset_db(self):
         self.eventsdb_prev = self.eventsdb_subset
@@ -706,21 +704,6 @@ class App(tk.Frame):
         subset_file = open(subset_file_path,'wb')
         self.eventsdb_subset.to_csv(subset_file,index=False)
         subset_file.close()
-
-    def open_stats_file(self):
-        self.file_path_string = tkFileDialog.askopenfilename(initialdir='C:\Users\kbrig035\Analysis\CUSUM\output\\')
-        self.stats_file_path.set(self.file_path_string)
-        self.eventsdb = pd.read_csv(self.file_path_string,encoding='utf-8')
-        self.eventsdb_subset = self.eventsdb
-        self.eventsdb_prev = self.eventsdb
-        self.db_info_string.set('Number of events: ' +str(len(self.eventsdb_subset)))
-        self.survival_probability()
-        self.delay_probability()
-        
-
-    def set_events_folder(self):
-        self.events_folder = tkFileDialog.askdirectory(initialdir='C:\Users\kbrig035\Analysis\CUSUM\output\\')
-        self.events_folder_path.set(self.events_folder)
 
     def onclick(event):
         self.status_string.set('button=%d, x=%d, y=%d, xdata=%f, ydata=%f' % (event.button, event.x, event.y, event.xdata, event.ydata))
