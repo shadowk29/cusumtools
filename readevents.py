@@ -29,6 +29,7 @@ from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2TkAgg
 from scipy.optimize import curve_fit
 import itertools
+from collections import OrderedDict
 
 def exponential(x, A, tau): #define a fitting function form
     return A * np.exp(-x/tau)
@@ -43,17 +44,25 @@ class App(tk.Frame):
         self.file_path_string = file_path_string
         self.events_folder = events_folder
         self.eventsdb = eventsdb
+
+        self.clicks_remaining = 0
+        
+        eventsdb['event_shape']=""
+        eventsdb['trimmed_shape']=""
+        eventsdb['trimmed_n_levels']=""
+        
+
+
+        max_subsets = 5
+        self.eventsdb_subset = dict(('Subset {0}'.format(i), self.eventsdb) for i in range(max_subsets))
+        self.filter_list = dict(('Subset {0}'.format(i), []) for i in range(max_subsets))
         self.survival_probability()
         self.delay_probability()
         self.folding_distribution()
         self.count()
-        self.eventsdb_subset = self.eventsdb
+
         self.export_type = None
-        self.clicks_remaining = 0
-        self.filter_list = []
-        eventsdb['event_shape']=""
-        eventsdb['trimmed_shape']=""
-        eventsdb['trimmed_n_levels']=""
+
 
         column_list = list(eventsdb)
         self.column_list = column_list
@@ -146,7 +155,7 @@ class App(tk.Frame):
         self.event_toolbar.update()
         self.event_info_string = tk.StringVar()
         self.event_index = tk.IntVar()
-        self.event_index.set(self.eventsdb_subset['id'][0])
+        self.event_index.set(self.eventsdb_subset['Subset 0']['id'][0])
         self.event_entry = tk.Entry(self.events_frame, textvariable=self.event_index)
         self.plot_event_button = tk.Button(self.events_frame,text='Plot Event',command=self.plot_event)
         self.next_event_button = tk.Button(self.events_frame,text='Next',command=self.next_event)
@@ -182,13 +191,14 @@ class App(tk.Frame):
         self.db_frame.columnconfigure(4, weight=1)
 
         default_subset = tk.StringVar()
-        default_subset.set('1')
-        self.subset_option = tk.OptionMenu(self.db_frame, default_subset, '1')
+        default_subset.set('Subset 0')
+        options = ['Subset {0}'.format(i) for i in range(max_subsets)]
+        self.subset_option = tk.OptionMenu(self.db_frame, default_subset, *options)
         self.filter_button = tk.Button(self.db_frame,text='Filter Subset',command=self.filter_db)
         self.reset_button = tk.Button(self.db_frame,text='Reset Subset',command=self.reset_db)
         self.show_subset_details_button = tk.Button(self.db_frame, text='Display Filters', command=self.display_filters)
         self.db_info_string = tk.StringVar()
-        self.db_info_string.set('Count: ' +str(len(self.eventsdb_subset)))
+        self.db_info_string.set('Count: ' +str(len(self.eventsdb_subset['Subset 0'])))
         self.db_info_display = tk.Label(self.db_frame, textvariable=self.db_info_string)
         self.save_subset_button = tk.Button(self.db_frame,text='Save Subset',command=self.save_subset)
         self.filter_entry = tk.Entry(self.db_frame)
@@ -221,20 +231,28 @@ class App(tk.Frame):
     def display_filters(self):
         top = tk.Toplevel()
         top.title('Filters Used')
-        filters = tk.StringVar()
-        if (len(self.filter_list) > 0):
-            filters.set('%s' % '\n'.join(self.filter_list))
-        else:
-            filters.set('None')
 
+
+        subset_frame = dict((key, tk.LabelFrame(top, text=key)) for key, val in self.eventsdb_subset.iteritems())
+        subset_frame = OrderedDict(sorted(subset_frame.items()))
             
-        msg = tk.Label(top, textvariable=filters)
-        destroy = tk.Button(top, text='Exit', command=top.destroy)
-
-        top.columnconfigure(0,minsize=500)
-        msg.grid(row=0,column=0,stick=tk.E+tk.W)
-        destroy.grid(row=1,column=0,sticky=tk.E+tk.W)
-
+        filters = dict((key, tk.StringVar()) for key, val in subset_frame.iteritems())
+        msg = dict((key, tk.Label(val, textvariable=filters[key])) for key, val in subset_frame.iteritems())
+        
+        i = 0
+        for key, val in subset_frame.iteritems():
+            top.columnconfigure(i,weight=1)
+            val.grid(row=0, column=i, sticky=tk.E+tk.W)
+            if (len(self.filter_list[key]) > 0):
+                filters[key].set('%s' % '\n'.join(self.filter_list[key]))
+            else:
+                if key == 'Subset 0':
+                    filters[key].set('None')
+                else:
+                    filters[key].set('Inactive')
+            msg[key].grid(row=0,column=0,stick=tk.E+tk.W)
+            i += 1
+            
     def delay_probability(self):
         eventsdb = self.eventsdb
         eventsdb_sorted = sqldf('SELECT * from eventsdb ORDER BY event_delay_s',locals())
@@ -242,7 +260,8 @@ class App(tk.Frame):
         delay = [1.0 - float(i)/float(numevents) for i in range(0,numevents)]
         eventsdb_sorted['delay_probability'] = delay
         self.eventsdb = sqldf('SELECT * from eventsdb_sorted ORDER BY id',locals())
-        self.eventsdb_subset = self.eventsdb
+        for key, val in self.eventsdb_subset.iteritems():
+            val = self.eventsdb
         
     def survival_probability(self):
         eventsdb = self.eventsdb
@@ -251,12 +270,14 @@ class App(tk.Frame):
         survival = [1.0 - float(i)/float(numevents) for i in range(0,numevents)]
         eventsdb_sorted['survival_probability'] = survival
         self.eventsdb = sqldf('SELECT * from eventsdb_sorted ORDER BY id',locals())
-        self.eventsdb_subset = self.eventsdb
+        for key, val in self.eventsdb_subset.iteritems():
+            val = self.eventsdb
 
     def folding_distribution(self):
         x = self.eventsdb['max_blockage_duration_us']/(self.eventsdb['duration_us']+self.eventsdb['max_blockage_duration_us'])
         self.eventsdb['folding'] = x
-        self.eventsdb_subset = self.eventsdb
+        for key, val in self.eventsdb_subset.iteritems():
+            val = self.eventsdb
 
 
     def count(self):
@@ -266,26 +287,29 @@ class App(tk.Frame):
         count = [i for i in range(0,numevents)]
         eventsdb_sorted['count'] = count
         self.eventsdb = sqldf('SELECT * from eventsdb_sorted ORDER BY id',locals())
-        self.eventsdb_subset = self.eventsdb
+        for key, val in self.eventsdb_subset.iteritems():
+            val = self.eventsdb
         
                 
     def filter_db(self):
         filterstring = self.filter_entry.get()
-        self.eventsdb_prev = self.eventsdb_subset
-        eventsdb_subset = self.eventsdb_subset
+        subset = self.subset_option.cget('text')
+        self.eventsdb_prev = self.eventsdb_subset[subset]
+        eventsdb_subset = self.eventsdb_subset[subset]
         tempdb = sqldf('SELECT * from eventsdb_subset WHERE %s' % filterstring,locals())
-        self.eventsdb_subset = tempdb
+        self.eventsdb_subset[subset] = tempdb
         try:
-            self.db_info_string.set('Number of events: ' +str(len(self.eventsdb_subset)))
-            self.filter_list.append(filterstring)
+            self.db_info_string.set('Number of events: ' +str(len(self.eventsdb_subset[subset])))
+            self.filter_list[subset].append(filterstring)
         except TypeError:
             self.db_info_string.set('Invalid Entry')
-            self.eventsdb_subset = self.eventsdb_prev
+            self.eventsdb_subset[subset] = self.eventsdb_prev
 
     def reset_db(self):
-        self.eventsdb_prev = self.eventsdb_subset
-        self.eventsdb_subset = self.eventsdb
-        self.db_info_string.set('Number of events: ' +str(len(self.eventsdb_subset)))
+        subset = self.subset_option.cget('text')
+        self.eventsdb_subset[subset] = self.eventsdb
+        self.filter_list[subset] = []
+        self.db_info_string.set('Number of events: ' +str(len(self.eventsdb_subset[subset])))
 
     def plot_xy(self):
         self.export_type = 'scatter'
@@ -699,11 +723,17 @@ class App(tk.Frame):
         self.unalias_dict = dict (zip(self.alias_dict.values(),self.alias_dict.keys()))
 
     def save_subset(self):
+        subset = self.subset_option.cget('text')
         folder = os.path.dirname(os.path.abspath(self.file_path_string))
-        subset_file_path = folder + '\eventsdb-subset.csv'
+        subset_file_path = folder + '\eventsdb-{0}.csv'.format(subset)
         subset_file = open(subset_file_path,'wb')
-        self.eventsdb_subset.to_csv(subset_file,index=False)
+        filter_file_path = folder + '\eventsdb-{0}-filters.txt'.format(subset)
+        filter_file = open(filter_file_path,'w')
+        self.eventsdb_subset[subset].to_csv(subset_file,index=False)
+        for item in self.filter_list[subset]:
+            filter_file.write('{0}\n'.format(item))
         subset_file.close()
+        filter_file.close()
 
     def onclick(event):
         self.status_string.set('button=%d, x=%d, y=%d, xdata=%f, ydata=%f' % (event.button, event.x, event.y, event.xdata, event.ydata))
