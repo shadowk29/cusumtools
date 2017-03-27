@@ -481,11 +481,16 @@ class App(tk.Frame):
         self.eventsdb_subset = self.eventsdb    
 
     def plot_1d_histogram(self):
+        subset_list = []
+        for key, val in self.filter_list.iteritems():
+            if key == 'Subset 0' or len(val) > 0:
+                subset_list.append(key)
+        subset_list.sort()
         self.export_type = 'hist1d'
         logscale_x = self.x_log_var.get()
         logscale_y = self.y_log_var.get()
         x_label = self.x_option.cget('text')
-        col = self.parse_db_col(self.unalias_dict.get(x_label,x_label))
+        col = [self.parse_db_col(self.unalias_dict.get(x_label,x_label),key) for key in subset_list]
         numbins = self.xbin_entry.get()
         self.f.clf()
         a = self.f.add_subplot(111)
@@ -493,8 +498,12 @@ class App(tk.Frame):
             a.set_xlabel('Log(' +str(x_label)+')')
             a.set_ylabel('Count')
             self.f.subplots_adjust(bottom=0.14,left=0.21)
-            sign = np.sign(np.average(col))
-            self.ydata, self.xdata, patches = a.hist(np.log10(sign*col),bins=int(numbins),log=bool(logscale_y))
+            for i in range(len(col)):
+                col[i] *= np.sign(np.average(col[i]))
+                col[i] = np.log10(col[i])
+                print len(col[i])
+            self.ydata, self.xdata, patches = a.hist(col,bins=int(numbins),log=bool(logscale_y),histtype='step',stacked=False,fill=False,label=subset_list)
+            a.legend(prop={'size': 10})
         else:
             a.set_xlabel(x_label)
             a.set_ylabel('Count')
@@ -578,14 +587,14 @@ class App(tk.Frame):
             w /= np.sum(w)
         return np.hstack(weights)
 
-    def parse_db_col(self, col):
+    def parse_db_col(self, col, subset):
         if col in ['blockages_pA','level_current_pA','level_duration_us','stdev_pA']:
             if self.include_baseline.get():
-                return_col = np.hstack([np.array(a,dtype=float) for a in self.eventsdb_subset[col].str.split(';')])
+                return_col = np.hstack([np.array(a,dtype=float) for a in self.eventsdb_subset[subset][col].str.split(';')])
             else:
-                return_col = np.hstack([np.array(a,dtype=float)[1:-1] for a in self.eventsdb_subset[col].str.split(';')])
+                return_col = np.hstack([np.array(a,dtype=float)[1:-1] for a in self.eventsdb_subset[subset][col].str.split(';')])
         else:
-            return_col = self.eventsdb_subset[col]
+            return_col = self.eventsdb_subset[subset][col]
         return return_col
 
     def plot_event(self):
