@@ -408,35 +408,7 @@ class App(tk.Frame):
         self.status_string.set('Click on the 1D blockage level histogram {0} times'.format(self.clicks_remaining))
         self.state_array = np.zeros(self.num_states*2)
 
-##    def define_shapes(self): 
-##        if self.clicks_remaining > 0:
-##            self.status_string.set('Complete State Array First')
-##        else:
-##            type_array = []
-##            state_means = np.zeros(self.num_states)
-##            i = 0
-##            while i < self.num_states*2:
-##                state_means[i/2] = 0.5*(self.state_array[i]+self.state_array[i+1])
-##                i += 2
-##            blockage_levels = [np.array(a,dtype=float)[1:-1] for a in self.eventsdb_subset['blockages_pA'].str.split(';')]
-##            for b in blockage_levels:
-##                event_type = []
-##                indices = [(np.abs(state_means - blevel)).argmin() for blevel in b]
-##                for level,index in itertools.izip(b,indices):
-##                    if level > self.state_array[2*index] and level < self.state_array[2*index+1]:
-##                        event_type.append(index+1)
-##                    else:
-##                        event_type = [-1]
-##                        break
-##                typenum = int(''.join(map(str, event_type)))
-##                if typenum > 999999999:
-##                    typenum = -1
-##                type_array.append(typenum)
-##            self.eventsdb_subset['event_shape'] = type_array
-##            self.status_string.set('Event shapes recalculated. \nThis applies only to the current subset')
-##            self.eventsdb_subset.loc[self.eventsdb_subset['event_shape'] == 1, 'folding'] = 0
-##            self.eventsdb_subset.loc[self.eventsdb_subset['event_shape'] == 2, 'folding'] = 0.5
-            
+
     def define_shapes(self): 
         if self.clicks_remaining > 0:
             self.status_string.set('Complete State Array First')
