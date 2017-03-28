@@ -469,7 +469,7 @@ class App(tk.Frame):
         self.ydata = ysign*y_col
         plot_data = []
         for i in range(len(subset_list)):
-            a.plot(self.xdata[i],self.ydata[i],marker='.',linestyle='None',label=subset_list[i],alpha=0.5)
+            a.plot(self.xdata[i],self.ydata[i],marker='.',linestyle='None',label=subset_list[i],alpha=0.2)
         if logscale_x:
             a.set_xscale('log')
         if logscale_y:
