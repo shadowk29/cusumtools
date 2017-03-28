@@ -353,7 +353,20 @@ class App(tk.Frame):
             data_frame = pd.DataFrame(data)
             data_frame.to_csv(data_path, index=False)
         elif self.export_type == 'scatter':
-            pass
+            y_label = self.y_option.cget('text')
+            data = OrderedDict()
+            data_frame = pd.DataFrame()
+            column_names = []
+            for i in range(len(subset_list)):
+                x_string = '{0}_{1}'.format(subset_list[i],x_label)
+                y_string = '{0}_{1}'.format(subset_list[i],y_label)
+                column_names.append(x_string)
+                column_names.append(y_string)
+                data[x_string] = self.xdata[i]
+                data[y_string] = self.ydata[i]
+                data_frame = pd.concat([data_frame, pd.DataFrame(data[x_string]), pd.DataFrame(data[y_string])],axis=1)
+            data_frame.columns = column_names
+            data_frame.to_csv(data_path, index=False)
         elif self.export_type == 'hist2d':
             data_path = tkFileDialog.asksaveasfilename(defaultextension='.csv')
             np.savetxt(data_path,np.c_[self.xdata,self.ydata,self.zdata],delimiter=',')
