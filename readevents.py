@@ -148,6 +148,8 @@ class App(tk.Frame):
         #Single Event widgets
 
         self.events_frame = tk.LabelFrame(parent,text='Single Event View')
+        self.events_frame.columnconfigure(0, weight=1)
+        self.events_frame.columnconfigure(3, weight=1)
         self.event_f = Figure(figsize=(7,5), dpi=100)
         self.event_canvas = FigureCanvasTkAgg(self.event_f, master=self.events_frame)
         self.event_toolbar_frame = tk.Frame(self.events_frame)
@@ -161,8 +163,9 @@ class App(tk.Frame):
         self.next_event_button = tk.Button(self.events_frame,text='Next',command=self.next_event)
         self.prev_event_button = tk.Button(self.events_frame,text='Prev',command=self.prev_event)
         self.delete_event_button = tk.Button(self.events_frame,text='Delete',command=self.delete_event)
+        self.replicate_delete = tk.Button(self.events_frame,text='Replicate Deletions',command=self.replicate_manual_deletions)
         self.save_event_button = tk.Button(self.events_frame,text='Export Data',command=self.export_event_data)
-        self.event_info_string.set('')
+        self.event_info_string.set('hi')
         self.event_info_display = tk.Label(self.events_frame, textvariable=self.event_info_string)
 
         
@@ -174,13 +177,16 @@ class App(tk.Frame):
         parent.bind("<Delete>", self.delete_key_press)
 
         self.events_frame.grid(row=0,column=6,columnspan=6,sticky=tk.N+tk.S)
-        self.event_entry.grid(row=3,column=2,sticky=tk.E+tk.W)
-        self.plot_event_button.grid(row=4,column=2,sticky=tk.E+tk.W)
-        self.event_info_display.grid(row=4,column=3,sticky=tk.W+tk.E)
-        self.next_event_button.grid(row=3,column=3,sticky=tk.W)
-        self.prev_event_button.grid(row=3,column=1,sticky=tk.E)
-        self.delete_event_button.grid(row=3,column=4,sticky=tk.E+tk.W)
-        self.save_event_button.grid(row=4,column=4,sticky=tk.E+tk.W)
+        self.event_entry.grid(row=2,column=0,columnspan=3,sticky=tk.E+tk.W)
+        self.event_info_display.grid(row=2,column=3,columnspan=3,sticky=tk.W+tk.E)
+        self.plot_event_button.grid(row=3,column=0,columnspan=3,sticky=tk.E+tk.W)
+        self.save_event_button.grid(row=3,column=3,columnspan=3,sticky=tk.E+tk.W)
+        self.next_event_button.grid(row=4,column=3,columnspan=3,sticky=tk.E+tk.W)
+        self.prev_event_button.grid(row=4,column=0,columnspan=3,sticky=tk.E+tk.W)
+        self.delete_event_button.grid(row=5,column=0,columnspan=3,sticky=tk.E+tk.W)
+        self.replicate_delete.grid(row=5,column=3,columnspan=3,sticky=tk.E+tk.W)
+        
+        
 
 
         #Datbase widgets
@@ -225,8 +231,14 @@ class App(tk.Frame):
 
         self.status_display.grid(row=0,column=0,sticky=tk.E+tk.W+tk.S+tk.N)
 
+    def not_implemented(self):
+        top = tk.Toplevel()
+        top.title('Not Implemented Warning')
+        warning = tk.Label(top, text='This functionality is not yet implemented')
+        warning.pack()
         
-        
+    def replicate_manual_deletions(self):
+        self.not_implemented()
     
     def display_filters(self):
         top = tk.Toplevel()
@@ -510,12 +522,12 @@ class App(tk.Frame):
             for i in range(len(col)):
                 col[i] *= np.sign(np.average(col[i]))
                 col[i] = np.log10(col[i])
-            self.ydata, self.xdata, patches = a.hist(col,bins=int(numbins),log=bool(logscale_y),histtype='step',stacked=False,fill=False,label=subset_list)
+            self.ydata, self.xdata, patches = a.hist(col,bins=int(numbins),log=bool(logscale_y),histtype='step',stacked=False,fill=False,label=subset_list,alpha=0.5)
         else:
             a.set_xlabel(x_label)
             a.set_ylabel('Count')
             if x_label == 'Fold Fraction':
-                self.ydata, self.xdata, patches = a.hist(col,range=(0,0.5),bins=(0,0.1,0.2,0.3,0.4,0.5),log=bool(logscale_y),histtype='step',stacked=False,fill=False,label=subset_list)
+                self.ydata, self.xdata, patches = a.hist(col,range=(0,0.5),bins=(0,0.1,0.2,0.3,0.4,0.5),log=bool(logscale_y),histtype='step',stacked=False,fill=False,label=subset_list,alpha=0.5)
             else:
                 self.ydata, self.xdata, patches = a.hist(col,bins=int(numbins),log=bool(logscale_y),histtype='step',stacked=False,fill=False,label=subset_list)
         a.legend(prop={'size': 10})
