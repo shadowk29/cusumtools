@@ -257,6 +257,8 @@ class App(tk.Frame):
         a.set_yscale('log')
         a.legend(prop={'size': 10})
         self.canvas.show()
+
+        self.status_string.set('{0} events used for capture rate fit\n{1}: Capture Rate is {2:.3g} +/- {3:.3g} Hz'.format(len(valid_delays), subset, popt[1], np.sqrt(np.diag(pcov))[1]))
         
 
     def not_implemented(self):
