@@ -359,9 +359,27 @@ class App(tk.Frame):
         self.canvas.show()
 
     def export_plot_data(self):
-        if self.export_type == 'hist1d' or self.export_type == 'scatter':
+        if self.export_type == 'hist1d': 
             data_path = tkFileDialog.asksaveasfilename(defaultextension='.csv')
-            np.savetxt(data_path,np.c_[self.xdata,self.ydata],delimiter=',')
+            subset_list = []
+            for key, val in self.filter_list.iteritems():
+                if key == 'Subset 0' or len(val) > 0:
+                    subset_list.append(key)
+            subset_list.sort()
+            
+            x_label = self.x_option.cget('text')
+            logscale_x = self.x_log_var.get()
+            if (logscale_x):
+                x_label = 'Log({0})'.format(x_label)
+            data = OrderedDict()
+            data[x_label] = self.xdata
+            for i in range(len(subset_list)):
+                data['{0} Count'.format(subset_list[i])] = self.ydata[i]
+            data_frame = pd.DataFrame(data)
+            print data_frame
+            data_frame.to_csv(data_path, index=False)
+        elif self.export_type == 'scatter':
+            pass
         elif self.export_type == 'hist2d':
             data_path = tkFileDialog.asksaveasfilename(defaultextension='.csv')
             np.savetxt(data_path,np.c_[self.xdata,self.ydata,self.zdata],delimiter=',')
@@ -494,27 +512,26 @@ class App(tk.Frame):
         numbins = self.xbin_entry.get()
         self.f.clf()
         a = self.f.add_subplot(111)
+        self.f.subplots_adjust(bottom=0.14,left=0.21)
         if logscale_x:
             a.set_xlabel('Log(' +str(x_label)+')')
             a.set_ylabel('Count')
-            self.f.subplots_adjust(bottom=0.14,left=0.21)
             for i in range(len(col)):
                 col[i] *= np.sign(np.average(col[i]))
                 col[i] = np.log10(col[i])
-                print len(col[i])
             self.ydata, self.xdata, patches = a.hist(col,bins=int(numbins),log=bool(logscale_y),histtype='step',stacked=False,fill=False,label=subset_list)
-            a.legend(prop={'size': 10})
         else:
             a.set_xlabel(x_label)
             a.set_ylabel('Count')
-            self.f.subplots_adjust(bottom=0.14,left=0.16)
             if x_label == 'Fold Fraction':
-                self.ydata, self.xdata, patches = a.hist(col,range=(0,0.5),bins=(0,0.1,0.2,0.3,0.4,0.5),log=bool(logscale_y))
+                self.ydata, self.xdata, patches = a.hist(col,range=(0,0.5),bins=(0,0.1,0.2,0.3,0.4,0.5),log=bool(logscale_y),histtype='step',stacked=False,fill=False,label=subset_list)
             else:
-                self.ydata, self.xdata, patches = a.hist(col,bins=int(numbins),log=bool(logscale_y))
+                self.ydata, self.xdata, patches = a.hist(col,bins=int(numbins),log=bool(logscale_y),histtype='step',stacked=False,fill=False,label=subset_list)
+        a.legend(prop={'size': 10})
         self.xdata = self.xdata[:-1] + np.diff(self.xdata)/2.0
         self.canvas.show()
         self.canvas.callbacks.connect('button_press_event', self.on_click)
+
         
     def plot_2d_histogram(self):
         self.export_type = 'hist2d'
