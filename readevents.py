@@ -231,7 +231,7 @@ class App(tk.Frame):
         self.status_string.set('Ready')
         self.status_display = tk.Label(self.status_frame, textvariable=self.status_string)
 
-        self.status_display.grid(row=0,column=0,sticky=tk.E+tk.W+tk.S+tk.N)
+        self.status_display.grid(row=0,column=0,columnspan=6,sticky=tk.E+tk.W+tk.S+tk.N)
 
     def exponential(self, t, A, rate): #define a fitting function form
         return A * np.exp(-rate*t)
@@ -258,7 +258,7 @@ class App(tk.Frame):
         a.legend(prop={'size': 10})
         self.canvas.show()
 
-        self.status_string.set('{0} events used for capture rate fit\n{1}: Capture Rate is {2:.3g} +/- {3:.3g} Hz'.format(len(valid_delays), subset, popt[1], np.sqrt(np.diag(pcov))[1]))
+        self.status_string.set('{0}/{1} events had valid delays and were used for capture rate fit\n{2}: Capture Rate is {3:.3g} +/- {4:.3g} Hz'.format(len(valid_delays),len(indices), subset, popt[1], np.sqrt(np.diag(pcov))[1]))
         
 
     def not_implemented(self):
