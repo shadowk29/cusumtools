@@ -617,8 +617,9 @@ class App(tk.Frame):
         return return_col
 
     def plot_event(self):
+        subset = self.subset_option.cget('text')
         index = self.event_index.get()
-        if any(self.eventsdb_subset['id']==index):
+        if any(self.eventsdb_subset[subset]['id']==index):
             try:
                 event_file_path = self.events_folder+'/event_%05d.csv' % index
                 event_file = pd.read_csv(event_file_path,encoding='utf-8')
@@ -629,7 +630,7 @@ class App(tk.Frame):
                 except IOError:
                     self.event_info_string.set(event_file_path+' not found')
                     return
-            eventsdb_subset = self.eventsdb_subset
+            eventsdb_subset = self.eventsdb_subset[subset]
             self.event_export_file = event_file
             event_type = sqldf('SELECT type from eventsdb_subset WHERE id=%d' % index,locals())['type'][0]
             self.event_export_type = event_type
@@ -659,47 +660,51 @@ class App(tk.Frame):
             np.savetxt(data_path,np.c_[self.event_export_file['time'],self.event_export_file['current'],self.event_export_file['cusum'], self.event_export_file['stepfit']],delimiter=',')
 
     def next_event(self):
+        subset = self.subset_option.cget('text')
         try:
-            current_index = self.eventsdb_subset[self.eventsdb_subset['id'] == self.event_index.get()].index.tolist()[0]
+            current_index = self.eventsdb_subset[subset][self.eventsdb_subset[subset]['id'] == self.event_index.get()].index.tolist()[0]
         except IndexError:
             self.event_info_string.set('Event not found, resetting')
             current_index = -1
-        if current_index < len(self.eventsdb_subset)-1:
-            self.event_index.set(int(self.eventsdb_subset['id'][current_index + 1]))
+        if current_index < len(self.eventsdb_subset[subset])-1:
+            self.event_index.set(int(self.eventsdb_subset[subset]['id'][current_index + 1]))
             self.plot_event()
         else:
             pass
             
 
     def prev_event(self):
+        subset = self.subset_option.cget('text')
         try:
-            current_index = self.eventsdb_subset[self.eventsdb_subset['id'] == self.event_index.get()].index.tolist()[0]
+            current_index = self.eventsdb_subset[subset][self.eventsdb_subset[subset]['id'] == self.event_index.get()].index.tolist()[0]
         except IndexError:
             self.event_info_string.set('Event not found, resetting')
             current_index = 1
         if current_index > 0:
-            self.event_index.set(int(self.eventsdb_subset['id'][current_index - 1]))
+            self.event_index.set(int(self.eventsdb_subset[subset]['id'][current_index - 1]))
             self.plot_event()
         else:
             pass
 
     def delete_event(self):
+        subset = self.subset_option.cget('text')
         event_index = self.event_index.get()
         try:
-            current_index = self.eventsdb_subset[self.eventsdb_subset['id'] == self.event_index.get()].index.tolist()[0]
+            current_index = self.eventsdb_subset[subset][self.eventsdb_subset[subset]['id'] == self.event_index.get()].index.tolist()[0]
         except IndexError:
             self.event_info_string.set('Event not found, resetting')
             current_index = -1
-        if current_index < len(self.eventsdb_subset)-1:
+        if current_index < len(self.eventsdb_subset[subset])-1:
             self.next_event()
         elif current_index > 0:
             self.prev_event()
         else:
-            self.event_index.set(self.eventsdb_subset['id'][0])
+            self.event_index.set(self.eventsdb_subset[subset]['id'][0])
             self.plot_event()
-        eventsdb_subset = self.eventsdb_subset
-        self.eventsdb_subset = sqldf('SELECT * from eventsdb_subset WHERE id != %d' % event_index,locals())
-        self.db_info_string.set('Number of events: ' +str(len(self.eventsdb_subset)))
+        eventsdb_subset = self.eventsdb_subset[subset]
+        self.eventsdb_subset[subset] = sqldf('SELECT * from eventsdb_subset WHERE id != %d' % event_index,locals())
+        self.db_info_string.set('Number of events: ' +str(len(self.eventsdb_subset[subset])))
+        self.filter_list[subset].append('id != {0}'.format(event_index))
 
     def right_key_press(self, event):
         self.next_event()
