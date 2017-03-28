@@ -165,7 +165,7 @@ class App(tk.Frame):
         self.delete_event_button = tk.Button(self.events_frame,text='Delete',command=self.delete_event)
         self.replicate_delete = tk.Button(self.events_frame,text='Replicate Deletions',command=self.replicate_manual_deletions)
         self.save_event_button = tk.Button(self.events_frame,text='Export Data',command=self.export_event_data)
-        self.event_info_string.set('hi')
+        self.event_info_string.set('Ready')
         self.event_info_display = tk.Label(self.events_frame, textvariable=self.event_info_string)
 
         
@@ -644,9 +644,9 @@ class App(tk.Frame):
             elif event_type == 1:
                 a.plot(event_file['time'],event_file['current'],event_file['time'],event_file['cusum'],event_file['time'],event_file['stepfit'])
             self.event_canvas.show()
-            self.event_info_string.set('')
+            self.event_info_string.set('Successfully plotted event {0}'.format(index))
         else:
-            self.event_info_string.set('No such event!')
+            self.event_info_string.set('Event {0} is missing or deleted'.format(index))
 
     def export_event_data(self):
         data_path = tkFileDialog.asksaveasfilename(defaultextension='.csv')
