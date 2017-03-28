@@ -359,16 +359,15 @@ class App(tk.Frame):
         self.canvas.show()
 
     def export_plot_data(self):
-        if self.export_type == 'hist1d': 
-            data_path = tkFileDialog.asksaveasfilename(defaultextension='.csv')
-            subset_list = []
-            for key, val in self.filter_list.iteritems():
-                if key == 'Subset 0' or len(val) > 0:
-                    subset_list.append(key)
-            subset_list.sort()
-            
-            x_label = self.x_option.cget('text')
-            logscale_x = self.x_log_var.get()
+        data_path = tkFileDialog.asksaveasfilename(defaultextension='.csv')
+        subset_list = []
+        for key, val in self.filter_list.iteritems():
+            if key == 'Subset 0' or len(val) > 0:
+                subset_list.append(key)
+        subset_list.sort()
+        x_label = self.x_option.cget('text')
+        logscale_x = self.x_log_var.get()
+        if self.export_type == 'hist1d':
             if (logscale_x):
                 x_label = 'Log({0})'.format(x_label)
             data = OrderedDict()
@@ -376,7 +375,6 @@ class App(tk.Frame):
             for i in range(len(subset_list)):
                 data['{0} Count'.format(subset_list[i])] = self.ydata[i]
             data_frame = pd.DataFrame(data)
-            print data_frame
             data_frame.to_csv(data_path, index=False)
         elif self.export_type == 'scatter':
             pass
