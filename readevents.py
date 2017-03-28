@@ -249,7 +249,7 @@ class App(tk.Frame):
         
         self.f.clf()
         a = self.f.add_subplot(111)
-        a.set_xlabel('Interevent Delay (us)')
+        a.set_xlabel('Interevent Delay (s)')
         a.set_ylabel('Probability')
         self.f.subplots_adjust(bottom=0.14,left=0.21)
         a.plot(valid_delays,probability,'.',label='{0}: Capture Rate is {1:.3g} Hz'.format(subset, popt[1]))
