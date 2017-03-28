@@ -55,8 +55,8 @@ class App(tk.Frame):
         max_subsets = 5
         self.eventsdb_subset = dict(('Subset {0}'.format(i), self.eventsdb) for i in range(max_subsets))
         self.filter_list = dict(('Subset {0}'.format(i), []) for i in range(max_subsets))
-        self.survival_probability()
-        self.delay_probability()
+        #self.survival_probability()
+        #self.delay_probability()
         self.folding_distribution()
         self.count()
 
@@ -295,25 +295,25 @@ class App(tk.Frame):
             msg[key].grid(row=0,column=0,stick=tk.E+tk.W)
             i += 1
             
-    def delay_probability(self):
-        eventsdb = self.eventsdb
-        eventsdb_sorted = sqldf('SELECT * from eventsdb ORDER BY event_delay_s',locals())
-        numevents = len(eventsdb)
-        delay = [1.0 - float(i)/float(numevents) for i in range(0,numevents)]
-        eventsdb_sorted['delay_probability'] = delay
-        self.eventsdb = sqldf('SELECT * from eventsdb_sorted ORDER BY id',locals())
-        for key, val in self.eventsdb_subset.iteritems():
-            val = self.eventsdb
-        
-    def survival_probability(self):
-        eventsdb = self.eventsdb
-        eventsdb_sorted = sqldf('SELECT * from eventsdb ORDER BY duration_us',locals())
-        numevents = len(eventsdb)
-        survival = [1.0 - float(i)/float(numevents) for i in range(0,numevents)]
-        eventsdb_sorted['survival_probability'] = survival
-        self.eventsdb = sqldf('SELECT * from eventsdb_sorted ORDER BY id',locals())
-        for key, val in self.eventsdb_subset.iteritems():
-            val = self.eventsdb
+##    def delay_probability(self):
+##        eventsdb = self.eventsdb
+##        eventsdb_sorted = sqldf('SELECT * from eventsdb ORDER BY event_delay_s',locals())
+##        numevents = len(eventsdb)
+##        delay = [1.0 - float(i)/float(numevents) for i in range(0,numevents)]
+##        eventsdb_sorted['delay_probability'] = delay
+##        self.eventsdb = sqldf('SELECT * from eventsdb_sorted ORDER BY id',locals())
+##        for key, val in self.eventsdb_subset.iteritems():
+##            val = self.eventsdb
+##        
+##    def survival_probability(self):
+##        eventsdb = self.eventsdb
+##        eventsdb_sorted = sqldf('SELECT * from eventsdb ORDER BY duration_us',locals())
+##        numevents = len(eventsdb)
+##        survival = [1.0 - float(i)/float(numevents) for i in range(0,numevents)]
+##        eventsdb_sorted['survival_probability'] = survival
+##        self.eventsdb = sqldf('SELECT * from eventsdb_sorted ORDER BY id',locals())
+##        for key, val in self.eventsdb_subset.iteritems():
+##            val = self.eventsdb
 
     def folding_distribution(self):
         x = self.eventsdb['max_blockage_duration_us']/(self.eventsdb['duration_us']+self.eventsdb['max_blockage_duration_us'])
@@ -773,8 +773,8 @@ class App(tk.Frame):
                       'level_duration_us': 'Level Duration (us)',
                       'blockages_pA': 'Blockage Level (pA)',
                       'residual_pA': 'Residuals (pA)',
-                      'survival_probability': 'Survival Probablity',
-                      'delay_probability': 'Delay Probablity',
+                      #'survival_probability': 'Survival Probablity',
+                      #'delay_probability': 'Delay Probablity',
                       'stdev_pA': 'Level Standard Deviation (pA)',
                       'count': 'Event Count',
                       'folding': 'Fold Fraction',
