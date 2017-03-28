@@ -341,9 +341,9 @@ class App(tk.Frame):
             if key == 'Subset 0' or len(val) > 0:
                 subset_list.append(key)
         subset_list.sort()
-        x_label = self.x_option.cget('text')
-        logscale_x = self.x_log_var.get()
         if self.export_type == 'hist1d':
+            x_label = self.x_option.cget('text')
+            logscale_x = self.x_log_var.get()
             if (logscale_x):
                 x_label = 'Log({0})'.format(x_label)
             data = OrderedDict()
@@ -353,6 +353,7 @@ class App(tk.Frame):
             data_frame = pd.DataFrame(data)
             data_frame.to_csv(data_path, index=False)
         elif self.export_type == 'scatter':
+            x_label = self.x_option.cget('text')
             y_label = self.y_option.cget('text')
             data = OrderedDict()
             data_frame = pd.DataFrame()
@@ -368,8 +369,16 @@ class App(tk.Frame):
             data_frame.columns = column_names
             data_frame.to_csv(data_path, index=False)
         elif self.export_type == 'hist2d':
-            data_path = tkFileDialog.asksaveasfilename(defaultextension='.csv')
-            np.savetxt(data_path,np.c_[self.xdata,self.ydata,self.zdata],delimiter=',')
+            data = OrderedDict()
+            logscale_x = self.x_log_var.get()
+            logscale_y = self.y_log_var.get()
+            x_label = self.x_option.cget('text')
+            y_label = self.y_option.cget('text')
+            data[x_label] = self.xdata
+            data[y_label] = self.ydata
+            data['Count'] = self.zdata
+            data_frame = pd.DataFrame(data)
+            data_frame.to_csv(data_path, index=False)
         else:
             self.status_string.set("Unable to export plot")
 
@@ -526,13 +535,14 @@ class App(tk.Frame):
 
         
     def plot_2d_histogram(self):
+        subset = self.subset_option.cget('text')
         self.export_type = 'hist2d'
         logscale_x = self.x_log_var.get()
         logscale_y = self.y_log_var.get()
         x_label = self.x_option.cget('text')
         y_label = self.y_option.cget('text')
-        x_col = self.parse_db_col(self.unalias_dict.get(x_label,x_label))
-        y_col = self.parse_db_col(self.unalias_dict.get(y_label,y_label))
+        x_col = self.parse_db_col(self.unalias_dict.get(x_label,x_label),subset)
+        y_col = self.parse_db_col(self.unalias_dict.get(y_label,y_label),subset)
         xbins = self.xbin_entry.get()
         ybins = self.ybin_entry.get()
         self.f.clf()
