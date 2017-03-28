@@ -31,8 +31,7 @@ from scipy.optimize import curve_fit
 import itertools
 from collections import OrderedDict
 
-def exponential(x, A, tau): #define a fitting function form
-    return A * np.exp(-x/tau)
+
 
 
 
@@ -119,6 +118,8 @@ class App(tk.Frame):
         self.define_state_button = tk.Button(self.stats_frame,text='Redefine Blockage States',command=self.define_states)
         self.define_event_shapes_button = tk.Button(self.stats_frame,text='Redefine Event Shapes',command=self.define_shapes)
 
+        self.capture_rate_button = tk.Button(self.stats_frame,text='Fit Capture Rate',command=self.capture_rate)
+
 
         self.stats_frame.grid(row=0,column=0,columnspan=6,sticky=tk.N+tk.S)
         self.x_log_check.grid(row=3,column=2,sticky=tk.E+tk.W)
@@ -141,6 +142,7 @@ class App(tk.Frame):
         self.n_states_entry.grid(row=5,column=1,sticky=tk.E+tk.W)
         self.define_state_button.grid(row=5,column=2,sticky=tk.E+tk.W)
         self.define_event_shapes_button.grid(row=5,column=3,sticky=tk.E+tk.W)
+        self.capture_rate_button.grid(row=5,column=4,sticky=tk.E+tk.W)
 
         
         
@@ -230,6 +232,32 @@ class App(tk.Frame):
         self.status_display = tk.Label(self.status_frame, textvariable=self.status_string)
 
         self.status_display.grid(row=0,column=0,sticky=tk.E+tk.W+tk.S+tk.N)
+
+    def exponential(self, t, A, rate): #define a fitting function form
+        return A * np.exp(-rate*t)
+
+    def capture_rate(self):
+        subset = self.subset_option.cget('text')
+        indices = self.eventsdb_subset[subset]['id'].values
+        start_times = self.eventsdb_subset[subset]['start_time_s'].values
+        delays = np.diff(start_times)
+        index_diff = np.diff(indices)
+        valid_delays = np.sort(delays[np.where(index_diff == 1)])
+        probability = np.squeeze(np.array([1.0-float(i)/float(len(valid_delays)) for i in range(len(valid_delays))]))
+        popt, pcov = curve_fit(self.exponential, valid_delays, probability)
+        fit = self.exponential(valid_delays, popt[0], popt[1])
+        
+        self.f.clf()
+        a = self.f.add_subplot(111)
+        a.set_xlabel('Interevent Delay (us)')
+        a.set_ylabel('Probability')
+        self.f.subplots_adjust(bottom=0.14,left=0.21)
+        a.plot(valid_delays,probability,'.',label='{0}: Capture Rate is {1:.3g} Hz'.format(subset, popt[1]))
+        a.plot(valid_delays,fit,label='Fit')
+        a.set_yscale('log')
+        a.legend(prop={'size': 10})
+        self.canvas.show()
+        
 
     def not_implemented(self):
         top = tk.Toplevel()
