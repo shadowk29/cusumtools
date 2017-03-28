@@ -483,6 +483,8 @@ class App(tk.Frame):
         x_col = np.squeeze(np.array([self.parse_db_col(self.unalias_dict.get(x_label,x_label),key) for key in subset_list]))
         y_col = np.squeeze(np.array([self.parse_db_col(self.unalias_dict.get(y_label,y_label),key) for key in subset_list]))
 
+        xsign = np.sign(np.average(x_col[0]))
+        ysign = np.sign(np.average(y_col[0]))
 
         self.f.clf()
         a = self.f.add_subplot(111)
@@ -490,8 +492,8 @@ class App(tk.Frame):
         a.set_ylabel(y_label)
         self.f.subplots_adjust(bottom=0.14,left=0.21)
         
-        self.xdata = np.absolute(x_col)
-        self.ydata = np.absolute(y_col)
+        self.xdata = x_col*xsign
+        self.ydata = y_col*ysign
 
         if len(subset_list) > 1:
             for i in range(len(subset_list)):
