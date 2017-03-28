@@ -455,20 +455,6 @@ class App(tk.Frame):
             self.status_string.set('Event shapes recalculated. \nThis applies only to the current subset')
             self.eventsdb_subset[subset].loc[self.eventsdb_subset[subset]['event_shape'] == 1, 'folding'] = 0
             self.eventsdb_subset[subset].loc[self.eventsdb_subset[subset]['event_shape'] == 2, 'folding'] = 0.5        
-        
-    def type_id(self):
-        blockage_levels = [np.array(a,dtype=float)[1:-1] for a in self.eventsdb_subset['blockages_pA'].str.split(';')]
-        sorted_levels = [np.sort(a) for a in blockage_levels]
-        event_type = []
-        for s, b in itertools.izip(sorted_levels, blockage_levels):
-            type_array = [1+(np.abs(s - blevel)).argmin() for blevel in b]
-            typestr = ''.join(map(str, type_array))
-            typenum = int(typestr)
-            if typenum > 999999999:
-                typenum = 0
-            event_type.append(typenum)
-        self.eventsdb['event_shape'] = event_type
-        self.eventsdb_subset = self.eventsdb
 
 
     def plot_xy(self):
@@ -603,12 +589,6 @@ class App(tk.Frame):
                 self.status_string.set("X and Y must have the same length")
         else:
             pass
-
-    def get_weights(self):
-        weights = [np.array(a,dtype=float)[1:-1] for a in self.eventsdb_subset['level_duration_us'].str.split(';')]
-        for w in weights:
-            w /= np.sum(w)
-        return np.hstack(weights)
 
     def parse_db_col(self, col, subset):
         if col in ['blockages_pA','level_current_pA','level_duration_us','stdev_pA']:
