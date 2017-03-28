@@ -310,30 +310,6 @@ class App(tk.Frame):
         self.eventsdb_subset[subset] = self.eventsdb
         self.filter_list[subset] = []
         self.db_info_string.set('Number of events: ' +str(len(self.eventsdb_subset[subset])))
-
-    def plot_xy(self):
-        self.export_type = 'scatter'
-        logscale_x = self.x_log_var.get()
-        logscale_y = self.y_log_var.get()
-        x_label = self.x_option.cget('text')
-        y_label = self.y_option.cget('text')
-        x_col = self.parse_db_col(self.unalias_dict.get(x_label,x_label))
-        y_col = self.parse_db_col(self.unalias_dict.get(y_label,y_label))
-        xsign = np.sign(np.average(x_col))
-        ysign = np.sign(np.average(y_col))
-        self.f.clf()
-        a = self.f.add_subplot(111)
-        a.set_xlabel(x_label)
-        a.set_ylabel(y_label)
-        self.f.subplots_adjust(bottom=0.14,left=0.21)
-        self.xdata = xsign*x_col
-        self.ydata = ysign*y_col
-        a.plot(xsign*x_col,ysign*y_col,marker='.',linestyle='None')
-        if logscale_x:
-            a.set_xscale('log')
-        if logscale_y:
-            a.set_yscale('log')
-        self.canvas.show()
         
 
     def fit_data(self):
@@ -466,7 +442,40 @@ class App(tk.Frame):
                 typenum = 0
             event_type.append(typenum)
         self.eventsdb['event_shape'] = event_type
-        self.eventsdb_subset = self.eventsdb    
+        self.eventsdb_subset = self.eventsdb
+
+
+    def plot_xy(self):
+        subset_list = []
+        for key, val in self.filter_list.iteritems():
+            if key == 'Subset 0' or len(val) > 0:
+                subset_list.append(key)
+        subset_list.sort()
+        self.export_type = 'scatter'
+        logscale_x = self.x_log_var.get()
+        logscale_y = self.y_log_var.get()
+        x_label = self.x_option.cget('text')
+        y_label = self.y_option.cget('text')
+        x_col = [self.parse_db_col(self.unalias_dict.get(x_label,x_label),key) for key in subset_list]
+        y_col = [self.parse_db_col(self.unalias_dict.get(y_label,y_label),key) for key in subset_list]
+        xsign = np.sign(np.average(x_col[0]))
+        ysign = np.sign(np.average(y_col[0]))
+        self.f.clf()
+        a = self.f.add_subplot(111)
+        a.set_xlabel(x_label)
+        a.set_ylabel(y_label)
+        self.f.subplots_adjust(bottom=0.14,left=0.21)
+        self.xdata = xsign*x_col
+        self.ydata = ysign*y_col
+        plot_data = []
+        for i in range(len(subset_list)):
+            a.plot(self.xdata[i],self.ydata[i],marker='.',linestyle='None',label=subset_list[i],alpha=0.5)
+        if logscale_x:
+            a.set_xscale('log')
+        if logscale_y:
+            a.set_yscale('log')
+        a.legend(prop={'size': 10})
+        self.canvas.show()
 
     def plot_1d_histogram(self):
         subset_list = []
