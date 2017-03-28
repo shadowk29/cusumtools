@@ -480,25 +480,29 @@ class App(tk.Frame):
         logscale_y = self.y_log_var.get()
         x_label = self.x_option.cget('text')
         y_label = self.y_option.cget('text')
-        x_col = [self.parse_db_col(self.unalias_dict.get(x_label,x_label),key) for key in subset_list]
-        y_col = [self.parse_db_col(self.unalias_dict.get(y_label,y_label),key) for key in subset_list]
-        xsign = np.sign(np.average(x_col[0]))
-        ysign = np.sign(np.average(y_col[0]))
+        x_col = np.squeeze(np.array([self.parse_db_col(self.unalias_dict.get(x_label,x_label),key) for key in subset_list]))
+        y_col = np.squeeze(np.array([self.parse_db_col(self.unalias_dict.get(y_label,y_label),key) for key in subset_list]))
+
+
         self.f.clf()
         a = self.f.add_subplot(111)
         a.set_xlabel(x_label)
         a.set_ylabel(y_label)
         self.f.subplots_adjust(bottom=0.14,left=0.21)
-        self.xdata = xsign*x_col
-        self.ydata = ysign*y_col
-        plot_data = []
-        for i in range(len(subset_list)):
-            a.plot(self.xdata[i],self.ydata[i],marker='.',linestyle='None',label=subset_list[i],alpha=0.2)
+        
+        self.xdata = np.absolute(x_col)
+        self.ydata = np.absolute(y_col)
+
+        if len(subset_list) > 1:
+            for i in range(len(subset_list)):
+                a.plot(self.xdata[i],self.ydata[i],marker='.',linestyle='None',label=subset_list[i],alpha=0.2)
+            a.legend(prop={'size': 10})
+        else:
+            a.plot(self.xdata,self.ydata,marker='.',linestyle='None')
         if logscale_x:
             a.set_xscale('log')
         if logscale_y:
             a.set_yscale('log')
-        a.legend(prop={'size': 10})
         self.canvas.show()
 
     def plot_1d_histogram(self):
