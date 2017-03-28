@@ -405,7 +405,8 @@ class App(tk.Frame):
         self.state_array = np.zeros(self.num_states*2)
 
 
-    def define_shapes(self): 
+    def define_shapes(self):
+        subset = self.subset_option.cget('text')
         if self.clicks_remaining > 0:
             self.status_string.set('Complete State Array First')
         else:
@@ -417,7 +418,7 @@ class App(tk.Frame):
             while i < self.num_states*2:
                 state_means[i/2] = 0.5*(self.state_array[i]+self.state_array[i+1])
                 i += 2
-            blockage_levels = [np.array(a,dtype=float)[1:-1] for a in self.eventsdb_subset['blockages_pA'].str.split(';')]
+            blockage_levels = [np.array(a,dtype=float)[1:-1] for a in self.eventsdb_subset[subset]['blockages_pA'].str.split(';')]
             for b in blockage_levels:
                 event_type = []
                 indices = [(np.abs(state_means - blevel)).argmin() for blevel in b]
@@ -445,12 +446,15 @@ class App(tk.Frame):
                 if typenum > 999999999:
                     typenum = -1
                 type_array.append(typenum)
-            self.eventsdb_subset['event_shape'] = type_array
-            self.eventsdb_subset['trimmed_shape'] = trimmed_type
-            self.eventsdb_subset['trimmed_n_levels'] = trimmed_Nlev
+            print type_array
+            print trimmed_type
+            print trimmed_Nlev
+            self.eventsdb_subset[subset]['event_shape'] = type_array
+            self.eventsdb_subset[subset]['trimmed_shape'] = trimmed_type
+            self.eventsdb_subset[subset]['trimmed_n_levels'] = trimmed_Nlev
             self.status_string.set('Event shapes recalculated. \nThis applies only to the current subset')
-            self.eventsdb_subset.loc[self.eventsdb_subset['event_shape'] == 1, 'folding'] = 0
-            self.eventsdb_subset.loc[self.eventsdb_subset['event_shape'] == 2, 'folding'] = 0.5        
+            self.eventsdb_subset[subset].loc[self.eventsdb_subset[subset]['event_shape'] == 1, 'folding'] = 0
+            self.eventsdb_subset[subset].loc[self.eventsdb_subset[subset]['event_shape'] == 2, 'folding'] = 0.5        
         
     def type_id(self):
         blockage_levels = [np.array(a,dtype=float)[1:-1] for a in self.eventsdb_subset['blockages_pA'].str.split(';')]
