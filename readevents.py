@@ -63,7 +63,8 @@ class App(tk.Frame):
 
         self.export_type = None
 
-
+        self.manual_delete = []
+        
         column_list = list(eventsdb)
         self.column_list = column_list
         self.x_col_options = tk.StringVar()
@@ -234,8 +235,8 @@ class App(tk.Frame):
 
         self.status_display.grid(row=0,column=0,columnspan=6,sticky=tk.E+tk.W+tk.S+tk.N)
 
-    def ln_exponential(self, t, rate): #define a fitting function form
-        return -rate*t
+    def ln_exponential(self, t, rate, amplitude): #define a fitting function form
+        return np.log(amplitude)-rate*t
 
     def capture_rate(self):
         subset = self.subset_option.cget('text')
@@ -247,8 +248,7 @@ class App(tk.Frame):
         probability = np.squeeze(np.array([1.0-float(i)/float(len(valid_delays)) for i in range(len(valid_delays))]))
         lnprob = np.log(probability)
         popt, pcov = curve_fit(self.ln_exponential, valid_delays, lnprob)
-        fit = np.exp(self.ln_exponential(valid_delays, popt[0]))
-
+        fit = np.exp(self.ln_exponential(valid_delays, popt[0], popt[1]))
 
         residuals = lnprob + popt[0]*valid_delays
         ss_res = np.sum(residuals**2)
@@ -277,9 +277,53 @@ class App(tk.Frame):
         top.title('Not Implemented Warning')
         warning = tk.Label(top, text='This functionality is not yet implemented')
         warning.pack()
+
+    def filter_db(self):
+        filterstring = self.filter_entry.get()
+        subset = self.subset_option.cget('text')
+        self.eventsdb_prev = self.eventsdb_subset[subset]
+        eventsdb_subset = self.eventsdb_subset[subset]
+        self.eventsdb_subset[subset] = sqldf('SELECT * from eventsdb_subset WHERE %s' % filterstring,locals())
+        try:
+            self.db_info_string.set('Number of events: ' +str(len(self.eventsdb_subset[subset])))
+            if filterstring not in self.filter_list[subset]:
+                self.filter_list[subset].append(filterstring)
+            else:
+                self.status_string.set('Redundant Filter Ignored')
+        except TypeError:
+            self.db_info_string.set('Invalid Entry')
+            self.eventsdb_subset[subset] = self.eventsdb_prev
         
     def replicate_manual_deletions(self):
         self.not_implemented()
+##        subset_list = []
+##        for key, val in self.filter_list.iteritems():
+##            if key == 'Subset 0' or len(val) > 0:
+##                subset_list.append(key)
+##        subset_list.sort()
+##
+##        for subset in subset_list:
+##            print subset
+##            self.eventsdb_prev = self.eventsdb_subset[subset]
+##            eventsdb_subset = self.eventsdb_subset[subset]
+##            self.eventsdb_subset[subset]
+##            manual_delete = self.manual_delete
+##            print manual_delete
+##            self.eventsdb_subset[subset] = sqldf('SELECT * from eventsdb_subset WHERE id NOT IN manual_delete',locals())
+##            print self.eventsdb_subset[subset]
+##            try:
+##                self.db_info_string.set('Number of events: ' +str(len(self.eventsdb_subset[subset])))
+##                for event in manual_delete:
+##                    print event
+##                    filterstring = 'id != {0}'.format(event)
+##                    if filterstring not in self.filter_list[subset]:
+##                        self.filter_list[subset].append(filterstring)
+##                    else:
+##                        self.status_string.set('Redundant Filter Ignored')
+##            except TypeError:
+##                print subset + 'error'
+##                self.db_info_string.set('Invalid Entry')
+##                self.eventsdb_subset[subset] = self.eventsdb_prev
     
     def display_filters(self):
         top = tk.Toplevel()
@@ -344,19 +388,7 @@ class App(tk.Frame):
             val = self.eventsdb
         
                 
-    def filter_db(self):
-        filterstring = self.filter_entry.get()
-        subset = self.subset_option.cget('text')
-        self.eventsdb_prev = self.eventsdb_subset[subset]
-        eventsdb_subset = self.eventsdb_subset[subset]
-        tempdb = sqldf('SELECT * from eventsdb_subset WHERE %s' % filterstring,locals())
-        self.eventsdb_subset[subset] = tempdb
-        try:
-            self.db_info_string.set('Number of events: ' +str(len(self.eventsdb_subset[subset])))
-            self.filter_list[subset].append(filterstring)
-        except TypeError:
-            self.db_info_string.set('Invalid Entry')
-            self.eventsdb_subset[subset] = self.eventsdb_prev
+    
 
     def reset_db(self):
         subset = self.subset_option.cget('text')
@@ -753,7 +785,13 @@ class App(tk.Frame):
         eventsdb_subset = self.eventsdb_subset[subset]
         self.eventsdb_subset[subset] = sqldf('SELECT * from eventsdb_subset WHERE id != %d' % event_index,locals())
         self.db_info_string.set('Number of events: ' +str(len(self.eventsdb_subset[subset])))
-        self.filter_list[subset].append('id != {0}'.format(event_index))
+
+        if 'id != {0}'.format(event_index) not in self.filter_list[subset]:
+            self.filter_list[subset].append('id != {0}'.format(event_index))
+
+        if event_index not in self.manual_delete:
+            self.manual_delete.append(event_index)
+
 
     def right_key_press(self, event):
         self.next_event()
