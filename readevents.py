@@ -233,8 +233,8 @@ class App(tk.Frame):
 
         self.status_display.grid(row=0,column=0,columnspan=6,sticky=tk.E+tk.W+tk.S+tk.N)
 
-    def exponential(self, t, A, rate): #define a fitting function form
-        return A * np.exp(-rate*t)
+    def ln_exponential(self, t, rate): #define a fitting function form
+        return -rate*t
 
     def capture_rate(self):
         subset = self.subset_option.cget('text')
@@ -244,22 +244,25 @@ class App(tk.Frame):
         index_diff = np.diff(indices)
         valid_delays = np.sort(delays[np.where(index_diff == 1)])
         probability = np.squeeze(np.array([1.0-float(i)/float(len(valid_delays)) for i in range(len(valid_delays))]))
-        popt, pcov = curve_fit(self.exponential, valid_delays, probability)
-        fit = self.exponential(valid_delays, popt[0], popt[1])
+        popt, pcov = curve_fit(self.ln_exponential, valid_delays, np.log(probability))
+        fit = np.exp(self.ln_exponential(valid_delays, popt[0]))
         
         self.f.clf()
         a = self.f.add_subplot(111)
         a.set_xlabel('Interevent Delay (s)')
         a.set_ylabel('Probability')
         self.f.subplots_adjust(bottom=0.14,left=0.21)
-        a.plot(valid_delays,probability,'.',label='{0}: Capture Rate is {1:.3g} Hz'.format(subset, popt[1]))
+        a.plot(valid_delays,probability,'.',label='{0}: Capture Rate is {1:.3g} Hz'.format(subset, popt[0]))
         a.plot(valid_delays,fit,label='Fit')
         a.set_yscale('log')
         a.legend(prop={'size': 10})
         self.canvas.show()
 
-        self.status_string.set('{0}/{1} events had valid delays and were used for capture rate fit\n{2}: Capture Rate is {3:.3g} +/- {4:.3g} Hz'.format(len(valid_delays),len(indices), subset, popt[1], np.sqrt(np.diag(pcov))[1]))
-        
+        self.status_string.set('{0}/{1} events had valid delays and were used for capture rate fit\n{2}: Capture Rate is {3:.3g} +/- {4:.3g} Hz'.format(len(valid_delays),len(indices), subset, popt[0], np.sqrt(np.diag(pcov))[0]))
+
+        self.export_type = 'capture_rate'
+        self.xdata = valid_delays
+        self.ydata = probability
 
     def not_implemented(self):
         top = tk.Toplevel()
@@ -419,6 +422,12 @@ class App(tk.Frame):
             data[x_label] = self.xdata
             data[y_label] = self.ydata
             data['Count'] = self.zdata
+            data_frame = pd.DataFrame(data)
+            data_frame.to_csv(data_path, index=False)
+        elif self.export_type == 'capture_rate':
+            data = OrderedDict()
+            data['Event Delay (s)'] = self.xdata
+            data['Probability'] = self.ydata
             data_frame = pd.DataFrame(data)
             data_frame.to_csv(data_path, index=False)
         else:
