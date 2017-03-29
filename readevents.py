@@ -31,6 +31,7 @@ from scipy.optimize import curve_fit
 import itertools
 from collections import OrderedDict
 from scipy.stats import t
+import pylab as pl
 
 
 
@@ -562,8 +563,9 @@ class App(tk.Frame):
         x_col = np.squeeze(np.array([self.parse_db_col(self.unalias_dict.get(x_label,x_label),key) for key in subset_list]))
         y_col = np.squeeze(np.array([self.parse_db_col(self.unalias_dict.get(y_label,y_label),key) for key in subset_list]))
 
-        xsign = np.sign(np.average(x_col[0]))
-        ysign = np.sign(np.average(y_col[0]))
+
+        xsign = np.sign(np.average(x_col[0])) if len(subset_list) > 1 else np.sign(np.average(x_col))
+        ysign = np.sign(np.average(y_col[0])) if len(subset_list) > 1 else np.sign(np.average(y_col))
 
         self.f.clf()
         a = self.f.add_subplot(111)
@@ -571,8 +573,9 @@ class App(tk.Frame):
         a.set_ylabel(y_label)
         self.f.subplots_adjust(bottom=0.14,left=0.21)
         
-        self.xdata = x_col*xsign
-        self.ydata = y_col*ysign
+        self.xdata = np.array(x_col*xsign)
+        self.ydata = np.array(y_col*ysign)
+
 
         if len(subset_list) > 1:
             for i in range(len(subset_list)):
@@ -604,17 +607,29 @@ class App(tk.Frame):
         if logscale_x:
             a.set_xlabel('Log(' +str(x_label)+')')
             a.set_ylabel('Count')
-            for i in range(len(col)):
-                col[i] *= np.sign(np.average(col[i]))
-                col[i] = np.log10(col[i])
-            self.ydata, self.xdata, patches = a.hist(col,bins=int(numbins),log=bool(logscale_y),histtype='step',stacked=False,fill=False,label=subset_list,alpha=0.5)
+            if len(subset_list) > 1:
+                for i in range(len(col)):
+                    col[i] *= np.sign(np.average(col[i]))
+                    col[i] = np.log10(col[i])
+                    self.ydata, self.xdata, patches = a.hist(col[i],bins=int(numbins),log=bool(logscale_y),histtype='step',stacked=False,fill=False,label=subset_list[i],alpha=0.5)
+            else:
+                col *= np.sign(np.average(col))
+                col = np.log10(col)
+                self.ydata, self.xdata, patches = a.hist(col,bins=int(numbins),log=bool(logscale_y),histtype='step',stacked=False,fill=False,label=subset_list,alpha=0.5)
         else:
             a.set_xlabel(x_label)
             a.set_ylabel('Count')
-            if x_label == 'Fold Fraction':
-                self.ydata, self.xdata, patches = a.hist(col,range=(0,0.5),bins=(0,0.1,0.2,0.3,0.4,0.5),log=bool(logscale_y),histtype='step',stacked=False,fill=False,label=subset_list,alpha=0.5)
+            if len(subset_list) > 1:
+                for i in range(len(col)):
+                    if x_label == 'Fold Fraction':
+                        self.ydata, self.xdata, patches = a.hist(col[i],range=(0,0.5),bins=(0,0.1,0.2,0.3,0.4,0.5),log=bool(logscale_y),histtype='step',stacked=False,fill=False,label=subset_list[i],alpha=0.5)
+                    else:
+                        self.ydata, self.xdata, patches = a.hist(col[i],bins=int(numbins),log=bool(logscale_y),histtype='step',stacked=False,fill=False,label=subset_list[i])
             else:
-                self.ydata, self.xdata, patches = a.hist(col,bins=int(numbins),log=bool(logscale_y),histtype='step',stacked=False,fill=False,label=subset_list)
+                if x_label == 'Fold Fraction':
+                    self.ydata, self.xdata, patches = a.hist(col,range=(0,0.5),bins=(0,0.1,0.2,0.3,0.4,0.5),log=bool(logscale_y),histtype='step',stacked=False,fill=False,label=subset_list,alpha=0.5)
+                else:
+                    self.ydata, self.xdata, patches = a.hist(col,bins=int(numbins),log=bool(logscale_y),histtype='step',stacked=False,fill=False,label=subset_list)
         a.legend(prop={'size': 10})
         self.xdata = self.xdata[:-1] + np.diff(self.xdata)/2.0
         self.canvas.show()
