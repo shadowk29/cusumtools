@@ -608,7 +608,7 @@ class App(tk.Frame):
             a.set_xlabel('Log(' +str(x_label)+')')
             a.set_ylabel('Count')
             if len(subset_list) > 1:
-                for i in range(len(col)):
+                for i in range(len(subset_list)):
                     col[i] *= np.sign(np.average(col[i]))
                     col[i] = np.log10(col[i])
                     self.ydata, self.xdata, patches = a.hist(col[i],bins=int(numbins),log=bool(logscale_y),histtype='step',stacked=False,fill=False,label=subset_list[i],alpha=0.5)
@@ -620,7 +620,7 @@ class App(tk.Frame):
             a.set_xlabel(x_label)
             a.set_ylabel('Count')
             if len(subset_list) > 1:
-                for i in range(len(col)):
+                for i in range(len(subset_list)):
                     if x_label == 'Fold Fraction':
                         self.ydata, self.xdata, patches = a.hist(col[i],range=(0,0.5),bins=(0,0.1,0.2,0.3,0.4,0.5),log=bool(logscale_y),histtype='step',stacked=False,fill=False,label=subset_list[i],alpha=0.5)
                     else:
