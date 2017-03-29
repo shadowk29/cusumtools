@@ -434,11 +434,11 @@ class App(tk.Frame):
                 x_label = 'Log({0})'.format(x_label)
             data = OrderedDict()
             data[x_label] = self.xdata
-            for i in range(len(subset_list)):
-                if len(subset_list) > 1:
+            if len(subset_list) > 1:
+                for i in range(len(subset_list)):
                     data['{0} Count'.format(subset_list[i])] = self.ydata[i]
-                else:
-                    data['{0} Count'.format(subset_list[i])] = self.ydata
+            else:
+                data['{0} Count'.format(subset_list[0])] = self.ydata
             data_frame = pd.DataFrame(data)
             data_frame.to_csv(data_path, index=False)
         elif self.export_type == 'scatter':
@@ -611,6 +611,7 @@ class App(tk.Frame):
         self.f.clf()
         a = self.f.add_subplot(111)
         self.f.subplots_adjust(bottom=0.14,left=0.21)
+        self.ydata = []
         if logscale_x:
             a.set_xlabel('Log(' +str(x_label)+')')
             a.set_ylabel('Count')
@@ -618,7 +619,8 @@ class App(tk.Frame):
                 for i in range(len(subset_list)):
                     col[i] *= np.sign(np.average(col[i]))
                     col[i] = np.log10(col[i])
-                    self.ydata, self.xdata, patches = a.hist(col[i],bins=int(numbins),log=bool(logscale_y),histtype='step',stacked=False,fill=False,label=subset_list[i],alpha=0.5)
+                    y, self.xdata, patches = a.hist(col[i],bins=int(numbins),log=bool(logscale_y),histtype='step',stacked=False,fill=False,label=subset_list[i],alpha=0.5)
+                    self.ydata.append(y)
             else:
                 col *= np.sign(np.average(col))
                 col = np.log10(col)
