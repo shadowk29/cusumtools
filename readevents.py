@@ -296,35 +296,35 @@ class App(tk.Frame):
             self.eventsdb_subset[subset] = self.eventsdb_prev
         
     def replicate_manual_deletions(self):
-        self.not_implemented()
-##        subset_list = []
-##        for key, val in self.filter_list.iteritems():
-##            if key == 'Subset 0' or len(val) > 0:
-##                subset_list.append(key)
-##        subset_list.sort()
-##
-##        for subset in subset_list:
-##            print subset
-##            self.eventsdb_prev = self.eventsdb_subset[subset]
-##            eventsdb_subset = self.eventsdb_subset[subset]
-##            self.eventsdb_subset[subset]
-##            manual_delete = self.manual_delete
-##            print manual_delete
-##            self.eventsdb_subset[subset] = sqldf('SELECT * from eventsdb_subset WHERE id NOT IN manual_delete',locals())
-##            print self.eventsdb_subset[subset]
-##            try:
-##                self.db_info_string.set('Number of events: ' +str(len(self.eventsdb_subset[subset])))
-##                for event in manual_delete:
-##                    print event
-##                    filterstring = 'id != {0}'.format(event)
-##                    if filterstring not in self.filter_list[subset]:
-##                        self.filter_list[subset].append(filterstring)
-##                    else:
-##                        self.status_string.set('Redundant Filter Ignored')
-##            except TypeError:
-##                print subset + 'error'
-##                self.db_info_string.set('Invalid Entry')
-##                self.eventsdb_subset[subset] = self.eventsdb_prev
+        subset_list = []
+        for key, val in self.filter_list.iteritems():
+            if key == 'Subset 0' or len(val) > 0:
+                subset_list.append(key)
+        subset_list.sort()
+
+        for subset in subset_list:
+            self.eventsdb_prev = self.eventsdb_subset[subset]
+            eventsdb_subset = self.eventsdb_subset[subset]
+            self.eventsdb_subset[subset]
+            manual_delete = self.manual_delete
+            tempdict = dict()
+            tempdict['deleted_id'] = manual_delete
+            temptable = pd.DataFrame(tempdict)
+            tempdb = sqldf('''SELECT * FROM eventsdb_subset t1 LEFT JOIN temptable t2 ON t1.id = t2.deleted_id''', locals())
+            tempdb['deleted_id'].fillna(-1,inplace=True)
+            self.eventsdb_subset[subset] = sqldf('''SELECT * FROM tempdb where deleted_id = -1''',locals())
+            self.eventsdb_subset[subset].drop('deleted_id',1,inplace=True)
+            try:
+                self.db_info_string.set('Number of events: ' +str(len(self.eventsdb_subset[subset])))
+                for event in manual_delete:
+                    filterstring = 'id != {0}'.format(event)
+                    if filterstring not in self.filter_list[subset]:
+                        self.filter_list[subset].append(filterstring)
+                    else:
+                        self.status_string.set('Redundant Filter Ignored')
+            except TypeError:
+                self.db_info_string.set('Unable to replacate deletions')
+                self.eventsdb_subset[subset] = self.eventsdb_prev
     
     def display_filters(self):
         top = tk.Toplevel()
