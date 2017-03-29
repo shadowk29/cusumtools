@@ -435,7 +435,10 @@ class App(tk.Frame):
             data = OrderedDict()
             data[x_label] = self.xdata
             for i in range(len(subset_list)):
-                data['{0} Count'.format(subset_list[i])] = self.ydata[i]
+                if len(subset_list) > 1:
+                    data['{0} Count'.format(subset_list[i])] = self.ydata[i]
+                else:
+                    data['{0} Count'.format(subset_list[i])] = self.ydata
             data_frame = pd.DataFrame(data)
             data_frame.to_csv(data_path, index=False)
         elif self.export_type == 'scatter':
@@ -449,8 +452,12 @@ class App(tk.Frame):
                 y_string = '{0}_{1}'.format(subset_list[i],y_label)
                 column_names.append(x_string)
                 column_names.append(y_string)
-                data[x_string] = self.xdata[i]
-                data[y_string] = self.ydata[i]
+                if len(subset_list) > 1:
+                    data[x_string] = self.xdata[i]
+                    data[y_string] = self.ydata[i]
+                else:
+                    data[x_string] = self.xdata
+                    data[y_string] = self.ydata
                 data_frame = pd.concat([data_frame, pd.DataFrame(data[x_string]), pd.DataFrame(data[y_string])],axis=1)
             data_frame.columns = column_names
             data_frame.to_csv(data_path, index=False)
