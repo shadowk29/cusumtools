@@ -32,6 +32,7 @@ import os
 import time
 import pandas as pd
 from pandasql import sqldf
+import re
 
 def make_format(current, other):
     # current and other are axes
@@ -160,6 +161,7 @@ class App(tk.Frame):
         analysis_dir = tkFileDialog.askdirectory(initialdir='G:/NPN/Filter Scaling/K435PC/500bp',title='Choose analysis directory')
         baseline_path = analysis_dir + '/baseline.csv'
         ratefile_path = analysis_dir + '/rate.csv'
+        config_path = analysis_dir + '/summary.txt'
         self.events_flag = True
         self.baseline_flag = True
         try:
@@ -168,10 +170,19 @@ class App(tk.Frame):
             self.overlay_flag = False
             self.wildcard.set('rate.csv not found in given directory')
         try:
-            self.baseline_file =pd.read_csv(baseline_path,encoding='utf-8')
+            self.baseline_file = pd.read_csv(baseline_path,encoding='utf-8')
         except IOError:
             self.overlay_flag = False
             self.wildcard.set('baseline.csv not found in given directory')
+        with open(config_path,'r') as config:
+            for line in config:
+                if 'threshold' in line:
+                    line = re.split('=|\n',line)
+                    self.threshold = line[1]
+                if 'hysteresis' in line:
+                    line = re.split('=|\n',line)
+                    self.hysteresis = line[1]
+        
 
 
     def export_psd(self):
@@ -304,9 +315,6 @@ class App(tk.Frame):
         a.set_ylabel('Current (pA)')
         self.trace_fig.subplots_adjust(bottom=0.14,left=0.21)
         a.plot(time*1e6,self.plot_data,'.',markersize=1)
-        #a.axhline(y=np.average(self.filtered_data),color='g')
-        #a.axhline(y=np.average(self.filtered_data)+3.0 * np.std(self.filtered_data),color='r')
-        #a.axhline(y=np.average(self.filtered_data)-3.0 * np.std(self.filtered_data),color='r')
 
 
         if self.events_flag:
@@ -354,14 +362,11 @@ class App(tk.Frame):
                     xmax = end_time
                 else:
                     xmax = times[i+1]
-                a.plot((xmin*1e6,xmax*1e6), (means[i],means[i]), '-', color='black')
-                a.plot((xmin*1e6,xmax*1e6), (means[i]+stdevs[i],means[i]+stdevs[i]), '-',color='y')
-                a.plot((xmin*1e6,xmax*1e6), (means[i]-stdevs[i],means[i]-stdevs[i]), '-',color='y')
                 
-            
-
-
-    
+                sign = np.sign(means[i])
+                a.plot((xmin*1e6,xmax*1e6), (means[i]-sign*(self.threshold - self.hysteresis)*stdevs[i],means[i]-sign*(self.threshold - self.hysteresis)*stdevs[i]), '-',color='y')
+                a.plot((xmin*1e6,xmax*1e6), (means[i]-sign*self.threshold*stdevs[i],means[i]-sign*self.threshold*stdevs[i]), '-',color='y')
+                a.plot((xmin*1e6,xmax*1e6), (means[i],means[i]), '-', color='black')
         self.trace_canvas.show()
 
     def update_psd(self):
