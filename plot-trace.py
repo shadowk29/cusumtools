@@ -178,10 +178,10 @@ class App(tk.Frame):
             for line in config:
                 if 'threshold' in line:
                     line = re.split('=|\n',line)
-                    self.threshold = line[1]
+                    self.threshold = float(line[1])
                 if 'hysteresis' in line:
                     line = re.split('=|\n',line)
-                    self.hysteresis = line[1]
+                    self.hysteresis = float(line[1])
         
 
 
@@ -364,9 +364,9 @@ class App(tk.Frame):
                     xmax = times[i+1]
                 
                 sign = np.sign(means[i])
-                a.plot((xmin*1e6,xmax*1e6), (means[i]-sign*(self.threshold - self.hysteresis)*stdevs[i],means[i]-sign*(self.threshold - self.hysteresis)*stdevs[i]), '-',color='y')
-                a.plot((xmin*1e6,xmax*1e6), (means[i]-sign*self.threshold*stdevs[i],means[i]-sign*self.threshold*stdevs[i]), '-',color='y')
-                a.plot((xmin*1e6,xmax*1e6), (means[i],means[i]), '-', color='black')
+                a.plot((xmin*1e6,xmax*1e6), (means[i]-sign*(self.threshold - self.hysteresis)*stdevs[i],means[i]-sign*(self.threshold - self.hysteresis)*stdevs[i]), '--',color='y')
+                a.plot((xmin*1e6,xmax*1e6), (means[i]-sign*self.threshold*stdevs[i],means[i]-sign*self.threshold*stdevs[i]), '--',color='y')
+                a.plot((xmin*1e6,xmax*1e6), (means[i],means[i]), '--', color='black')
         self.trace_canvas.show()
 
     def update_psd(self):
