@@ -304,10 +304,10 @@ class App(tk.Frame):
             db = self.ratefile
             start_time = self.start_time
             end_time = self.end_time
-            good_start = np.squeeze(sqldf('SELECT start_time_s from db WHERE start_time_s >= {0} AND start_time_s < {1} AND type=0'.format(start_time,end_time),locals()).values)*1e6
-            bad_start = np.squeeze(sqldf('SELECT start_time_s from db WHERE start_time_s >= {0} AND start_time_s < {1} AND type!=0'.format(start_time,end_time),locals()).values)*1e6
-            good_end = np.squeeze(sqldf('SELECT end_time_s from db WHERE end_time_s >= {0} AND end_time_s < {1} AND type=0'.format(start_time,end_time),locals()).values)*1e6
-            bad_end = np.squeeze(sqldf('SELECT end_time_s from db WHERE end_time_s >= {0} AND end_time_s < {1} AND type!=0'.format(start_time,end_time),locals()).values)*1e6
+            good_start = np.squeeze(sqldf('SELECT start_time_s from db WHERE start_time_s >= {0} AND start_time_s < {1} AND type IN (0,1)'.format(start_time,end_time),locals()).values)*1e6
+            bad_start = np.squeeze(sqldf('SELECT start_time_s from db WHERE start_time_s >= {0} AND start_time_s < {1} AND type>1'.format(start_time,end_time),locals()).values)*1e6
+            good_end = np.squeeze(sqldf('SELECT end_time_s from db WHERE end_time_s >= {0} AND end_time_s < {1} AND type IN (0,1)'.format(start_time,end_time),locals()).values)*1e6
+            bad_end = np.squeeze(sqldf('SELECT end_time_s from db WHERE end_time_s >= {0} AND end_time_s < {1} AND type>1'.format(start_time,end_time),locals()).values)*1e6
 
             for gs, ge in zip(good_start,good_end):
                 a.axvline(gs,color='g')
