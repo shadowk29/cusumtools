@@ -247,39 +247,46 @@ class App(tk.Frame):
         return np.log(amplitude)-rate*t
 
     def capture_rate(self):
-        subset = self.subset_option.cget('text')
-        indices = self.eventsdb_subset[subset]['id'].values
-        start_times = self.eventsdb_subset[subset]['start_time_s'].values
-        delays = np.diff(start_times)
-        index_diff = np.diff(indices)
-        valid_delays = np.sort(delays[np.where(index_diff == 1)])
-        probability = np.squeeze(np.array([1.0-float(i)/float(len(valid_delays)) for i in range(len(valid_delays))]))
-        lnprob = np.log(probability)
-        popt, pcov = curve_fit(self.ln_exponential, valid_delays, lnprob)
-        fit = np.exp(self.ln_exponential(valid_delays, popt[0], popt[1]))
-
-        residuals = lnprob + popt[0]*valid_delays
-        ss_res = np.sum(residuals**2)
-        ss_tot = np.sum((lnprob-np.mean(lnprob))**2)
-        rsquared = 1.0 - ss_res/ss_tot
-        
+        subset_list = []
+        for key, val in self.filter_list.iteritems():
+            if key == 'Subset 0' or len(val) > 0:
+                subset_list.append(key)
+        subset_list.sort()
         self.f.clf()
         a = self.f.add_subplot(111)
-        a.set_xlabel('Interevent Delay (s)')
-        a.set_ylabel('Probability')
         self.f.subplots_adjust(bottom=0.14,left=0.21)
-        a.plot(valid_delays,probability,'.',label='{0}: Capture Rate is {1:.3g} Hz'.format(subset, popt[0]))
-        a.plot(valid_delays,fit,label='Fit')
-        a.set_yscale('log')
+        self.xdata = []
+        self.ydata = []
+        fit_string = ''
+        self.export_type = 'capture_rate'
+        for subset in subset_list:
+            indices = self.eventsdb_subset[subset]['id'].values
+            start_times = self.eventsdb_subset[subset]['start_time_s'].values
+            delays = np.diff(start_times)
+            index_diff = np.diff(indices)
+            valid_delays = np.sort(delays[np.where(index_diff == 1)])
+            probability = np.squeeze(np.array([1.0-float(i)/float(len(valid_delays)) for i in range(len(valid_delays))]))
+            lnprob = np.log(probability)
+            popt, pcov = curve_fit(self.ln_exponential, valid_delays, lnprob)
+            fit = np.exp(self.ln_exponential(valid_delays, popt[0], popt[1]))
+
+            residuals = lnprob + popt[0]*valid_delays
+            ss_res = np.sum(residuals**2)
+            ss_tot = np.sum((lnprob-np.mean(lnprob))**2)
+            rsquared = 1.0 - ss_res/ss_tot
+            a.set_xlabel('Interevent Delay (s)')
+            a.set_ylabel('Probability')
+            a.plot(valid_delays,probability,'.',label='{0}: Capture Rate is {1:.3g} Hz'.format(subset, popt[0]))
+            a.plot(valid_delays,fit,label='{0} Fit'.format(subset))
+            a.set_yscale('log')
+            fit_string = fit_string + u'Subset {0}: {1}/{2} events used. Capture Rate is {3:.3g} \u00B1 {4:.1g} Hz (R\u00B2 = {5:.2g})\n'.format(subset,len(valid_delays),len(indices), popt[0], -t.isf(0.975,len(valid_delays))*np.sqrt(np.diag(pcov))[0], rsquared)
+            print fit_string
+            self.xdata.append(valid_delays)
+            self.ydata.append(probability)
         a.legend(prop={'size': 10})
         self.canvas.show()
-
-        self.status_string.set(u'{0}/{1} events had valid delays and were used for capture rate fit\n{2}: Capture Rate is {3:.3g} \u00B1 {4:.1g} Hz (R\u00B2 = {5:.2g})'.format(len(valid_delays),len(indices), subset, popt[0], -t.isf(0.975,len(valid_delays))*np.sqrt(np.diag(pcov))[0], rsquared))
-
-        self.export_type = 'capture_rate'
-        self.xdata = valid_delays
-        self.ydata = probability
-
+        self.status_string.set(fit_string)
+        
     def not_implemented(self):
         top = tk.Toplevel()
         top.title('Not Implemented Warning')
@@ -480,9 +487,14 @@ class App(tk.Frame):
             data_frame.to_csv(data_path, index=False)
         elif self.export_type == 'capture_rate':
             data = OrderedDict()
-            data['Event Delay (s)'] = self.xdata
-            data['Probability'] = self.ydata
-            data_frame = pd.DataFrame(data)
+            column_names = []
+            for i in range(len(subset_list)):
+                x_string = '{0} Event Delay (s)'.format(subset_list[i])
+                y_string = '{0} Probability'.format(subset_list[i])
+                    
+                data[x_string] = self.xdata[i]
+                data[y_string] = self.ydata[i]
+            data_frame = pd.DataFrame({k : pd.Series(v) for k,v in data.iteritems()})
             data_frame.to_csv(data_path, index=False)
         else:
             self.status_string.set("Unable to export plot")
