@@ -52,7 +52,8 @@ class App(tk.Frame):
     def __init__(self, parent,file_path):
         tk.Frame.__init__(self, parent)
         parent.deiconify()
-        self.overlay_flag = False
+        self.events_flag = False
+        self.baseline_flag = False
         self.file_path = file_path
                 
         ##### Trace plotting widgets #####
@@ -156,14 +157,22 @@ class App(tk.Frame):
     ##### utility functions #####
 
     def overlay_cusum(self):
-        ratefile_path = tkFileDialog.askdirectory(initialdir='G:/NPN/Filter Scaling/K435PC/500bp',title='Choose analysis directory')
-        ratefile_path = ratefile_path + '/rate.csv'
-        self.overlay_flag = True
+        analysis_dir = tkFileDialog.askdirectory(initialdir='G:/NPN/Filter Scaling/K435PC/500bp',title='Choose analysis directory')
+        baseline_path = analysis_dir + '/baseline.csv'
+        ratefile_path = analysis_dir + '/rate.csv'
+        self.events_flag = True
+        self.baseline_flag = True
         try:
             self.ratefile = pd.read_csv(ratefile_path,encoding='utf-8')
         except IOError:
             self.overlay_flag = False
             self.wildcard.set('rate.csv not found in given directory')
+        try:
+            self.baseline_file =pd.read_csv(baseline_path,encoding='utf-8')
+        except IOError:
+            self.overlay_flag = False
+            self.wildcard.set('baseline.csv not found in given directory')
+
 
     def export_psd(self):
         try:
@@ -300,7 +309,7 @@ class App(tk.Frame):
         #a.axhline(y=np.average(self.filtered_data)-3.0 * np.std(self.filtered_data),color='r')
 
 
-        if self.overlay_flag:
+        if self.events_flag:
             db = self.ratefile
             start_time = self.start_time
             end_time = self.end_time
@@ -315,6 +324,40 @@ class App(tk.Frame):
             for bs, be in zip(bad_start,bad_end):
                 a.axvline(bs,color='r')
                 a.axvline(be,color='r')
+
+        if self.baseline_flag:
+            db = self.baseline_file
+            start_time = self.start_time
+            end_time = self.end_time
+            times = np.squeeze(sqldf('SELECT time_s from db',locals()).values)
+            times = np.sort(times)
+
+            start_block = times[0]
+            for time in times:
+                if time <= start_time and time >= start_block:
+                    start_block = time
+            
+
+
+            baseline_db = sqldf('SELECT * from db WHERE time_s >= {0} and time_s < {1}'.format(start_block,end_time),locals())
+            times = baseline_db['time_s'].values
+            means = baseline_db['baseline_pA'].values
+            stdevs = baseline_db['stdev_pA'].values
+  
+            numblocks = len(means)
+            for i in range(numblocks):
+                if i == 0:
+                    xmin = start_time
+                else:
+                    xmin = times[i]
+                if i+1 == numblocks:
+                    xmax = end_time
+                else:
+                    xmax = times[i+1]
+                a.plot((xmin*1e6,xmax*1e6), (means[i],means[i]), '-', color='black')
+                a.plot((xmin*1e6,xmax*1e6), (means[i]+stdevs[i],means[i]+stdevs[i]), '-',color='y')
+                a.plot((xmin*1e6,xmax*1e6), (means[i]-stdevs[i],means[i]-stdevs[i]), '-',color='y')
+                
             
 
 
