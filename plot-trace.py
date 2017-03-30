@@ -30,6 +30,8 @@ import pylab as pl
 import glob
 import os
 import time
+import pandas as pd
+from pandasql import sqldf
 
 def make_format(current, other):
     # current and other are axes
@@ -50,7 +52,7 @@ class App(tk.Frame):
     def __init__(self, parent,file_path):
         tk.Frame.__init__(self, parent)
         parent.deiconify()
-
+        self.overlay_flag = False
         self.file_path = file_path
                 
         ##### Trace plotting widgets #####
@@ -130,7 +132,10 @@ class App(tk.Frame):
         self.plot_psd.grid(row=2,column=2,columnspan=2,sticky=tk.E+tk.W)
 
         self.update_data = tk.Button(self.control_frame, text='Update Data', command=self.update_data)
-        self.update_data.grid(row=2,column=4,columnspan=2,sticky=tk.E+tk.W)
+        self.update_data.grid(row=2,column=4,columnspan=1,sticky=tk.E+tk.W)
+
+        self.overlay_cusum = tk.Button(self.control_frame, text='Overlay CUSUM', command=self.overlay_cusum)
+        self.overlay_cusum.grid(row=2,column=5,columnspan=1,sticky=tk.E+tk.W)
         
 
         ##### Feedback Widgets #####
@@ -149,6 +154,16 @@ class App(tk.Frame):
         self.initialize_samplerate()
 
     ##### utility functions #####
+
+    def overlay_cusum(self):
+        ratefile_path = tkFileDialog.askdirectory(initialdir='G:/NPN/Filter Scaling/K435PC/500bp',title='Choose analysis directory')
+        ratefile_path = ratefile_path + '/rate.csv'
+        self.overlay_flag = True
+        try:
+            self.ratefile = pd.read_csv(ratefile_path,encoding='utf-8')
+        except IOError:
+            self.overlay_flag = False
+            self.wildcard.set('rate.csv not found in given directory')
 
     def export_psd(self):
         try:
@@ -176,6 +191,7 @@ class App(tk.Frame):
         start_f = int(start_index / filesize)
 
         if self.end_entry.get()!='':
+            self.end_time = float(self.end_entry.get())
             end_index = int((float(self.end_entry.get())*self.samplerate))
             if end_index > self.total_samples:
                 end_index = self.total_samples
@@ -278,10 +294,31 @@ class App(tk.Frame):
         a.set_xlabel(r'Time ($\mu s$)')
         a.set_ylabel('Current (pA)')
         self.trace_fig.subplots_adjust(bottom=0.14,left=0.21)
-        a.plot(time*1e6,self.plot_data,'.',markersize=1,alpha=0.1)
+        a.plot(time*1e6,self.plot_data,'.',markersize=1)
         #a.axhline(y=np.average(self.filtered_data),color='g')
         #a.axhline(y=np.average(self.filtered_data)+3.0 * np.std(self.filtered_data),color='r')
         #a.axhline(y=np.average(self.filtered_data)-3.0 * np.std(self.filtered_data),color='r')
+
+
+        if self.overlay_flag:
+            db = self.ratefile
+            start_time = self.start_time
+            end_time = self.end_time
+            good_start = np.squeeze(sqldf('SELECT start_time_s from db WHERE start_time_s >= {0} AND start_time_s < {1} AND type=0'.format(start_time,end_time),locals()).values)*1e6
+            bad_start = np.squeeze(sqldf('SELECT start_time_s from db WHERE start_time_s >= {0} AND start_time_s < {1} AND type!=0'.format(start_time,end_time),locals()).values)*1e6
+            good_end = np.squeeze(sqldf('SELECT end_time_s from db WHERE end_time_s >= {0} AND end_time_s < {1} AND type=0'.format(start_time,end_time),locals()).values)*1e6
+            bad_end = np.squeeze(sqldf('SELECT end_time_s from db WHERE end_time_s >= {0} AND end_time_s < {1} AND type!=0'.format(start_time,end_time),locals()).values)*1e6
+
+            for gs, ge in zip(good_start,good_end):
+                a.axvline(gs,color='g')
+                a.axvline(ge,color='g')
+            for bs, be in zip(bad_start,bad_end):
+                a.axvline(bs,color='r')
+                a.axvline(be,color='r')
+            
+
+
+    
         self.trace_canvas.show()
 
     def update_psd(self):
