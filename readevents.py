@@ -320,8 +320,6 @@ class App(tk.Frame):
                     filterstring = 'id != {0}'.format(event)
                     if filterstring not in self.filter_list[subset]:
                         self.filter_list[subset].append(filterstring)
-                    else:
-                        self.status_string.set('Redundant Filter Ignored')
             except TypeError:
                 self.db_info_string.set('Unable to replacate deletions')
                 self.eventsdb_subset[subset] = self.eventsdb_prev
