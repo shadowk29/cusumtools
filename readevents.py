@@ -738,7 +738,7 @@ class App(tk.Frame):
                 return_col = np.hstack([np.array(a,dtype=float)[1:-1] for a in self.eventsdb_subset[subset][col].str.split(';')])
         else:
             return_col = self.eventsdb_subset[subset][col]
-        return return_col
+        return return_col.astype(np.float64)
 
     def plot_event(self):
         subset = self.subset_option.cget('text')
