@@ -182,7 +182,12 @@ class App(tk.Frame):
                 if 'hysteresis' in line:
                     line = re.split('=|\n',line)
                     self.hysteresis = float(line[1])
-        
+                if 'cutoff' in line:
+                    line = re.split('=|\n',line)
+                    self.config_cutoff = int(line[1])
+                if 'poles' in line:
+                    line = re.split('=|\n',line)
+                    self.config_order = int(line[1])
 
 
     def export_psd(self):
@@ -308,14 +313,9 @@ class App(tk.Frame):
         
 
         
-        time = np.linspace(1.0/plot_samplerate,len(self.plot_data)/plot_samplerate,len(self.plot_data))+self.start_time
+        
         self.trace_fig.clf()
         a = self.trace_fig.add_subplot(111)
-        a.set_xlabel(r'Time ($\mu s$)')
-        a.set_ylabel('Current (pA)')
-        self.trace_fig.subplots_adjust(bottom=0.14,left=0.21)
-        a.plot(time*1e6,self.plot_data,'.',markersize=1)
-
 
         if self.events_flag:
             db = self.ratefile
@@ -333,7 +333,18 @@ class App(tk.Frame):
                 a.axvline(bs,color='r')
                 a.axvline(be,color='r')
 
+        
+
+        time = np.linspace(1.0/plot_samplerate,len(self.plot_data)/plot_samplerate,len(self.plot_data))+self.start_time
+        
+        a.set_xlabel(r'Time ($\mu s$)')
+        a.set_ylabel('Current (pA)')
+        self.trace_fig.subplots_adjust(bottom=0.14,left=0.21)
+        a.plot(time*1e6,self.plot_data,'.',markersize=1)
+
         if self.baseline_flag:
+            if self.config_cutoff != int(self.cutoff_entry.get()) or self.config_order != int(self.order_entry.get()):
+                self.wildcard.set('Filter settings in config file do not match plotting filter settings, overlay will be inaccurate')
             db = self.baseline_file
             start_time = self.start_time
             end_time = self.end_time
@@ -367,6 +378,7 @@ class App(tk.Frame):
                 a.plot((xmin*1e6,xmax*1e6), (means[i]-sign*(self.threshold - self.hysteresis)*stdevs[i],means[i]-sign*(self.threshold - self.hysteresis)*stdevs[i]), '--',color='y')
                 a.plot((xmin*1e6,xmax*1e6), (means[i]-sign*self.threshold*stdevs[i],means[i]-sign*self.threshold*stdevs[i]), '--',color='y')
                 a.plot((xmin*1e6,xmax*1e6), (means[i],means[i]), '--', color='black')
+                
         self.trace_canvas.show()
 
     def update_psd(self):
