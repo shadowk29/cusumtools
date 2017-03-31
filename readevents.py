@@ -284,7 +284,7 @@ class App(tk.Frame):
             fit_string = fit_string + u'{0}: {1}/{2} events used. Capture Rate is {3:.3g} \u00B1 {4:.1g} Hz (R\u00B2 = {5:.2g})\n'.format(subset,len(valid_delays),len(indices), popt[0], -t.isf(0.975,len(valid_delays))*np.sqrt(np.diag(pcov))[0], rsquared)
             self.xdata.append(valid_delays)
             self.ydata.append(probability)
-        a.legend(prop={'size': 10})
+        a.legend(loc='best',prop={'size': 10})
         self.canvas.show()
         self.status_string.set(fit_string)
         
@@ -606,7 +606,7 @@ class App(tk.Frame):
         if len(subset_list) > 1:
             for i in range(len(subset_list)):
                 a.plot(self.xdata[i],self.ydata[i],marker='.',linestyle='None',label=subset_list[i],alpha=0.2)
-            a.legend(prop={'size': 10})
+            a.legend(loc='best',prop={'size': 10})
         else:
             a.plot(self.xdata,self.ydata,marker='.',linestyle='None')
         if logscale_x:
@@ -638,27 +638,27 @@ class App(tk.Frame):
                 for i in range(len(subset_list)):
                     col[i] *= np.sign(np.average(col[i]))
                     col[i] = np.log10(col[i])
-                    y, self.xdata, patches = a.hist(col[i],bins=int(numbins),log=bool(logscale_y),histtype='step',stacked=False,fill=False,label=subset_list[i],alpha=0.5)
+                    y, self.xdata, patches = a.hist(col[i],bins=int(numbins),log=bool(logscale_y),histtype='step',stacked=False,fill=False,label=subset_list[i])
                     self.ydata.append(y)
             else:
                 col *= np.sign(np.average(col))
                 col = np.log10(col)
-                self.ydata, self.xdata, patches = a.hist(col,bins=int(numbins),log=bool(logscale_y),histtype='step',stacked=False,fill=False,label=subset_list,alpha=0.5)
+                self.ydata, self.xdata, patches = a.hist(col,bins=int(numbins),log=bool(logscale_y),histtype='step',stacked=False,fill=False,label=subset_list)
         else:
             a.set_xlabel(x_label)
             a.set_ylabel('Count')
             if len(subset_list) > 1:
                 for i in range(len(subset_list)):
                     if x_label == 'Fold Fraction':
-                        self.ydata, self.xdata, patches = a.hist(col[i],range=(0,0.5),bins=(0,0.1,0.2,0.3,0.4,0.5),log=bool(logscale_y),histtype='step',stacked=False,fill=False,label=subset_list[i],alpha=0.5)
+                        self.ydata, self.xdata, patches = a.hist(col[i],range=(0,0.5),bins=(0,0.1,0.2,0.3,0.4,0.5),log=bool(logscale_y),histtype='step',stacked=False,fill=False,label=subset_list[i])
                     else:
                         self.ydata, self.xdata, patches = a.hist(col[i],bins=int(numbins),log=bool(logscale_y),histtype='step',stacked=False,fill=False,label=subset_list[i])
             else:
                 if x_label == 'Fold Fraction':
-                    self.ydata, self.xdata, patches = a.hist(col,range=(0,0.5),bins=(0,0.1,0.2,0.3,0.4,0.5),log=bool(logscale_y),histtype='step',stacked=False,fill=False,label=subset_list,alpha=0.5)
+                    self.ydata, self.xdata, patches = a.hist(col,range=(0,0.5),bins=(0,0.1,0.2,0.3,0.4,0.5),log=bool(logscale_y),histtype='step',stacked=False,fill=False,label=subset_list)
                 else:
                     self.ydata, self.xdata, patches = a.hist(col,bins=int(numbins),log=bool(logscale_y),histtype='step',stacked=False,fill=False,label=subset_list)
-        a.legend(prop={'size': 10})
+        a.legend(loc='best',prop={'size': 10})
         self.xdata = self.xdata[:-1] + np.diff(self.xdata)/2.0
         self.canvas.show()
         self.canvas.callbacks.connect('button_press_event', self.on_click)
