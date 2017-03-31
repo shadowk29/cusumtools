@@ -276,15 +276,12 @@ class App(tk.Frame):
             ss_tot = np.sum((lnprob-np.mean(lnprob))**2)
             rsquared = 1.0 - ss_res/ss_tot
 
-            print ss_res
-            print ss_tot
-            print rsquared
             a.set_xlabel('Interevent Delay (s)')
             a.set_ylabel('Probability')
-            a.plot(valid_delays,probability,'.',label='{0}: Capture Rate is {1:.3g} Hz'.format(subset, popt[0]))
+            a.plot(valid_delays,probability,'.',label='{0}'.format(subset))
             a.plot(valid_delays,fit,label='{0} Fit'.format(subset))
             a.set_yscale('log')
-            fit_string = fit_string + u'Subset {0}: {1}/{2} events used. Capture Rate is {3:.3g} \u00B1 {4:.1g} Hz (R\u00B2 = {5:.2g})\n'.format(subset,len(valid_delays),len(indices), popt[0], -t.isf(0.975,len(valid_delays))*np.sqrt(np.diag(pcov))[0], rsquared)
+            fit_string = fit_string + u'{0}: {1}/{2} events used. Capture Rate is {3:.3g} \u00B1 {4:.1g} Hz (R\u00B2 = {5:.2g})\n'.format(subset,len(valid_delays),len(indices), popt[0], -t.isf(0.975,len(valid_delays))*np.sqrt(np.diag(pcov))[0], rsquared)
             self.xdata.append(valid_delays)
             self.ydata.append(probability)
         a.legend(prop={'size': 10})
