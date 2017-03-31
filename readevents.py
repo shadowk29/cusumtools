@@ -122,6 +122,8 @@ class App(tk.Frame):
         self.define_event_shapes_button = tk.Button(self.stats_frame,text='Redefine Event Shapes',command=self.define_shapes)
 
         self.capture_rate_button = tk.Button(self.stats_frame,text='Fit Capture Rate',command=self.capture_rate)
+        self.use_histogram = tk.IntVar()
+        self.use_histogram_check = tk.Checkbutton(self.stats_frame, text='Use Histogram', variable = self.use_histogram)
 
 
         self.stats_frame.grid(row=0,column=0,columnspan=6,sticky=tk.N+tk.S)
@@ -146,6 +148,7 @@ class App(tk.Frame):
         self.define_state_button.grid(row=5,column=2,sticky=tk.E+tk.W)
         self.define_event_shapes_button.grid(row=5,column=3,sticky=tk.E+tk.W)
         self.capture_rate_button.grid(row=5,column=4,sticky=tk.E+tk.W)
+        self.use_histogram_check.grid(row=5,column=5,sticky=tk.E+tk.W)
 
         
         
@@ -246,6 +249,9 @@ class App(tk.Frame):
     def ln_exponential(self, t, rate, amplitude): #define a fitting function form
         return np.log(amplitude)-rate*t
 
+    def log_exp_pdf(self, logt, rate, amplitude):
+        return amplitude * np.exp(-rate*10.0**logt) * 10.0**logt * np.log(10)
+
     def capture_rate(self):
         subset_list = []
         for key, val in self.filter_list.iteritems():
@@ -265,28 +271,55 @@ class App(tk.Frame):
             delays = np.diff(start_times)
             index_diff = np.diff(indices)
             valid_delays = np.sort(delays[np.where(index_diff == 1)])
-            probability = np.squeeze(np.array([1.0-float(i)/float(len(valid_delays)) for i in range(len(valid_delays))]))
-            lnprob = np.log(probability)
-            popt, pcov = curve_fit(self.ln_exponential, valid_delays, lnprob)
-            fit = np.exp(self.ln_exponential(valid_delays, popt[0], popt[1]))
 
-            residuals = lnprob - np.log(fit)
+            if not self.use_histogram.get():
+                probability = np.squeeze(np.array([1.0-float(i)/float(len(valid_delays)) for i in range(len(valid_delays))]))
+                lnprob = np.log(probability)
+                popt, pcov = curve_fit(self.ln_exponential, valid_delays, lnprob)
+                fit = np.exp(self.ln_exponential(valid_delays, popt[0], popt[1]))
 
-            ss_res = np.sum(residuals**2)
-            ss_tot = np.sum((lnprob-np.mean(lnprob))**2)
-            rsquared = 1.0 - ss_res/ss_tot
+                residuals = lnprob - np.log(fit)
 
-            a.set_xlabel('Interevent Delay (s)')
-            a.set_ylabel('Probability')
-            a.plot(valid_delays,probability,'.',label='{0}'.format(subset))
-            a.plot(valid_delays,fit,label='{0} Fit'.format(subset))
-            a.set_yscale('log')
-            fit_string = fit_string + u'{0}: {1}/{2} events used. Capture Rate is {3:.3g} \u00B1 {4:.1g} Hz (R\u00B2 = {5:.2g})\n'.format(subset,len(valid_delays),len(indices), popt[0], -t.isf(0.975,len(valid_delays))*np.sqrt(np.diag(pcov))[0], rsquared)
-            self.xdata.append(valid_delays)
-            self.ydata.append(probability)
-        a.legend(loc='best',prop={'size': 10})
-        self.canvas.show()
-        self.status_string.set(fit_string)
+                ss_res = np.sum(residuals**2)
+                ss_tot = np.sum((lnprob-np.mean(lnprob))**2)
+                rsquared = 1.0 - ss_res/ss_tot
+
+                a.set_xlabel('Interevent Delay (s)')
+                a.set_ylabel('Probability')
+                a.plot(valid_delays,probability,'.',label='{0}'.format(subset))
+                a.plot(valid_delays,fit,label='{0} Fit'.format(subset))
+                a.set_yscale('log')
+                fit_string = fit_string + u'{0}: {1}/{2} events used. Capture Rate is {3:.3g} \u00B1 {4:.1g} Hz (R\u00B2 = {5:.2g})\n'.format(subset,len(valid_delays),len(indices), popt[0], -t.isf(0.975,len(valid_delays))*np.sqrt(np.diag(pcov))[0], rsquared)
+                self.xdata.append(valid_delays)
+                self.ydata.append(probability)
+                a.legend(loc='best',prop={'size': 10})
+                self.canvas.show()
+                self.status_string.set(fit_string)
+            else:
+                log_delays = np.log10(valid_delays)
+                numbins = int(self.xbin_entry.get())
+                counts, edges  = np.histogram(log_delays, bins=numbins)
+                bincenters = edges[:-1] + np.diff(edges)/2.0
+                self.xdata.append(bincenters)
+                self.ydata.append(counts)
+
+                popt, pcov = curve_fit(self.log_exp_pdf, bincenters, counts)
+                fit = self.log_exp_pdf(bincenters, popt[0], popt[1])
+
+                residuals = fit - counts
+                ss_res = np.sum(residuals**2)
+                ss_tot = np.sum((counts - np.mean(counts))**2)
+                rsquared = 1.0 - ss_res/ss_tot
+
+                
+                a.set_xlabel('Log(Interevent Delay (s))')
+                a.set_ylabel('Count')
+                a.plot(bincenters,counts,drawstyle='steps-mid',label='{0}'.format(subset))
+                a.plot(bincenters,fit,label='{0} Fit'.format(subset))
+                fit_string = fit_string + u'{0}: {1}/{2} events used. Capture Rate is {3:.3g} \u00B1 {4:.1g} Hz (R\u00B2 = {5:.2g})\n'.format(subset,len(valid_delays),len(indices), popt[0], -t.isf(0.975,len(counts))*np.sqrt(np.diag(pcov))[0], rsquared)
+                a.legend(loc='best',prop={'size': 10})
+                self.canvas.show()
+                self.status_string.set(fit_string)
         
     def not_implemented(self):
         top = tk.Toplevel()
