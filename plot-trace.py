@@ -203,6 +203,16 @@ class App(tk.Frame):
             np.savetxt(data_path,self.plot_data,delimiter=',')
         except AttributeError:
             self.wildcard.set('Plot the trace first')
+
+    def get_file_index(self, samplenum):
+        i = 0
+        try:
+            while self.file_start_index[i+1] < samplenum:
+                i += 1
+        except IndexError:
+            i = len(self.file_start_index)
+        return i
+        
         
     def load_mapped_data(self):
         if self.start_entry.get()!='':
@@ -212,8 +222,9 @@ class App(tk.Frame):
             self.start_time = 0
             start_index = 0
             
-        filesize = len(self.maps[0])
-        start_f = int(start_index / filesize)
+        
+        start_f = self.get_file_index(start_index)
+
 
         if self.end_entry.get()!='':
             self.end_time = float(self.end_entry.get())
@@ -223,14 +234,16 @@ class App(tk.Frame):
         else:
             end_index = start_index + len(self.maps[start_f])        
         
-        end_f = int(end_index / filesize)
+        end_f = self.get_file_index(end_index)
 
         if start_f == end_f:
-            tempdata = self.maps[start_f][int(np.floor(start_index % filesize)):int(np.floor(end_index % filesize))]
+            filesize = len(self.maps[start_f])
+            tempdata = self.maps[start_f][start_index - self.file_start_index[start_f]:end_index - self.file_start_index[start_f]]
             settings = self.settings[start_f]
             data = self.scale_raw_data(tempdata,settings)     
         else:
-            tempdata = self.maps[start_f][int(np.floor(start_index % filesize)):]
+            filesize = len(self.maps[start_f])
+            tempdata = self.maps[start_f][start_index - self.file_start_index[start_f]:]
             settings = self.settings[start_f]
             data = self.scale_raw_data(tempdata,settings)
             for i in range(start_f+1,end_f):
@@ -239,7 +252,8 @@ class App(tk.Frame):
                 data = np.concatenate((data,self.scale_raw_data(tempdata,settings)))
             tempdata = self.maps[end_f]
             settings = self.settings[end_f]
-            data = np.concatenate((data, self.scale_raw_data(self.maps[end_f][:int(np.floor(end_index % filesize))],settings)))
+            filesize = len(self.maps[end_f])
+            data = np.concatenate((data, self.scale_raw_data(self.maps[end_f][:end_index - self.file_start_index[end_f]],settings)))
         self.data = data
 
     def scale_raw_data(self,tempdata,settings):
@@ -264,10 +278,13 @@ class App(tk.Frame):
         self.maps = [np.memmap(f, dtype=columntypes, mode='r')['current'] for f in self.sorted_files]
         self.settings = [sio.loadmat(f.replace('.log','.mat')) for f in self.sorted_files]
         total = 0
+        self.file_start_index = [0]
         for m in self.maps:
             total += len(m)
+            self.file_start_index.append(total)
         self.total_samples = total
-
+        self.file_start_index = np.array(self.file_start_index,dtype=np.int64)
+        
     def get_filenames(self, initialfile):
         pattern = initialfile[:-19] + '*.log'
         files = glob.glob(pattern)
