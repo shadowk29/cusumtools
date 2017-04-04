@@ -344,11 +344,9 @@ class App(tk.Frame):
             bad_end = np.squeeze(sqldf('SELECT end_time_s from db WHERE end_time_s >= {0} AND end_time_s < {1} AND type>1'.format(start_time,end_time),locals()).values)*1e6
 
             for gs, ge in zip(np.atleast_1d(good_start),np.atleast_1d(good_end)):
-                a.axvline(gs,color='g')
-                a.axvline(ge,color='g')
+                a.axvspan(gs,ge,color='g',alpha=0.3)
             for bs, be in zip(np.atleast_1d(bad_start),np.atleast_1d(bad_end)):
-                a.axvline(bs,color='r')
-                a.axvline(be,color='r')
+                a.axvspan(bs,be,color='r',alpha=0.3)
 
         
 
