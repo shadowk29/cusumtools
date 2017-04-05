@@ -582,7 +582,7 @@ class App(tk.Frame):
                     self.define_state_array_flag = 0
                 self.status_string.set('State Boundaries Defined: {0}'.format(self.state_array))
             else:
-                print 'Clicked ouside axes bounds but inside plot window'
+                self.status_string.set('Clicked ouside axes bounds but inside plot window')
 
 
 
@@ -634,9 +634,6 @@ class App(tk.Frame):
                 if typenum > 999999999:
                     typenum = -1
                 type_array.append(typenum)
-            print type_array
-            print trimmed_type
-            print trimmed_Nlev
             self.eventsdb_subset[subset]['event_shape'] = type_array
             self.eventsdb_subset[subset]['trimmed_shape'] = trimmed_type
             self.eventsdb_subset[subset]['trimmed_n_levels'] = trimmed_Nlev
