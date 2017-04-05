@@ -54,7 +54,7 @@ class App(tk.Frame):
         
 
 
-        max_subsets = 5
+        max_subsets = 11
         self.eventsdb_subset = dict(('Subset {0}'.format(i), self.eventsdb) for i in range(max_subsets))
         self.filter_list = dict(('Subset {0}'.format(i), []) for i in range(max_subsets))
         #self.survival_probability()
