@@ -33,9 +33,14 @@ from collections import OrderedDict
 from scipy.stats import t
 import pylab as pl
 
-
-
-
+class FlashableLabel(tk.Label):
+    def flash(self,count):
+        bg = self.cget('background')
+        fg = self.cget('foreground')
+        self.configure(background=fg,foreground=bg)
+        count -=1
+        if (count > 0):
+             self.after(500,self.flash, count) 
 
     
 class App(tk.Frame):
@@ -56,6 +61,7 @@ class App(tk.Frame):
 
         max_subsets = 11
         self.eventsdb_subset = dict(('Subset {0}'.format(i), self.eventsdb) for i in range(max_subsets))
+        self.capture_rate_subset = dict.fromkeys(list(self.eventsdb_subset.keys()))
         self.filter_list = dict(('Subset {0}'.format(i), []) for i in range(max_subsets))
         #self.survival_probability()
         #self.delay_probability()
@@ -233,7 +239,7 @@ class App(tk.Frame):
         self.status_frame.grid(row=2,column=6,columnspan=6,sticky=tk.E+tk.W+tk.S+tk.N)
         self.status_string = tk.StringVar()
         self.status_string.set('Ready')
-        self.status_display = tk.Label(self.status_frame, textvariable=self.status_string)
+        self.status_display = FlashableLabel(self.status_frame, textvariable=self.status_string, background='black', foreground='white')
 
         self.status_display.grid(row=0,column=0,columnspan=6,sticky=tk.E+tk.W+tk.S+tk.N)
 
@@ -246,14 +252,19 @@ class App(tk.Frame):
 
     def remove_nonconsecutive_events(self):
         subset = self.subset_option.cget('text')
-        indices = self.eventsdb_subset[subset]['id'].values
-        index_diff = np.diff(indices)
-        index_diff = np.insert(index_diff,0,0)
-        self.eventsdb_subset[subset]['index_diff'] = index_diff
-        db = self.eventsdb_subset[subset]
-        self.eventsdb_subset[subset] = sqldf('SELECT * from db where  index_diff = 1',locals())
-        self.status_string.set('{0}: {1} events'.format(subset, len(self.eventsdb_subset[subset])))
-        self.filter_list[subset].append('Nonconsecutive (cumulative)')
+        if 'Nonconsecutive Events Removed' in self.filter_list[subset]:
+            self.status_string.set('Cannot remove non-consecutive events twice. To apply further filters, reset the subset and start over')
+            self.status_display.flash(6)
+        else:
+            self.capture_rate_subset[subset] = self.eventsdb_subset[subset]
+            indices = self.eventsdb_subset[subset]['id'].values
+            index_diff = np.diff(indices)
+            index_diff = np.insert(index_diff,0,0)
+            self.eventsdb_subset[subset]['index_diff'] = index_diff
+            db = self.eventsdb_subset[subset]
+            self.eventsdb_subset[subset] = sqldf('SELECT * from db where  index_diff = 1',locals())
+            self.status_string.set('{0}: {1} events'.format(subset, len(self.eventsdb_subset[subset])))
+            self.filter_list[subset].append('Nonconsecutive Events Removed')
         
     def update_count(self, *args):
         subset = self.subset_option.cget('text')
@@ -282,8 +293,13 @@ class App(tk.Frame):
         fit_string = ''
         self.export_type = 'capture_rate'
         for subset in subset_list:
-            indices = self.eventsdb_subset[subset]['id'].values
-            start_times = self.eventsdb_subset[subset]['start_time_s'].values
+            if 'Nonconsecutive Events Removed' not in self.filter_list[subset]:
+                db = self.eventsdb_subset[subset]
+            else:
+                db = self.capture_rate_subset[subset]
+                
+            indices = db['id'].values
+            start_times = db['start_time_s'].values
             delays = np.diff(start_times)
             index_diff = np.diff(indices)
             valid_delays = np.sort(delays[np.where(index_diff == 1)])
@@ -348,16 +364,20 @@ class App(tk.Frame):
         subset = self.subset_option.cget('text')
         self.eventsdb_prev = self.eventsdb_subset[subset]
         eventsdb_subset = self.eventsdb_subset[subset]
-        self.eventsdb_subset[subset] = sqldf('SELECT * from eventsdb_subset WHERE %s' % filterstring,locals())
-        try:
-            self.status_string.set('{0}: {1} events'.format(subset,len(self.eventsdb_subset[subset])))
-            if filterstring not in self.filter_list[subset]:
-                self.filter_list[subset].append(filterstring)
-            else:
-                self.status_string.set('Redundant Filter Ignored')
-        except TypeError:
-            self.status_string.set('Invalid Entry')
-            self.eventsdb_subset[subset] = self.eventsdb_prev
+        if 'Nonconsecutive Events Removed' in self.filter_list[subset]:
+            self.status_string.set('Cannot apply filters after removing non-consecutive events. To apply further filters, reset the subset and start over')
+        else:
+            self.eventsdb_subset[subset] = sqldf('SELECT * from eventsdb_subset WHERE %s' % filterstring,locals())
+            try:
+                self.status_string.set('{0}: {1} events'.format(subset,len(self.eventsdb_subset[subset])))
+                if filterstring not in self.filter_list[subset]:
+                    self.filter_list[subset].append(filterstring)
+                else:
+                    self.status_string.set('Redundant Filter Ignored')
+            except TypeError:
+                self.status_string.set('Invalid Entry')
+                self.status_display.flash(6)
+                self.eventsdb_subset[subset] = self.eventsdb_prev
         
     def replicate_manual_deletions(self):
         subset_list = []
@@ -457,6 +477,7 @@ class App(tk.Frame):
     def reset_db(self):
         subset = self.subset_option.cget('text')
         self.eventsdb_subset[subset] = self.eventsdb
+        self.capture_rate_subset[subset] = None
         self.filter_list[subset] = []
         self.status_string.set('{0}: {1} events'.format(subset,len(self.eventsdb_subset[subset])))
         
