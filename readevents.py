@@ -211,10 +211,8 @@ class App(tk.Frame):
         self.filter_button = tk.Button(self.db_frame,text='Filter Subset',command=self.filter_db)
         self.reset_button = tk.Button(self.db_frame,text='Reset Subset',command=self.reset_db)
         self.show_subset_details_button = tk.Button(self.db_frame, text='Display Filters', command=self.display_filters)
-        self.db_info_string = tk.StringVar()
-        self.db_info_string.set('Count: ' +str(len(self.eventsdb_subset['Subset 0'])))
-        self.db_info_display = tk.Label(self.db_frame, textvariable=self.db_info_string)
         self.save_subset_button = tk.Button(self.db_frame,text='Save Subset',command=self.save_subset)
+        self.remove_nonconsecutive_button = tk.Button(self.db_frame,text='Remove Non-Consecutive',command=self.remove_nonconsecutive_events)
         self.filter_entry = tk.Entry(self.db_frame)
 
         
@@ -226,7 +224,7 @@ class App(tk.Frame):
         
         self.save_subset_button.grid(row=2,column=0,columnspan=2,sticky=tk.E+tk.W)
         self.show_subset_details_button.grid(row=2,column=2,columnspan=2,sticky=tk.E+tk.W)
-        self.db_info_display.grid(row=2,column=4,columnspan=2,sticky=tk.E+tk.W)
+        self.remove_nonconsecutive_button.grid(row=2,column=4,columnspan=2,sticky=tk.E+tk.W)
 
         #Folder widgets
 
@@ -238,13 +236,31 @@ class App(tk.Frame):
         self.status_display = tk.Label(self.status_frame, textvariable=self.status_string)
 
         self.status_display.grid(row=0,column=0,columnspan=6,sticky=tk.E+tk.W+tk.S+tk.N)
+
+    def get_active_subsets(self):
+        subset_list = []
+        for key, val in self.filter_list.iteritems():
+            if key == 'Subset 0' or len(val) > 0:
+                subset_list.append(key)
+        return subset_list.sort()
+
+    def remove_nonconsecutive_events(self):
+        subset = self.subset_option.cget('text')
+        indices = self.eventsdb_subset[subset]['id'].values
+        index_diff = np.diff(indices)
+        index_diff = np.insert(index_diff,0,0)
+        self.eventsdb_subset[subset]['index_diff'] = index_diff
+        db = self.eventsdb_subset[subset]
+        self.eventsdb_subset[subset] = sqldf('SELECT * from db where  index_diff = 1',locals())
+        self.status_string.set('{0}: {1} events'.format(subset, len(self.eventsdb_subset[subset])))
+        self.filter_list[subset].append('Nonconsecutive (cumulative)')
         
     def update_count(self, *args):
         subset = self.subset_option.cget('text')
         try:
-            self.db_info_string.set('Subset {0}: {1} events'.format(subset,len(self.eventsdb_subset[subset])))
+            self.status_string.set('{0}: {1} events'.format(subset,len(self.eventsdb_subset[subset])))
         except TypeError:
-            self.db_info_string.set('Empty subset, try resetting')
+            self.status_string.set('Empty subset, try resetting')
 
     def ln_exponential(self, t, rate, amplitude): #define a fitting function form
         return np.log(amplitude)-rate*t
@@ -334,13 +350,13 @@ class App(tk.Frame):
         eventsdb_subset = self.eventsdb_subset[subset]
         self.eventsdb_subset[subset] = sqldf('SELECT * from eventsdb_subset WHERE %s' % filterstring,locals())
         try:
-            self.db_info_string.set('Subset {0}: {1} events'.format(subset,len(self.eventsdb_subset[subset])))
+            self.status_string.set('{0}: {1} events'.format(subset,len(self.eventsdb_subset[subset])))
             if filterstring not in self.filter_list[subset]:
                 self.filter_list[subset].append(filterstring)
             else:
                 self.status_string.set('Redundant Filter Ignored')
         except TypeError:
-            self.db_info_string.set('Invalid Entry')
+            self.status_string.set('Invalid Entry')
             self.eventsdb_subset[subset] = self.eventsdb_prev
         
     def replicate_manual_deletions(self):
@@ -363,14 +379,14 @@ class App(tk.Frame):
             self.eventsdb_subset[subset] = sqldf('''SELECT * FROM tempdb where deleted_id = -1''',locals())
             self.eventsdb_subset[subset].drop('deleted_id',1,inplace=True)
             try:
-                self.db_info_string.set('Subset {0}: {1} events'.format(subset,len(self.eventsdb_subset[subset])))
+                self.status_string.set('{0}: {1} events'.format(subset,len(self.eventsdb_subset[subset])))
                 for event in manual_delete:
                     filterstring = 'id != {0}'.format(event)
                     if filterstring not in self.filter_list[subset]:
                         self.filter_list[subset].append(filterstring)
                 
             except TypeError:
-                self.db_info_string.set('Unable to replicate deletions')
+                self.status_string.set('Unable to replicate deletions')
                 self.eventsdb_subset[subset] = self.eventsdb_prev
     
     def display_filters(self):
@@ -442,7 +458,7 @@ class App(tk.Frame):
         subset = self.subset_option.cget('text')
         self.eventsdb_subset[subset] = self.eventsdb
         self.filter_list[subset] = []
-        self.db_info_string.set('Subset {0}: {1} events'.format(subset,len(self.eventsdb_subset[subset])))
+        self.status_string.set('{0}: {1} events'.format(subset,len(self.eventsdb_subset[subset])))
         
 
     def fit_data(self):
@@ -860,7 +876,7 @@ class App(tk.Frame):
             self.plot_event()
         eventsdb_subset = self.eventsdb_subset[subset]
         self.eventsdb_subset[subset] = sqldf('SELECT * from eventsdb_subset WHERE id != %d' % event_index,locals())
-        self.db_info_string.set('Subset {0}: {1} events'.format(subset,len(self.eventsdb_subset[subset])))
+        self.status_string.set('{0}: {1} events'.format(subset,len(self.eventsdb_subset[subset])))
 
         if 'id != {0}'.format(event_index) not in self.filter_list[subset]:
             self.filter_list[subset].append('id != {0}'.format(event_index))
