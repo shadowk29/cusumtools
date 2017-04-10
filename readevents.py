@@ -248,7 +248,8 @@ class App(tk.Frame):
         for key, val in self.filter_list.iteritems():
             if key == 'Subset 0' or len(val) > 0:
                 subset_list.append(key)
-        return subset_list.sort()
+        subset_list = sorted(subset_list)
+        return subset_list
 
     def remove_nonconsecutive_events(self):
         subset = self.subset_option.cget('text')
@@ -280,13 +281,10 @@ class App(tk.Frame):
         return amplitude * np.exp(-rate*10.0**logt) * 10.0**logt * np.log(10)
 
     def capture_rate(self):
-        subset_list = []
-        for key, val in self.filter_list.iteritems():
-            if key == 'Subset 0' or len(val) > 0:
-                subset_list.append(key)
-        subset_list.sort()
+        subset_list = self.self.get_active_subsets()
         self.f.clf()
-        a = self.f.add_subplot(111)
+        self.a = self.f.add_subplot(111)
+        
         self.f.subplots_adjust(bottom=0.14,left=0.21)
         self.xdata = []
         self.ydata = []
@@ -316,15 +314,15 @@ class App(tk.Frame):
                 ss_tot = np.sum((lnprob-np.mean(lnprob))**2)
                 rsquared = 1.0 - ss_res/ss_tot
 
-                a.set_xlabel('Interevent Delay (s)')
-                a.set_ylabel('Probability')
-                a.plot(valid_delays,probability,'.',label='{0}'.format(subset))
-                a.plot(valid_delays,fit,label='{0} Fit'.format(subset))
-                a.set_yscale('log')
+                self.a.set_xlabel('Interevent Delay (s)')
+                self.a.set_ylabel('Probability')
+                self.a.plot(valid_delays,probability,'.',label='{0}'.format(subset))
+                self.a.plot(valid_delays,fit,label='{0} Fit'.format(subset))
+                self.a.set_yscale('log')
                 fit_string = fit_string + u'{0}: {1}/{2} events used. Capture Rate is {3:.3g} \u00B1 {4:.1g} Hz (R\u00B2 = {5:.2g})\n'.format(subset,len(valid_delays),len(indices), popt[0], -t.isf(0.975,len(valid_delays))*np.sqrt(np.diag(pcov))[0], rsquared)
                 self.xdata.append(valid_delays)
                 self.ydata.append(probability)
-                a.legend(loc='best',prop={'size': 10})
+                self.a.legend(loc='best',prop={'size': 10})
                 self.canvas.show()
                 self.status_string.set(fit_string)
             else:
@@ -344,12 +342,12 @@ class App(tk.Frame):
                 rsquared = 1.0 - ss_res/ss_tot
 
                 
-                a.set_xlabel('Log(Interevent Delay (s))')
-                a.set_ylabel('Count')
-                a.plot(bincenters,counts,drawstyle='steps-mid',label='{0}'.format(subset))
-                a.plot(bincenters,fit,label='{0} Fit'.format(subset))
+                self.a.set_xlabel('Log(Interevent Delay (s))')
+                self.a.set_ylabel('Count')
+                self.a.plot(bincenters,counts,drawstyle='steps-mid',label='{0}'.format(subset))
+                self.a.plot(bincenters,fit,label='{0} Fit'.format(subset))
                 fit_string = fit_string + u'{0}: {1}/{2} events used. Capture Rate is {3:.3g} \u00B1 {4:.1g} Hz (R\u00B2 = {5:.2g})\n'.format(subset,len(valid_delays),len(indices), popt[0], -t.isf(0.975,len(counts))*np.sqrt(np.diag(pcov))[0], rsquared)
-                a.legend(loc='best',prop={'size': 10})
+                self.a.legend(loc='best',prop={'size': 10})
                 self.canvas.show()
                 self.status_string.set(fit_string)
         
@@ -380,11 +378,7 @@ class App(tk.Frame):
                 self.eventsdb_subset[subset] = self.eventsdb_prev
         
     def replicate_manual_deletions(self):
-        subset_list = []
-        for key, val in self.filter_list.iteritems():
-            if key == 'Subset 0' or len(val) > 0:
-                subset_list.append(key)
-        subset_list.sort()
+        subset_list = self.get_active_subsets()
 
         for subset in subset_list:
             self.eventsdb_prev = self.eventsdb_subset[subset]
@@ -480,37 +474,10 @@ class App(tk.Frame):
         self.capture_rate_subset[subset] = None
         self.filter_list[subset] = []
         self.status_string.set('{0}: {1} events'.format(subset,len(self.eventsdb_subset[subset])))
-        
-
-    def fit_data(self):
-        logscale_x = self.x_log_var.get()
-        logscale_y = self.y_log_var.get()
-        x_label = self.x_option.cget('text')
-        y_label = self.y_option.cget('text')
-        x_col = self.parse_db_col(self.unalias_dict.get(x_label,x_label))
-        y_col = self.parse_db_col(self.unalias_dict.get(y_label,y_label))
-        xsign = np.sign(np.average(x_col))
-        ysign = np.sign(np.average(y_col))
-        self.f.clf()
-        a = self.f.add_subplot(111)
-        a.set_xlabel(x_label)
-        a.set_ylabel(y_label)
-        self.f.subplots_adjust(bottom=0.14,left=0.21)
-        popt, pcov = curve_fit(exponential, xsign*x_col, ysign*y_col)
-        a.plot(xsign*x_col,ysign*y_col,'.',xsign*x_col, exponential(xsign*x_col,popt[0],popt[1]),'.')
-        if logscale_x:
-            a.set_xscale('log')
-        if logscale_y:
-            a.set_yscale('log')
-        self.canvas.show()
 
     def export_plot_data(self):
         data_path = tkFileDialog.asksaveasfilename(defaultextension='.csv')
-        subset_list = []
-        for key, val in self.filter_list.iteritems():
-            if key == 'Subset 0' or len(val) > 0:
-                subset_list.append(key)
-        subset_list.sort()
+        subset_list = self.get_active_subsets()
         if self.export_type == 'hist1d':
             x_label = self.x_option.cget('text')
             logscale_x = self.x_log_var.get()
@@ -643,11 +610,7 @@ class App(tk.Frame):
 
 
     def plot_xy(self):
-        subset_list = []
-        for key, val in self.filter_list.iteritems():
-            if key == 'Subset 0' or len(val) > 0:
-                subset_list.append(key)
-        subset_list.sort()
+        subset_list = self.get_active_subsets()
         self.export_type = 'scatter'
         logscale_x = self.x_log_var.get()
         logscale_y = self.y_log_var.get()
@@ -661,9 +624,9 @@ class App(tk.Frame):
         ysign = np.sign(np.average(y_col[0])) if len(subset_list) > 1 else np.sign(np.average(y_col))
 
         self.f.clf()
-        a = self.f.add_subplot(111)
-        a.set_xlabel(x_label)
-        a.set_ylabel(y_label)
+        self.a = self.f.add_subplot(111)
+        self.a.set_xlabel(x_label)
+        self.a.set_ylabel(y_label)
         self.f.subplots_adjust(bottom=0.14,left=0.21)
         
         self.xdata = np.array(x_col*xsign)
@@ -672,22 +635,19 @@ class App(tk.Frame):
 
         if len(subset_list) > 1:
             for i in range(len(subset_list)):
-                a.plot(self.xdata[i],self.ydata[i],marker='.',linestyle='None',label=subset_list[i],alpha=0.2)
-            a.legend(loc='best',prop={'size': 10})
+                self.a.plot(self.xdata[i],self.ydata[i],marker='.',linestyle='None',label=subset_list[i],alpha=0.2)
+            self.a.legend(loc='best',prop={'size': 10})
         else:
-            a.plot(self.xdata,self.ydata,marker='.',linestyle='None')
+            self.a.plot(self.xdata,self.ydata,marker='.',linestyle='None')
         if logscale_x:
-            a.set_xscale('log')
+            self.a.set_xscale('log')
         if logscale_y:
-            a.set_yscale('log')
+            self.a.set_yscale('log')
         self.canvas.show()
 
     def plot_1d_histogram(self):
-        subset_list = []
-        for key, val in self.filter_list.iteritems():
-            if key == 'Subset 0' or len(val) > 0:
-                subset_list.append(key)
-        subset_list.sort()
+        subset_list = self.get_active_subsets()
+        print subset_list
         self.export_type = 'hist1d'
         logscale_x = self.x_log_var.get()
         logscale_y = self.y_log_var.get()
@@ -695,37 +655,37 @@ class App(tk.Frame):
         col = np.squeeze(np.array([self.parse_db_col(self.unalias_dict.get(x_label,x_label),key) for key in subset_list]))
         numbins = self.xbin_entry.get()
         self.f.clf()
-        a = self.f.add_subplot(111)
+        self.a = self.f.add_subplot(111)
         self.f.subplots_adjust(bottom=0.14,left=0.21)
         self.ydata = []
         if logscale_x:
-            a.set_xlabel('Log(' +str(x_label)+')')
-            a.set_ylabel('Count')
+            self.a.set_xlabel('Log(' +str(x_label)+')')
+            self.a.set_ylabel('Count')
             if len(subset_list) > 1:
                 for i in range(len(subset_list)):
                     col[i] *= np.sign(np.average(col[i]))
                     col[i] = np.log10(col[i])
-                    y, self.xdata, patches = a.hist(col[i],bins=int(numbins),log=bool(logscale_y),histtype='step',stacked=False,fill=False,label=subset_list[i])
+                    y, self.xdata, patches = self.a.hist(col[i],bins=int(numbins),log=bool(logscale_y),histtype='step',stacked=False,fill=False,label=subset_list[i])
                     self.ydata.append(y)
             else:
                 col *= np.sign(np.average(col))
                 col = np.log10(col)
-                self.ydata, self.xdata, patches = a.hist(col,bins=int(numbins),log=bool(logscale_y),histtype='step',stacked=False,fill=False,label=subset_list)
+                self.ydata, self.xdata, patches = self.a.hist(col,bins=int(numbins),log=bool(logscale_y),histtype='step',stacked=False,fill=False,label=subset_list)
         else:
-            a.set_xlabel(x_label)
-            a.set_ylabel('Count')
+            self.a.set_xlabel(x_label)
+            self.a.set_ylabel('Count')
             if len(subset_list) > 1:
                 for i in range(len(subset_list)):
                     if x_label == 'Fold Fraction':
-                        self.ydata, self.xdata, patches = a.hist(col[i],range=(0,0.5),bins=(0,0.1,0.2,0.3,0.4,0.5),log=bool(logscale_y),histtype='step',stacked=False,fill=False,label=subset_list[i])
+                        self.ydata, self.xdata, patches = self.a.hist(col[i],range=(0,0.5),bins=(0,0.1,0.2,0.3,0.4,0.5),log=bool(logscale_y),histtype='step',stacked=False,fill=False,label=subset_list[i])
                     else:
-                        self.ydata, self.xdata, patches = a.hist(col[i],bins=int(numbins),log=bool(logscale_y),histtype='step',stacked=False,fill=False,label=subset_list[i])
+                        self.ydata, self.xdata, patches = self.a.hist(col[i],bins=int(numbins),log=bool(logscale_y),histtype='step',stacked=False,fill=False,label=subset_list[i])
             else:
                 if x_label == 'Fold Fraction':
-                    self.ydata, self.xdata, patches = a.hist(col,range=(0,0.5),bins=(0,0.1,0.2,0.3,0.4,0.5),log=bool(logscale_y),histtype='step',stacked=False,fill=False,label=subset_list)
+                    self.ydata, self.xdata, patches = self.a.hist(col,range=(0,0.5),bins=(0,0.1,0.2,0.3,0.4,0.5),log=bool(logscale_y),histtype='step',stacked=False,fill=False,label=subset_list)
                 else:
-                    self.ydata, self.xdata, patches = a.hist(col,bins=int(numbins),log=bool(logscale_y),histtype='step',stacked=False,fill=False,label=subset_list)
-        a.legend(loc='best',prop={'size': 10})
+                    self.ydata, self.xdata, patches = self.a.hist(col,bins=int(numbins),log=bool(logscale_y),histtype='step',stacked=False,fill=False,label=subset_list)
+        self.a.legend(loc='best',prop={'size': 10})
         self.xdata = self.xdata[:-1] + np.diff(self.xdata)/2.0
         self.canvas.show()
         self.canvas.callbacks.connect('button_press_event', self.on_click)
@@ -743,17 +703,17 @@ class App(tk.Frame):
         xbins = self.xbin_entry.get()
         ybins = self.ybin_entry.get()
         self.f.clf()
-        a = self.f.add_subplot(111)
-        a.set_xlabel(x_label)
-        a.set_ylabel(y_label)
+        self.a = self.f.add_subplot(111)
+        self.a.set_xlabel(x_label)
+        self.a.set_ylabel(y_label)
         if logscale_x:
-            a.set_xlabel('Log(' +str(x_label)+')')
+            self.a.set_xlabel('Log(' +str(x_label)+')')
         if logscale_y:
-            a.set_ylabel('Log(' +str(y_label)+')')
+            self.a.set_ylabel('Log(' +str(y_label)+')')
         self.f.subplots_adjust(bottom=0.14,left=0.21)
         xsign = np.sign(np.average(x_col))
         ysign = np.sign(np.average(y_col))
-        z, x, y, image = a.hist2d(np.log10(xsign*x_col) if bool(logscale_x) else x_col,np.log10(ysign*y_col) if bool(logscale_y) else y_col,bins=[int(xbins),int(ybins)],norm=matplotlib.colors.LogNorm())
+        z, x, y, image = self.a.hist2d(np.log10(xsign*x_col) if bool(logscale_x) else x_col,np.log10(ysign*y_col) if bool(logscale_y) else y_col,bins=[int(xbins),int(ybins)],norm=matplotlib.colors.LogNorm())
         x = x[:-1] + np.diff(x)/2.0
         y = y[:-1] + np.diff(y)/2.0
         xy = [zip([a]*len(y),y) for a in x]
