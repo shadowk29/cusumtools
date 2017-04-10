@@ -711,7 +711,6 @@ class App(tk.Frame):
 
     def plot_1d_histogram(self):
         subset_list = self.get_active_subsets()
-        print subset_list
         self.export_type = 'hist1d'
         logscale_x = self.x_log_var.get()
         logscale_y = self.y_log_var.get()
