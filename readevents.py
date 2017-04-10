@@ -627,7 +627,6 @@ class App(tk.Frame):
     def set_axis_limits(self):
         limits = tk.Toplevel()
         limits.title('Axis Limits')
-        limits.columnconfigure(1,weight=1)
 
         x_min, x_max = self.a.get_xlim()
         y_min, y_max = self.a.get_ylim()
@@ -652,17 +651,17 @@ class App(tk.Frame):
 
         apply_button = tk.Button(limits,text='Apply',command=self.apply_limits)
 
-        x_label.grid(row=1,column=0)
-        y_label.grid(row=2,column=0)
-        min_label.grid(row=0,column=1)
-        max_label.grid(row=0,column=2)
+        x_label.grid(row=1,column=0,sticky=tk.E+tk.W)
+        y_label.grid(row=2,column=0,sticky=tk.E+tk.W)
+        min_label.grid(row=0,column=1,sticky=tk.E+tk.W)
+        max_label.grid(row=0,column=2,sticky=tk.E+tk.W)
 
-        self.x_min.grid(row=1,column=1)
-        self.x_max.grid(row=1,column=2)
-        self.y_min.grid(row=2,column=1)
-        self.y_max.grid(row=2,column=2)
+        self.x_min.grid(row=1,column=1,sticky=tk.E+tk.W)
+        self.x_max.grid(row=1,column=2,sticky=tk.E+tk.W)
+        self.y_min.grid(row=2,column=1,sticky=tk.E+tk.W)
+        self.y_max.grid(row=2,column=2,sticky=tk.E+tk.W)
 
-        apply_button.grid(row=3,column=1,columnspan=2)
+        apply_button.grid(row=3,column=0,columnspan=3,sticky=tk.E+tk.W)
 
 
     def on_click(self, event):
