@@ -156,6 +156,10 @@ class App(tk.Frame):
         self.capture_rate_button.grid(row=5,column=4,sticky=tk.E+tk.W)
         self.use_histogram_check.grid(row=5,column=5,sticky=tk.E+tk.W)
 
+
+        parent.bind("<Key>", self.key_press)
+
+
         
         
 
@@ -606,8 +610,67 @@ class App(tk.Frame):
             self.eventsdb_subset[subset]['trimmed_n_levels'] = trimmed_Nlev
             self.status_string.set('Event shapes recalculated. \nThis applies only to the current subset')
             self.eventsdb_subset[subset].loc[self.eventsdb_subset[subset]['event_shape'] == 1, 'folding'] = 0
-            self.eventsdb_subset[subset].loc[self.eventsdb_subset[subset]['event_shape'] == 2, 'folding'] = 0.5        
+            self.eventsdb_subset[subset].loc[self.eventsdb_subset[subset]['event_shape'] == 2, 'folding'] = 0.5
 
+    def apply_limits(self):
+        x_min = float(self.x_min.get())
+        x_max = float(self.x_max.get())
+        y_min = float(self.y_min.get())
+        y_max = float(self.y_max.get())
+
+        self.a.set_xlim([x_min, x_max])
+        self.a.set_ylim([y_min, y_max])
+        self.canvas.show()
+
+        
+
+    def set_axis_limits(self):
+        limits = tk.Toplevel()
+        limits.title('Axis Limits')
+        limits.columnconfigure(1,weight=1)
+
+        x_min, x_max = self.a.get_xlim()
+        y_min, y_max = self.a.get_ylim()
+
+        lim_frame = tk.LabelFrame(limits, text='Axis Limits')
+        x_label = tk.Label(limits, text='X')
+        y_label = tk.Label(limits, text='Y')
+        min_label = tk.Label(limits, text='Min')
+        max_label = tk.Label(limits, text='Max')
+        x_min_default = tk.StringVar()
+        x_min_default.set(x_min)
+        x_max_default = tk.StringVar()
+        x_max_default.set(x_max)
+        y_min_default = tk.StringVar()
+        y_min_default.set(y_min)
+        y_max_default = tk.StringVar()
+        y_max_default.set(y_max)
+        self.x_min = tk.Entry(limits,textvariable=x_min_default)
+        self.x_max = tk.Entry(limits,textvariable=x_max_default)
+        self.y_min = tk.Entry(limits,textvariable=y_min_default)
+        self.y_max = tk.Entry(limits,textvariable=y_max_default)
+
+        apply_button = tk.Button(limits,text='Apply',command=self.apply_limits)
+
+        x_label.grid(row=1,column=0)
+        y_label.grid(row=2,column=0)
+        min_label.grid(row=0,column=1)
+        max_label.grid(row=0,column=2)
+
+        self.x_min.grid(row=1,column=1)
+        self.x_max.grid(row=1,column=2)
+        self.y_min.grid(row=2,column=1)
+        self.y_max.grid(row=2,column=2)
+
+        apply_button.grid(row=3,column=1,columnspan=2)
+
+
+    def on_click(self, event):
+        pass#print event.xdata, event.ydata
+
+    def key_press(self, event):
+        if event.char == 'a':
+            self.set_axis_limits()
 
     def plot_xy(self):
         subset_list = self.get_active_subsets()
@@ -625,6 +688,7 @@ class App(tk.Frame):
 
         self.f.clf()
         self.a = self.f.add_subplot(111)
+        self.a.figure.canvas.mpl_connect('button_press_event', self.on_click)
         self.a.set_xlabel(x_label)
         self.a.set_ylabel(y_label)
         self.f.subplots_adjust(bottom=0.14,left=0.21)
@@ -874,6 +938,8 @@ class App(tk.Frame):
 
     def enter_key_press(self,event):
         self.update_plot()
+
+    
 
     def alias_columns(self):
         self.alias_dict = {'id': 'Event Number',
