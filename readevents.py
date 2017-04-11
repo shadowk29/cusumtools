@@ -625,43 +625,47 @@ class App(tk.Frame):
         
 
     def set_axis_limits(self):
-        limits = tk.Toplevel()
-        limits.title('Axis Limits')
+        try:
+            limits = tk.Toplevel()
+            limits.title('Axis Limits')
 
-        x_min, x_max = self.a.get_xlim()
-        y_min, y_max = self.a.get_ylim()
+            x_min, x_max = self.a.get_xlim()
+            y_min, y_max = self.a.get_ylim()
 
-        lim_frame = tk.LabelFrame(limits, text='Axis Limits')
-        x_label = tk.Label(limits, text='X')
-        y_label = tk.Label(limits, text='Y')
-        min_label = tk.Label(limits, text='Min')
-        max_label = tk.Label(limits, text='Max')
-        x_min_default = tk.StringVar()
-        x_min_default.set(x_min)
-        x_max_default = tk.StringVar()
-        x_max_default.set(x_max)
-        y_min_default = tk.StringVar()
-        y_min_default.set(y_min)
-        y_max_default = tk.StringVar()
-        y_max_default.set(y_max)
-        self.x_min = tk.Entry(limits,textvariable=x_min_default)
-        self.x_max = tk.Entry(limits,textvariable=x_max_default)
-        self.y_min = tk.Entry(limits,textvariable=y_min_default)
-        self.y_max = tk.Entry(limits,textvariable=y_max_default)
+            lim_frame = tk.LabelFrame(limits, text='Axis Limits')
+            x_label = tk.Label(limits, text='X')
+            y_label = tk.Label(limits, text='Y')
+            min_label = tk.Label(limits, text='Min')
+            max_label = tk.Label(limits, text='Max')
+            x_min_default = tk.StringVar()
+            x_min_default.set(x_min)
+            x_max_default = tk.StringVar()
+            x_max_default.set(x_max)
+            y_min_default = tk.StringVar()
+            y_min_default.set(y_min)
+            y_max_default = tk.StringVar()
+            y_max_default.set(y_max)
+            self.x_min = tk.Entry(limits,textvariable=x_min_default)
+            self.x_max = tk.Entry(limits,textvariable=x_max_default)
+            self.y_min = tk.Entry(limits,textvariable=y_min_default)
+            self.y_max = tk.Entry(limits,textvariable=y_max_default)
 
-        apply_button = tk.Button(limits,text='Apply',command=self.apply_limits)
+            apply_button = tk.Button(limits,text='Apply',command=self.apply_limits)
 
-        x_label.grid(row=1,column=0,sticky=tk.E+tk.W)
-        y_label.grid(row=2,column=0,sticky=tk.E+tk.W)
-        min_label.grid(row=0,column=1,sticky=tk.E+tk.W)
-        max_label.grid(row=0,column=2,sticky=tk.E+tk.W)
+            x_label.grid(row=1,column=0,sticky=tk.E+tk.W)
+            y_label.grid(row=2,column=0,sticky=tk.E+tk.W)
+            min_label.grid(row=0,column=1,sticky=tk.E+tk.W)
+            max_label.grid(row=0,column=2,sticky=tk.E+tk.W)
 
-        self.x_min.grid(row=1,column=1,sticky=tk.E+tk.W)
-        self.x_max.grid(row=1,column=2,sticky=tk.E+tk.W)
-        self.y_min.grid(row=2,column=1,sticky=tk.E+tk.W)
-        self.y_max.grid(row=2,column=2,sticky=tk.E+tk.W)
+            self.x_min.grid(row=1,column=1,sticky=tk.E+tk.W)
+            self.x_max.grid(row=1,column=2,sticky=tk.E+tk.W)
+            self.y_min.grid(row=2,column=1,sticky=tk.E+tk.W)
+            self.y_max.grid(row=2,column=2,sticky=tk.E+tk.W)
 
-        apply_button.grid(row=3,column=0,columnspan=3,sticky=tk.E+tk.W)
+            apply_button.grid(row=3,column=0,columnspan=3,sticky=tk.E+tk.W)
+        except AttributeError:
+            self.status_string.set('Plot something first')
+            limits.destroy()
 
 
     def on_click(self, event):
