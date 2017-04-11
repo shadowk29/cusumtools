@@ -369,7 +369,7 @@ class App(tk.Frame):
         if 'Nonconsecutive Events Removed' in self.filter_list[subset]:
             self.status_string.set('Cannot apply filters after removing non-consecutive events. To apply further filters, reset the subset and start over')
         else:
-            self.eventsdb_subset[subset] = sqldf('SELECT * from eventsdb_subset WHERE %s' % filterstring,locals())
+            self.eventsdb_subset[subset] = eventsdb_subset.query(filterstring)
             try:
                 self.status_string.set('{0}: {1} events'.format(subset,len(self.eventsdb_subset[subset])))
                 if filterstring not in self.filter_list[subset]:
