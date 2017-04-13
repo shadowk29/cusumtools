@@ -157,7 +157,7 @@ class App(tk.Frame):
         self.use_histogram_check.grid(row=5,column=5,sticky=tk.E+tk.W)
 
 
-        parent.bind("<Key>", self.key_press)
+        parent.bind("<Control-Key>", self.key_press)
 
 
         
@@ -672,7 +672,7 @@ class App(tk.Frame):
         pass#print event.xdata, event.ydata
 
     def key_press(self, event):
-        if event.char == 'a':
+        if event.keysym == 'a':
             self.set_axis_limits()
 
     def plot_xy(self):
