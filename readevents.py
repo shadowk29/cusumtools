@@ -285,7 +285,7 @@ class App(tk.Frame):
         return amplitude * np.exp(-rate*10.0**logt) * 10.0**logt * np.log(10)
 
     def capture_rate(self):
-        subset_list = self.self.get_active_subsets()
+        subset_list = self.get_active_subsets()
         self.f.clf()
         self.a = self.f.add_subplot(111)
         
