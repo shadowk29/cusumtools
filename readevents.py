@@ -884,7 +884,8 @@ class App(tk.Frame):
             self.event_info_string.set('Event not found, resetting')
             current_index = -1
         if current_index < len(self.eventsdb_subset[subset])-1:
-            self.event_index.set(int(self.eventsdb_subset[subset]['id'][current_index + 1]))
+            next_index = self.eventsdb_subset[subset][self.eventsdb_subset[subset]['id'] > self.event_index.get()].index.tolist()[0]
+            self.event_index.set(int(self.eventsdb_subset[subset]['id'][next_index]))
             self.plot_event()
         else:
             pass
@@ -898,7 +899,8 @@ class App(tk.Frame):
             self.event_info_string.set('Event not found, resetting')
             current_index = 1
         if current_index > 0:
-            self.event_index.set(int(self.eventsdb_subset[subset]['id'][current_index - 1]))
+            prev_index = self.eventsdb_subset[subset][self.eventsdb_subset[subset]['id'] < self.event_index.get()].index.tolist()[-1]
+            self.event_index.set(int(self.eventsdb_subset[subset]['id'][prev_index]))
             self.plot_event()
         else:
             pass
