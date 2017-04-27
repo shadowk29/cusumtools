@@ -311,7 +311,7 @@ class App(tk.Frame):
 
     def initialize_samplerate(self):
         settings = self.settings[0]
-        self.samplerate = np.squeeze(settings['ADCSAMPLERATE'])
+        self.samplerate = np.floor(np.squeeze(settings['ADCSAMPLERATE']))
 
     ##### Plot Updating functions #####
     def update_trace(self):
