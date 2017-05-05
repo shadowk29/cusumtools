@@ -257,7 +257,7 @@ class App(tk.Frame):
         self.data = data
 
     def scale_raw_data(self,tempdata,settings):
-        samplerate = int(np.squeeze(settings['ADCSAMPLERATE']))
+        samplerate = np.floor(np.squeeze(settings['ADCSAMPLERATE']))
         TIAgain = np.squeeze(settings['SETUP_TIAgain'])
         preADCgain = np.squeeze(settings['SETUP_preADCgain'])
         currentoffset = np.squeeze(settings['SETUP_pAoffset'])
