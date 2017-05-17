@@ -32,6 +32,7 @@ import itertools
 from collections import OrderedDict
 from scipy.stats import t
 import pylab as pl
+from idlelib.WidgetRedirector import WidgetRedirector
 
 class FlashableLabel(tk.Label):
     def flash(self,count):
@@ -42,7 +43,15 @@ class FlashableLabel(tk.Label):
         if (count > 0):
              self.after(500,self.flash, count) 
 
-    
+
+class ReadOnlyText(tk.Entry):
+     def __init__(self, *args, **kwargs):
+         tk.Entry.__init__(self, *args, **kwargs)
+         self.redirector = WidgetRedirector(self)
+         self.insert = self.redirector.register("insert", lambda *args, **kw: "break")
+         self.delete = self.redirector.register("delete", lambda *args, **kw: "break")
+
+
 class App(tk.Frame):
     def __init__(self, parent,eventsdb,events_folder,file_path_string):
         tk.Frame.__init__(self, parent)
@@ -416,7 +425,7 @@ class App(tk.Frame):
         subset_frame = OrderedDict(sorted(subset_frame.items()))
             
         filters = dict((key, tk.StringVar()) for key, val in subset_frame.iteritems())
-        msg = dict((key, tk.Label(val, textvariable=filters[key])) for key, val in subset_frame.iteritems())
+        msg = dict((key, ReadOnlyText(val, textvariable=filters[key], bg=subset_frame[key].cget('bg'), relief='flat')) for key, val in subset_frame.iteritems())
         
         i = 0
         for key, val in subset_frame.iteritems():
