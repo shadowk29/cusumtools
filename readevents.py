@@ -576,7 +576,7 @@ class App(tk.Frame):
     def define_shapes(self):
         subset = self.subset_option.cget('text')
         if self.clicks_remaining > 0:
-            self.status_string.set('Complete State Array First')
+            self.status_string.set('Complete State Array First: {0} clicks remaining'.format(self.clicks_remaining))
         else:
             type_array = []
             trimmed_type = []
@@ -677,8 +677,8 @@ class App(tk.Frame):
             limits.destroy()
 
 
-    def on_click(self, event):
-        pass#print event.xdata, event.ydata
+    #def on_click(self, event):
+    #    pass#print event.xdata, event.ydata
 
     def key_press(self, event):
         if event.keysym == 'a':
@@ -892,7 +892,7 @@ class App(tk.Frame):
         except IndexError:
             self.event_info_string.set('Event not found, resetting')
             current_index = -1
-        if current_index < len(self.eventsdb_subset[subset])-1:
+        if current_index < max(self.eventsdb['id']):
             next_index = self.eventsdb_subset[subset][self.eventsdb_subset[subset]['id'] > self.event_index.get()].index.tolist()[0]
             self.event_index.set(int(self.eventsdb_subset[subset]['id'][next_index]))
             self.plot_event()
@@ -908,9 +908,12 @@ class App(tk.Frame):
             self.event_info_string.set('Event not found, resetting')
             current_index = 1
         if current_index > 0:
-            prev_index = self.eventsdb_subset[subset][self.eventsdb_subset[subset]['id'] < self.event_index.get()].index.tolist()[-1]
-            self.event_index.set(int(self.eventsdb_subset[subset]['id'][prev_index]))
-            self.plot_event()
+            try:
+                prev_index = self.eventsdb_subset[subset][self.eventsdb_subset[subset]['id'] < self.event_index.get()].index.tolist()[-1]
+                self.event_index.set(int(self.eventsdb_subset[subset]['id'][prev_index]))
+                self.plot_event()
+            except IndexError:
+                pass
         else:
             pass
 
