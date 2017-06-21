@@ -79,6 +79,7 @@ class App(tk.Frame):
             eventsdb['trimmed_n_levels']=""
         if 'first_level' not in eventsdb.columns:
             eventsdb['first_level']=""
+            eventsdb['last_level']=""
         if 'first_level_fraction' not in eventsdb.columns:
             eventsdb['first_level_fraction']=""
             self.first_level_fraction()
@@ -599,6 +600,7 @@ class App(tk.Frame):
             trimmed_type = []
             trimmed_Nlev = []
             first_level=[]
+            last_level=[]
             state_means = np.zeros(self.num_states)
             i = 0
             while i < self.num_states*2:
@@ -634,12 +636,15 @@ class App(tk.Frame):
                 type_array.append(typenum)
                 if typenum != -1:
                     first_level.append(int(str(trim_type)[0]))
+                    last_level.append(int(str(trim_type)[-1]))
                 else:
                     first_level.append(-1)
+                    last_level.append(-1)
             self.eventsdb_subset[subset]['event_shape'] = type_array
             self.eventsdb_subset[subset]['trimmed_shape'] = trimmed_type
             self.eventsdb_subset[subset]['trimmed_n_levels'] = trimmed_Nlev
             self.eventsdb_subset[subset]['first_level'] = first_level
+            self.eventsdb_subset[subset]['last_level'] = last_level
             self.status_string.set('Event shapes recalculated. \nThis applies only to the current subset')
             self.eventsdb_subset[subset].loc[self.eventsdb_subset[subset]['event_shape'] == 1, 'folding'] = 0
             self.eventsdb_subset[subset].loc[self.eventsdb_subset[subset]['event_shape'] == 2, 'folding'] = 0.5
@@ -1011,6 +1016,7 @@ class App(tk.Frame):
                       'trimmed_shape': 'Trimmed Shape',
                       'trimmed_n_levels':'Trimmed N Levels',
                       'first_level':'First Level',
+                      'last_level':'Last Level',
                       'first_level_fraction':'First Level Fraction',
                       'min_blockage_pA': 'Minimum Blockage (pA)',
                       'relative_min_blockage': 'Relative Minimum Blockage (unitless)',
