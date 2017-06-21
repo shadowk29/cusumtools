@@ -62,9 +62,7 @@ class App(tk.Frame):
 
         self.clicks_remaining = 0
         
-        eventsdb['event_shape']=""
-        eventsdb['trimmed_shape']=""
-        eventsdb['trimmed_n_levels']=""
+        
         
 
 
@@ -72,8 +70,19 @@ class App(tk.Frame):
         self.eventsdb_subset = dict(('Subset {0}'.format(i), self.eventsdb) for i in range(max_subsets))
         self.capture_rate_subset = dict.fromkeys(list(self.eventsdb_subset.keys()))
         self.filter_list = dict(('Subset {0}'.format(i), []) for i in range(max_subsets))
-        #self.survival_probability()
-        #self.delay_probability()
+
+        if 'event_shape' not in eventsdb.columns:
+            eventsdb['event_shape']=""
+        if 'trimmed_shape' not in eventsdb.columns:
+            eventsdb['trimmed_shape']=""
+        if 'trimmed_n_levels' not in eventsdb.columns:    
+            eventsdb['trimmed_n_levels']=""
+        if 'first_level' not in eventsdb.columns:
+            eventsdb['first_level']=""
+        if 'first_level_fraction' not in eventsdb.columns:
+            eventsdb['first_level_fraction']=""
+            self.first_level_fraction()
+            
         self.folding_distribution()
         self.count()
 
@@ -461,6 +470,14 @@ class App(tk.Frame):
 ##        for key, val in self.eventsdb_subset.iteritems():
 ##            val = self.eventsdb
 
+
+    def first_level_fraction(self):
+        durations = [np.array(a,dtype=float)[1:-1] for a in self.eventsdb['level_duration_us'].str.split(';')]
+        fraction = [duration[0]/(np.sum(duration)+duration[0]) for duration in durations]
+        self.eventsdb['first_level_fraction'] = fraction
+        for key, val in self.eventsdb_subset.iteritems():
+            val = self.eventsdb
+        
     def folding_distribution(self):
         x = self.eventsdb['max_blockage_duration_us']/(self.eventsdb['duration_us']+self.eventsdb['max_blockage_duration_us'])
         self.eventsdb['folding'] = x
@@ -581,6 +598,7 @@ class App(tk.Frame):
             type_array = []
             trimmed_type = []
             trimmed_Nlev = []
+            first_level=[]
             state_means = np.zeros(self.num_states)
             i = 0
             while i < self.num_states*2:
@@ -614,9 +632,14 @@ class App(tk.Frame):
                 if typenum > 999999999:
                     typenum = -1
                 type_array.append(typenum)
+                if typenum != -1:
+                    first_level.append(int(str(trim_type)[0]))
+                else:
+                    first_level.append(-1)
             self.eventsdb_subset[subset]['event_shape'] = type_array
             self.eventsdb_subset[subset]['trimmed_shape'] = trimmed_type
             self.eventsdb_subset[subset]['trimmed_n_levels'] = trimmed_Nlev
+            self.eventsdb_subset[subset]['first_level'] = first_level
             self.status_string.set('Event shapes recalculated. \nThis applies only to the current subset')
             self.eventsdb_subset[subset].loc[self.eventsdb_subset[subset]['event_shape'] == 1, 'folding'] = 0
             self.eventsdb_subset[subset].loc[self.eventsdb_subset[subset]['event_shape'] == 2, 'folding'] = 0.5
@@ -980,8 +1003,6 @@ class App(tk.Frame):
                       'level_duration_us': 'Level Duration (us)',
                       'blockages_pA': 'Blockage Level (pA)',
                       'residual_pA': 'Residuals (pA)',
-                      #'survival_probability': 'Survival Probablity',
-                      #'delay_probability': 'Delay Probablity',
                       'stdev_pA': 'Level Standard Deviation (pA)',
                       'count': 'Event Count',
                       'folding': 'Fold Fraction',
@@ -989,6 +1010,8 @@ class App(tk.Frame):
                       'max_deviation_pA': 'Maximum Deviation (pA)',
                       'trimmed_shape': 'Trimmed Shape',
                       'trimmed_n_levels':'Trimmed N Levels',
+                      'first_level':'First Level',
+                      'first_level_fraction':'First Level Fraction',
                       'min_blockage_pA': 'Minimum Blockage (pA)',
                       'relative_min_blockage': 'Relative Minimum Blockage (unitless)',
                       'min_blockage_duration_us': 'Minimum Blockage Duration (us)'}
