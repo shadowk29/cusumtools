@@ -33,6 +33,7 @@ from collections import OrderedDict
 from scipy.stats import t
 import pylab as pl
 from idlelib.WidgetRedirector import WidgetRedirector
+from exceptions import *
 
 class FlashableLabel(tk.Label):
     def flash(self,count):
@@ -585,11 +586,30 @@ class App(tk.Frame):
 
 
     def define_states(self):
-        self.num_states = int(self.n_states_entry.get())
+        setup = self.n_states_entry.get().split(';')
+        self.ignore_list = []
+        self.tolerance = 4
+
+        
+        self.num_states = int(setup[0])
         self.clicks_remaining = self.num_states*2
         self.status_string.set('Click on the 1D blockage level histogram {0} times'.format(self.clicks_remaining))
         self.state_array = np.zeros(self.num_states*2)
 
+        if len(setup) > 1:
+            self.ignore_list = np.array([int(i) if i.isdigit() else i for i in setup[1].split(',')])
+        if len(setup) > 2:
+            self.tolerance = float(setup[2])
+
+    def multi_gauss(self, x, N, *args):
+        f = np.zeros(len(x))
+        args = args[0]
+        for i in range(N):
+            amp = args[3*i]
+            mu = args[3*i+1]
+            sig = args[3*i+2]
+            f += amp * np.exp(-(x-mu)**2/(2.0*sig**2))
+        return f
 
     def define_shapes(self):
         subset = self.subset_option.cget('text')
@@ -606,6 +626,24 @@ class App(tk.Frame):
             while i < self.num_states*2:
                 state_means[i/2] = 0.5*(self.state_array[i]+self.state_array[i+1])
                 i += 2
+
+
+
+            x = self.xdata
+            y = self.ydata
+
+            p0 = []
+            for i in range(self.num_states):
+                p0.append(y[np.abs(x-state_means[i]).argmin()])
+                p0.append(state_means[i])
+                p0.append(1.0/6.0 * (self.state_array[2*i+1]-self.state_array[2*i]))
+            
+            popt, pcov = curve_fit(lambda x, *p0: self.multi_gauss(x, self.num_states, p0), x, y, p0=p0)
+
+            self.plot_1d_histogram()
+            self.a.plot(x, self.multi_gauss(x, self.num_states,popt))
+            self.canvas.show()
+            
             blockage_levels = [np.array(a,dtype=float)[1:-1] for a in self.eventsdb_subset[subset]['blockages_pA'].str.split(';')]
             for b in blockage_levels:
                 event_type = []

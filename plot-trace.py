@@ -428,7 +428,7 @@ class App(tk.Frame):
         
         if self.normalize.get():
             Pxx /= current**2
-            Pxx *= 100000
+            Pxx *= maxf/2.0
             self.rms /= np.absolute(current)
            
         self.f = f
