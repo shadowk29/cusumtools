@@ -50,3 +50,6 @@ Temporary Items
 *.spec
 *.csv
 *.conf
+*.html
+*.html
+build/readevents/xref-readevents.html
