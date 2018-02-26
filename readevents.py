@@ -34,7 +34,6 @@ from scipy.stats import t
 import pylab as pl
 from idlelib.WidgetRedirector import WidgetRedirector
 from exceptions import *
-import ttk
 
 class FlashableLabel(tk.Label):
     def flash(self,count):
