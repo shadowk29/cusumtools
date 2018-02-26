@@ -678,11 +678,11 @@ class App(tk.Frame):
                 else:
                     first_level.append(-1)
                     last_level.append(-1)
-            self.eventsdb_subset[subset]['event_shape'] = type_array
-            self.eventsdb_subset[subset]['trimmed_shape'] = trimmed_type
-            self.eventsdb_subset[subset]['trimmed_n_levels'] = trimmed_Nlev
-            self.eventsdb_subset[subset]['first_level'] = first_level
-            self.eventsdb_subset[subset]['last_level'] = last_level
+            self.eventsdb_subset[subset].loc[:,'event_shape'] = type_array
+            self.eventsdb_subset[subset].loc[:,'trimmed_shape'] = trimmed_type
+            self.eventsdb_subset[subset].loc[:,'trimmed_n_levels'] = trimmed_Nlev
+            self.eventsdb_subset[subset].loc[:,'first_level'] = first_level
+            self.eventsdb_subset[subset].loc[:,'last_level'] = last_level
             self.status_string.set('Event shapes recalculated. \nThis applies only to the current subset')
             self.eventsdb_subset[subset].loc[self.eventsdb_subset[subset]['event_shape'] == 1, 'folding'] = 0
             self.eventsdb_subset[subset].loc[self.eventsdb_subset[subset]['event_shape'] == 2, 'folding'] = 0.5
