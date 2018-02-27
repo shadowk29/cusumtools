@@ -63,10 +63,6 @@ class App(tk.Frame):
 
         self.clicks_remaining = 0
         
-        
-        
-
-
         max_subsets = 11
         self.eventsdb_subset = dict(('Subset {0}'.format(i), self.eventsdb) for i in range(max_subsets))
         self.capture_rate_subset = dict.fromkeys(list(self.eventsdb_subset.keys()))
@@ -74,6 +70,7 @@ class App(tk.Frame):
 ####################
         self.plot_list = dict(('Subset {0}'.format(i), 0) for i in range(max_subsets))
         self.plot_list['Subset 0'] = 1
+        self.init_plot_list = self.plot_list.copy()
         self.good_event_subset = []
 ####################
         if 'event_shape' not in eventsdb.columns:
@@ -288,9 +285,6 @@ class App(tk.Frame):
         self.lstbox = tk.Listbox(self.window,listvariable=self.plot_subset_select, selectmode = "multiple", width=20, height=11)
         self.lstbox.grid(column=0, row=0)
 
-
-#https://www.dataquest.io/blog/settingwithcopywarning/
-
     def plot_subset_list_btn(self):
         plot_list_int = list()
         for i in self.lstbox.curselection():
@@ -315,30 +309,22 @@ class App(tk.Frame):
         else:
             self.status_string.set('Cannot run operation after removing non-consecutive events. To operate, reset the subset and start over')
 
-
-    def get_plot_subsets(self):
-        subset_plot_list = []
-        for key, val in self.plot_list.iteritems():
-            if val == 1:
-                subset_plot_list.append(key)
-        subset_plot_list = sorted(subset_plot_list)
-        return subset_plot_list
-
-
+    def get_active_subsets(self,active):
+        subset_list = []
+        if self.plot_list == self.init_plot_list or active == 1:
+            for key, val in self.filter_list.iteritems():
+                if key == 'Subset 0' or len(val) > 0:
+                    subset_list.append(key)
+        else:
+            for key, val in self.plot_list.iteritems():
+                if val == 1:
+                    subset_list.append(key)
+        subset_list = sorted(subset_list)
+        return subset_list
 
 #######################################
 
         
-
-
-    def get_active_subsets(self):
-        subset_list = []
-        for key, val in self.filter_list.iteritems():
-            if key == 'Subset 0' or len(val) > 0:
-                subset_list.append(key)
-        subset_list = sorted(subset_list)
-        return subset_list
-
     def remove_nonconsecutive_events(self):
         subset = self.subset_option.cget('text')
         if 'Nonconsecutive Events Removed' in self.filter_list[subset]:
@@ -369,7 +355,7 @@ class App(tk.Frame):
         return amplitude * np.exp(-rate*10.0**logt) * 10.0**logt * np.log(10)
 
     def capture_rate(self):
-        subset_list = self.get_plot_subsets()
+        subset_list = self.get_active_subsets(0)
         self.f.clf()
         self.a = self.f.add_subplot(111)
         
@@ -471,7 +457,7 @@ class App(tk.Frame):
                 self.eventsdb_subset[subset] = self.eventsdb_prev
         
     def replicate_manual_deletions(self):
-        subset_list = self.get_active_subsets()
+        subset_list = self.get_active_subsets(1)
 
         for subset in subset_list:
             self.eventsdb_prev = self.eventsdb_subset[subset]
@@ -579,7 +565,7 @@ class App(tk.Frame):
 
     def export_plot_data(self):
         data_path = tkFileDialog.asksaveasfilename(defaultextension='.csv')
-        subset_list = self.get_plot_subsets()
+        subset_list = self.get_active_subsets(0)
         if self.export_type == 'hist1d':
             x_label = self.x_option.cget('text')
             logscale_x = self.x_log_var.get()
@@ -821,7 +807,7 @@ class App(tk.Frame):
             self.set_axis_limits()
 
     def plot_xy(self):
-        subset_list = self.get_plot_subsets()
+        subset_list = self.get_active_subsets(0)
         self.export_type = 'scatter'
         logscale_x = self.x_log_var.get()
         logscale_y = self.y_log_var.get()
@@ -858,7 +844,7 @@ class App(tk.Frame):
         self.canvas.show()
 
     def plot_1d_histogram(self):
-        subset_list = self.get_plot_subsets()
+        subset_list = self.get_active_subsets(0)
         self.export_type = 'hist1d'
         logscale_x = self.x_log_var.get()
         logscale_y = self.y_log_var.get()
