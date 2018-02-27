@@ -63,15 +63,16 @@ class App(tk.Frame):
 
         self.clicks_remaining = 0
         
-        
-        
-
-
         max_subsets = 11
         self.eventsdb_subset = dict(('Subset {0}'.format(i), self.eventsdb) for i in range(max_subsets))
         self.capture_rate_subset = dict.fromkeys(list(self.eventsdb_subset.keys()))
         self.filter_list = dict(('Subset {0}'.format(i), []) for i in range(max_subsets))
-
+####################
+        self.plot_list = dict(('Subset {0}'.format(i), 0) for i in range(max_subsets))
+        self.plot_list['Subset 0'] = 1
+        self.init_plot_list = self.plot_list.copy()
+        self.good_event_subset = []
+####################
         if 'event_shape' not in eventsdb.columns:
             eventsdb['event_shape']=""
         if 'trimmed_shape' not in eventsdb.columns:
@@ -115,12 +116,17 @@ class App(tk.Frame):
         self.toolbar = NavigationToolbar2TkAgg(self.canvas, self.toolbar_frame)
         self.toolbar.update()
 
-        
 
         self.toolbar_frame.grid(row=1,column=0,columnspan=6)
         self.canvas.get_tk_widget().grid(row=0,column=0,columnspan=6)
 
-        
+#########|##############################################
+        self.plot_subsets = tk.Button(self.stats_frame, text='Subsets to Plot',command=self.plot_subset_select)
+        self.plot_subsets.grid(row=1,column=5,sticky=tk.E+tk.W)
+
+        self.good_events = tk.Button(self.stats_frame, text='Good events',command=self.declare_good_events)
+        self.good_events.grid(row=1,column=4,sticky=tk.E+tk.W)
+########################################################
         
         self.plot_button = tk.Button(self.stats_frame,text='Update Plot',command=self.update_plot)
         self.export_plot_button = tk.Button(self.stats_frame,text='Export Data',command=self.export_plot_data)
@@ -267,14 +273,58 @@ class App(tk.Frame):
 
         self.status_display.grid(row=0,column=0,columnspan=6,sticky=tk.E+tk.W+tk.S+tk.N)
 
-    def get_active_subsets(self):
+#######################################
+    def plot_subset_select(self):
+        self.window = tk.Toplevel()
+        self.window.title("Subsets to plot")
+        self.plot_subsets_btn = tk.Button(self.window, text='Selection Done',command=self.plot_subset_list_btn)
+        self.plot_subsets_btn.grid(row=1,column=0,columnspan=3,sticky=tk.E+tk.W)
+        self.plot_subset_select = tk.StringVar()
+        b = len(self.plot_list)
+        self.plot_subset_select.set(str(np.arange(0,b))[1:-1])
+        self.lstbox = tk.Listbox(self.window,listvariable=self.plot_subset_select, selectmode = "multiple", width=20, height=11)
+        self.lstbox.grid(column=0, row=0)
+
+    def plot_subset_list_btn(self):
+        plot_list_int = list()
+        for i in self.lstbox.curselection():
+            plot_list_int.append(self.lstbox.get(i))
+        for key, val in self.plot_list.iteritems():
+            self.plot_list[key]=0     
+        for val in plot_list_int:
+            self.plot_list['Subset '+str(val)]=1
+        self.window.destroy()
+
+
+    def declare_good_events(self):
+        subset = self.subset_option.cget('text')
+        [a,b] = self.eventsdb_subset[subset].shape
+        if 'Nonconsecutive Events Removed' not in self.filter_list[subset]:
+            self.eventsdb_subset[subset]['index_ref'] = np.arange(0,a)
+            if subset in self.good_event_subset:
+                self.good_event_subset.remove(subset)
+            self.good_event_subset.insert(0,subset)
+            self.status_string.set(', '.join(self.good_event_subset)+' events are all considered successful')
+
+        else:
+            self.status_string.set('Cannot run operation after removing non-consecutive events. To operate, reset the subset and start over')
+
+    def get_active_subsets(self,active):
         subset_list = []
-        for key, val in self.filter_list.iteritems():
-            if key == 'Subset 0' or len(val) > 0:
-                subset_list.append(key)
+        if self.plot_list == self.init_plot_list or active == 1:
+            for key, val in self.filter_list.iteritems():
+                if key == 'Subset 0' or len(val) > 0:
+                    subset_list.append(key)
+        else:
+            for key, val in self.plot_list.iteritems():
+                if val == 1:
+                    subset_list.append(key)
         subset_list = sorted(subset_list)
         return subset_list
 
+#######################################
+
+        
     def remove_nonconsecutive_events(self):
         subset = self.subset_option.cget('text')
         if 'Nonconsecutive Events Removed' in self.filter_list[subset]:
@@ -305,7 +355,7 @@ class App(tk.Frame):
         return amplitude * np.exp(-rate*10.0**logt) * 10.0**logt * np.log(10)
 
     def capture_rate(self):
-        subset_list = self.get_active_subsets()
+        subset_list = self.get_active_subsets(0)
         self.f.clf()
         self.a = self.f.add_subplot(111)
         
@@ -319,12 +369,17 @@ class App(tk.Frame):
                 db = self.eventsdb_subset[subset]
             else:
                 db = self.capture_rate_subset[subset]
-                
-            indices = db['id'].values
+
             start_times = db['start_time_s'].values
-            delays = np.diff(start_times)
+            delays = np.diff(start_times)                        
+            indices = db['id'].values
             index_diff = np.diff(indices)
-            valid_delays = np.sort(delays[np.where(index_diff == 1)])
+            if 'index_ref' in db:
+                ref_indices = db['index_ref']
+                ref_indices_diff = np.diff(ref_indices)
+                valid_delays = np.sort(delays[np.where((index_diff - ref_indices_diff) == 0)])
+            else:
+                valid_delays = np.sort(delays[np.where(index_diff == 1)])
 
             if not self.use_histogram.get():
                 probability = np.squeeze(np.array([1.0-float(i)/float(len(valid_delays)) for i in range(len(valid_delays))]))
@@ -402,7 +457,7 @@ class App(tk.Frame):
                 self.eventsdb_subset[subset] = self.eventsdb_prev
         
     def replicate_manual_deletions(self):
-        subset_list = self.get_active_subsets()
+        subset_list = self.get_active_subsets(1)
 
         for subset in subset_list:
             self.eventsdb_prev = self.eventsdb_subset[subset]
@@ -506,10 +561,11 @@ class App(tk.Frame):
         self.capture_rate_subset[subset] = None
         self.filter_list[subset] = []
         self.status_string.set('{0}: {1} events'.format(subset,len(self.eventsdb_subset[subset])))
+        self.good_event_subset.remove(subset)
 
     def export_plot_data(self):
         data_path = tkFileDialog.asksaveasfilename(defaultextension='.csv')
-        subset_list = self.get_active_subsets()
+        subset_list = self.get_active_subsets(0)
         if self.export_type == 'hist1d':
             x_label = self.x_option.cget('text')
             logscale_x = self.x_log_var.get()
@@ -678,11 +734,11 @@ class App(tk.Frame):
                 else:
                     first_level.append(-1)
                     last_level.append(-1)
-            self.eventsdb_subset[subset].loc[:,'event_shape'] = type_array
-            self.eventsdb_subset[subset].loc[:,'trimmed_shape'] = trimmed_type
-            self.eventsdb_subset[subset].loc[:,'trimmed_n_levels'] = trimmed_Nlev
-            self.eventsdb_subset[subset].loc[:,'first_level'] = first_level
-            self.eventsdb_subset[subset].loc[:,'last_level'] = last_level
+            self.eventsdb_subset[subset]['event_shape'] = type_array
+            self.eventsdb_subset[subset]['trimmed_shape'] = trimmed_type
+            self.eventsdb_subset[subset]['trimmed_n_levels'] = trimmed_Nlev
+            self.eventsdb_subset[subset]['first_level'] = first_level
+            self.eventsdb_subset[subset]['last_level'] = last_level
             self.status_string.set('Event shapes recalculated. \nThis applies only to the current subset')
             self.eventsdb_subset[subset].loc[self.eventsdb_subset[subset]['event_shape'] == 1, 'folding'] = 0
             self.eventsdb_subset[subset].loc[self.eventsdb_subset[subset]['event_shape'] == 2, 'folding'] = 0.5
@@ -751,7 +807,7 @@ class App(tk.Frame):
             self.set_axis_limits()
 
     def plot_xy(self):
-        subset_list = self.get_active_subsets()
+        subset_list = self.get_active_subsets(0)
         self.export_type = 'scatter'
         logscale_x = self.x_log_var.get()
         logscale_y = self.y_log_var.get()
@@ -788,7 +844,7 @@ class App(tk.Frame):
         self.canvas.show()
 
     def plot_1d_histogram(self):
-        subset_list = self.get_active_subsets()
+        subset_list = self.get_active_subsets(0)
         self.export_type = 'hist1d'
         logscale_x = self.x_log_var.get()
         logscale_y = self.y_log_var.get()
