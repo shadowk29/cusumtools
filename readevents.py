@@ -1138,8 +1138,8 @@ def main():
     root.withdraw()
     file_path_string = tkFileDialog.askopenfilename(initialdir='C:/Users/kbrig035/Analysis/CUSUM/output/')
     folder = os.path.dirname(os.path.abspath(file_path_string))
+    root.wm_title("CUSUM Tools: " + folder)
     folder = folder + '\events\\'
-    root.wm_title("CUSUM Tools")
     eventsdb = pd.read_csv(file_path_string,encoding='utf-8')
     App(root,eventsdb,folder,file_path_string).grid(row=0,column=0)
     root.mainloop()
