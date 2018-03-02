@@ -35,6 +35,9 @@ import pylab as pl
 from idlelib.WidgetRedirector import WidgetRedirector
 from exceptions import *
 
+pd.options.mode.chained_assignment = None  # default='warn'
+
+
 class FlashableLabel(tk.Label):
     def flash(self,count):
         bg = self.cget('background')
@@ -60,19 +63,19 @@ class App(tk.Frame):
         self.file_path_string = file_path_string
         self.events_folder = events_folder
         self.eventsdb = eventsdb
-
+        [a,b] = self.eventsdb.shape
+        self.eventsdb['adj_id'] = np.arange(0,a)
         self.clicks_remaining = 0
         
         max_subsets = 11
         self.eventsdb_subset = dict(('Subset {0}'.format(i), self.eventsdb) for i in range(max_subsets))
         self.capture_rate_subset = dict.fromkeys(list(self.eventsdb_subset.keys()))
         self.filter_list = dict(('Subset {0}'.format(i), []) for i in range(max_subsets))
-####################
         self.plot_list = dict(('Subset {0}'.format(i), 0) for i in range(max_subsets))
         self.plot_list['Subset 0'] = 1
         self.init_plot_list = self.plot_list.copy()
-        self.good_event_subset = []
-####################
+        self.good_event_subset
+
         if 'event_shape' not in eventsdb.columns:
             eventsdb['event_shape']=""
         if 'trimmed_shape' not in eventsdb.columns:
@@ -445,6 +448,7 @@ class App(tk.Frame):
             self.status_string.set('Cannot apply filters after removing non-consecutive events. To apply further filters, reset the subset and start over')
         else:
             self.eventsdb_subset[subset] = eventsdb_subset.query(filterstring)
+            self.eventsdb_subset[subset]['adj_id'] = np.arange(0,len(self.eventsdb_subset[subset]))
             try:
                 self.status_string.set('{0}: {1} events'.format(subset,len(self.eventsdb_subset[subset])))
                 if filterstring not in self.filter_list[subset]:
@@ -561,7 +565,9 @@ class App(tk.Frame):
         self.capture_rate_subset[subset] = None
         self.filter_list[subset] = []
         self.status_string.set('{0}: {1} events'.format(subset,len(self.eventsdb_subset[subset])))
-        self.good_event_subset.remove(subset)
+        if subset in self.good_event_subset:
+            self.good_event_subset.remove(subset)
+
 
     def export_plot_data(self):
         data_path = tkFileDialog.asksaveasfilename(defaultextension='.csv')
@@ -874,9 +880,11 @@ class App(tk.Frame):
             if len(subset_list) > 1:
                 for i in range(len(subset_list)):
                     if x_label == 'Fold Fraction':
-                        self.ydata, self.xdata, patches = self.a.hist(col[i],range=(0,0.5),bins=(0,0.1,0.2,0.3,0.4,0.5),log=bool(logscale_y),histtype='step',stacked=False,fill=False,label=subset_list[i])
+                        y, self.xdata, patches = self.a.hist(col[i],range=(0,0.5),bins=(0,0.1,0.2,0.3,0.4,0.5),log=bool(logscale_y),histtype='step',stacked=False,fill=False,label=subset_list[i])
+                        self.ydata.append(y)
                     else:
-                        self.ydata, self.xdata, patches = self.a.hist(col[i],bins=int(numbins),log=bool(logscale_y),histtype='step',stacked=False,fill=False,label=subset_list[i])
+                        y, self.xdata, patches = self.a.hist(col[i],bins=int(numbins),log=bool(logscale_y),histtype='step',stacked=False,fill=False,label=subset_list[i])
+                        self.ydata.append(y)
             else:
                 if x_label == 'Fold Fraction':
                     self.ydata, self.xdata, patches = self.a.hist(col,range=(0,0.5),bins=(0,0.1,0.2,0.3,0.4,0.5),log=bool(logscale_y),histtype='step',stacked=False,fill=False,label=subset_list)
@@ -962,6 +970,7 @@ class App(tk.Frame):
                 return_col = np.hstack([np.array(a,dtype=float)[1:-1] for a in self.eventsdb_subset[subset][col].str.split(';')])
         else:
             return_col = self.eventsdb_subset[subset][col]
+        
         return return_col.astype(np.float64)
 
     def plot_event(self):
@@ -1081,6 +1090,7 @@ class App(tk.Frame):
 
     def alias_columns(self):
         self.alias_dict = {'id': 'Event Number',
+                      'adj_id': 'Adjusted Event Number',
                       'type': 'Event Type',
                       'start_time_s': 'Start Time (s)',
                       'duration_us': 'Dwell Time (us)',
@@ -1138,8 +1148,8 @@ def main():
     root.withdraw()
     file_path_string = tkFileDialog.askopenfilename(initialdir='C:/Users/kbrig035/Analysis/CUSUM/output/')
     folder = os.path.dirname(os.path.abspath(file_path_string))
-    root.wm_title("CUSUM Tools: " + folder)
     folder = folder + '\events\\'
+    root.wm_title("CUSUM Tools")
     eventsdb = pd.read_csv(file_path_string,encoding='utf-8')
     App(root,eventsdb,folder,file_path_string).grid(row=0,column=0)
     root.mainloop()
