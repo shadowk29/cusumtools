@@ -74,7 +74,7 @@ class App(tk.Frame):
         self.plot_list = dict(('Subset {0}'.format(i), 0) for i in range(max_subsets))
         self.plot_list['Subset 0'] = 1
         self.init_plot_list = self.plot_list.copy()
-        self.good_event_subset
+        self.good_event_subset = []
 
         if 'event_shape' not in eventsdb.columns:
             eventsdb['event_shape']=""
