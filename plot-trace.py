@@ -112,7 +112,7 @@ class App(tk.Frame):
 
         self.cutoff_entry = tk.Entry(self.control_frame)
         self.cutoff_entry.insert(0,'900000')
-        self.cutoff_label = tk.Label(self.control_frame, text='Cutoff Frequency (Hz)')
+        self.cutoff_label = tk.Label(self.control_frame, text='Cutoff (Hz)')
         self.cutoff_label.grid(row=1,column=0,sticky=tk.E+tk.W)
         self.cutoff_entry.grid(row=1,column=1,sticky=tk.E+tk.W)
 
@@ -130,8 +130,13 @@ class App(tk.Frame):
         self.plot_trace = tk.Button(self.control_frame, text='Update Trace', command=self.update_trace)
         self.plot_trace.grid(row=2,column=0,columnspan=2,sticky=tk.E+tk.W)
 
+        self.normalize = tk.IntVar()
+        self.normalize.set(0)
+        self.normalize_check = tk.Checkbutton(self.control_frame, text='Normalize', variable = self.normalize)
+        self.normalize_check.grid(row=2,column=2,sticky=tk.E+tk.W)
+        
         self.plot_psd = tk.Button(self.control_frame, text='Update PSD', command=self.update_psd)
-        self.plot_psd.grid(row=2,column=2,columnspan=2,sticky=tk.E+tk.W)
+        self.plot_psd.grid(row=2,column=3,sticky=tk.E+tk.W)
 
         self.update_data = tk.Button(self.control_frame, text='Update Data', command=self.update_data)
         self.update_data.grid(row=2,column=4,columnspan=1,sticky=tk.E+tk.W)
@@ -192,7 +197,7 @@ class App(tk.Frame):
 
     def export_psd(self):
         try:
-            data_path = tkFileDialog.asksaveasfilename(defaultextension='.csv',initialdir='G:\Analysis\Pores\NPN\PSDs')
+            data_path = tkFileDialog.asksaveasfilename(defaultextension='.csv',initialdir='G:\PSDs for Sam')
             np.savetxt(data_path,np.c_[self.f, self.Pxx, self.rms],delimiter=',')
         except AttributeError:
             self.wildcard.set('Plot the PSD first')
@@ -415,17 +420,27 @@ class App(tk.Frame):
         else:
             length = np.minimum(2**20,len(self.filtered_data))
         end_index = int(np.floor(len(self.filtered_data)/length)*length)
+
+        current = np.average(self.filtered_data[:end_index])
         
         f, Pxx = welch(self.filtered_data[:end_index], plot_samplerate,nperseg=length)
+        self.rms = self.integrate_noise(f, Pxx)
+        
+        if self.normalize.get():
+            Pxx /= current**2
+            Pxx *= maxf/2.0
+            self.rms /= np.absolute(current)
+           
         self.f = f
         self.Pxx = Pxx
-        self.rms = self.integrate_noise(f, Pxx)
+        
         minf = 1  
         BW_index = np.searchsorted(f, maxf/2)
-        logPxx = np.log10(Pxx[0:BW_index])
+        logPxx = np.log10(Pxx[1:BW_index])
         minP = 10**np.floor(np.amin(logPxx))
         maxP = 10**np.ceil(np.amax(logPxx))
 
+        
         
         self.psd_fig.clf()
         a = self.psd_fig.add_subplot(111)
@@ -434,7 +449,7 @@ class App(tk.Frame):
         a.set_xlim(minf, maxf)
         a.set_ylim(minP, maxP)
         self.psd_fig.subplots_adjust(bottom=0.14,left=0.21)
-        a.loglog(f,Pxx,'b-')
+        a.loglog(f[1:],Pxx[1:],'b-')
         for tick in a.get_yticklabels():
             tick.set_color('b')
 
