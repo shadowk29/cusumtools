@@ -1,5 +1,5 @@
 ##                                COPYRIGHT
-##    Copyright (C) 2017 Phillip Karau (pkara031<at>uottawa.ca)
+##    Copyright (C) 2017 Philipp Karau (pkara031<at>uottawa.ca)
 ##
 ##    This file is part of cusumtools.
 ##
@@ -25,6 +25,7 @@ import Tkinter as tk
 import pandas as pd
 import pandasql as sqldf
 import tkFileDialog
+from progress.bar import ChargingBar, Bar
 db=sql.sqlite3MDIO()
 
 pd.options.mode.chained_assignment = None
@@ -77,7 +78,8 @@ def do_Stuff(file_path_string,events_directory_path,directory_path):
                              
     eventsdb = pd.DataFrame(db.queryDB(q), columns=column_list, dtype=object)
     eventsdb_converted = pd.DataFrame(columns=column_list2, dtype=object)
-
+    
+    bar = ChargingBar('Processing Events', max=len(eventsdb))
     for index in range(len(eventsdb)):
         eventid = int(eventsdb['recIDX'][index])
         eventtype = int()
@@ -91,12 +93,12 @@ def do_Stuff(file_path_string,events_directory_path,directory_path):
         n_levels = eventsdb['NStates'][index] + 1
         rc_const1_us = eventsdb['RCConstant'][index][0] * 1000.
         
-        max_blockage_pA = (1 - min(eventsdb['BlockDepth'][index])) * eventsdb['OpenChCurrent'][index]
+        max_blockage_pA = (1 - min(eventsdb['BlockDepth'][index])) * effective_baseline_pA
         relative_max_blockage = (1 - min(eventsdb['BlockDepth'][index]))
         max_blockage_duration_us = eventsdb['StateResTime'][index][eventsdb['BlockDepth'][index].index(min(eventsdb['BlockDepth'][index]))] * 1000.
-        min_blockage_pA = (1 - max(eventsdb['BlockDepth'][index])) * eventsdb['OpenChCurrent'][index]
+        min_blockage_pA = (1 - max(eventsdb['BlockDepth'][index])) * effective_baseline_pA
         relative_min_blockage = (1 - max(eventsdb['BlockDepth'][index]))
-        min_blockage_duration_us = eventsdb['StateResTime'][index][eventsdb['BlockDepth'][index].index(max(eventsdb['BlockDepth'][index]))]
+        min_blockage_duration_us = eventsdb['StateResTime'][index][eventsdb['BlockDepth'][index].index(max(eventsdb['BlockDepth'][index]))] * 1000.
         
         timeseries = np.array(eventsdb['TimeSeries'][index])
         eventdelay = np.array(eventsdb['EventDelay'][index]) * 1000.
@@ -140,7 +142,9 @@ def do_Stuff(file_path_string,events_directory_path,directory_path):
             level_duration = np.append(level_duration, len(level)/4.16666666667)
         level_current = np.append(level_current, baseline_after_pA)
         stdev = np.append(stdev, np.std(baseline_after_series))
-        blockages = -level_current + effective_baseline_pA
+        blockages = [(1 - eventsdb['BlockDepth'][index][i]) * effective_baseline_pA for i in range(len(eventsdb['BlockDepth'][index]))]
+        blockages = [baseline_before_pA - effective_baseline_pA] + blockages + [(baseline_after_pA - effective_baseline_pA)]
+        
         level_duration = np.append(level_duration, len(baseline_after)/4.16666666667)
         level_current_pA = ''
         stdev_pA = ''
@@ -195,8 +199,9 @@ def do_Stuff(file_path_string,events_directory_path,directory_path):
             eventtrace.to_csv(event_file_name, index=False, header=False)
 
         eventsdb_converted = eventsdb_converted.append(column_dict_converted, ignore_index=True)
-        print("Events processed: %s / %s" %(index + 1, len(eventsdb)))
-        
+        bar.next()
+
+    bar.finish()
     file_name = os.path.basename(file_path_string)
     filename = directory_path + file_name[:-7] + '_converted.csv'
     with open(filename, 'wb'):
