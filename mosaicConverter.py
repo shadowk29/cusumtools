@@ -213,8 +213,8 @@ def main():
     #file_path_string = 'F:\\Chimera Data\\20161222 - PK079-1\\eventMD-20170110-115345.sqlite'
     file_path_string = tkFileDialog.askopenfilename(initialdir='F:\\Chimera Data\\')
     directory_path = os.path.dirname(os.path.abspath(file_path_string))
-    directory_path = directory_path + '\\MOSAIC converted\\'
-    events_directory_path = directory_path + '\\events\\'
+    directory_path = directory_path + '\\' + file_name[:-7] + '\\'
+    events_directory_path = directory_path + 'events\\'
     do_Stuff(file_path_string,events_directory_path,directory_path)
     
 
