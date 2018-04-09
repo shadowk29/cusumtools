@@ -202,7 +202,6 @@ def do_Stuff(file_path_string,events_directory_path,directory_path):
         bar.next()
 
     bar.finish()
-    file_name = os.path.basename(file_path_string)
     filename = directory_path + file_name[:-7] + '_converted.csv'
     with open(filename, 'wb'):
         eventsdb_converted.to_csv(filename, index=False)
@@ -212,6 +211,7 @@ def main():
     root.withdraw()
     #file_path_string = 'F:\\Chimera Data\\20161222 - PK079-1\\eventMD-20170110-115345.sqlite'
     file_path_string = tkFileDialog.askopenfilename(initialdir='F:\\Chimera Data\\')
+    file_name = os.path.basename(file_path_string)
     directory_path = os.path.dirname(os.path.abspath(file_path_string))
     directory_path = directory_path + '\\' + file_name[:-7] + '\\'
     events_directory_path = directory_path + 'events\\'
