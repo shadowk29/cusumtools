@@ -1,21 +1,3 @@
-##                                COPYRIGHT
-##    Copyright (C) 2017 Philipp Karau (pkara031<at>uottawa.ca)
-##
-##    This file is part of cusumtools.
-##
-##    This program is free software: you can redistribute it and/or modify
-##    it under the terms of the GNU General Public License as published by
-##    the Free Software Foundation, either version 3 of the License, or
-##    (at your option) any later version.
-##
-##    This program is distributed in the hope that it will be useful,
-##    but WITHOUT ANY WARRANTY; without even the implied warranty of
-##    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-##    GNU General Public License for more details.
-##
-##    You should have received a copy of the GNU General Public License
-##    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 import glob
 import os
 import numpy as np
@@ -30,7 +12,7 @@ db=sql.sqlite3MDIO()
 
 pd.options.mode.chained_assignment = None
 
-def do_Stuff(file_path_string,events_directory_path,directory_path):
+def do_Stuff(file_path_string,events_directory_path,directory_path,file_name):
     db.openDB(glob.glob(file_path_string)[-1])
     q = "SELECT * from metadata WHERE ProcessingStatus='normal'"
     column_list = ['recIDX',
@@ -58,6 +40,7 @@ def do_Stuff(file_path_string,events_directory_path,directory_path):
                     'baseline_before_pA',
                     'baseline_after_pA',
                     'effective_baseline_pA',
+                    'area_pC',
                     'average_blockage_pA',
                     'relative_average_blockage',
                     'max_blockage_pA',
@@ -78,7 +61,7 @@ def do_Stuff(file_path_string,events_directory_path,directory_path):
                              
     eventsdb = pd.DataFrame(db.queryDB(q), columns=column_list, dtype=object)
     eventsdb_converted = pd.DataFrame(columns=column_list2, dtype=object)
-    
+
     bar = ChargingBar('Processing Events', max=len(eventsdb))
     for index in range(len(eventsdb)):
         eventid = int(eventsdb['recIDX'][index])
@@ -144,7 +127,7 @@ def do_Stuff(file_path_string,events_directory_path,directory_path):
         stdev = np.append(stdev, np.std(baseline_after_series))
         blockages = [(1 - eventsdb['BlockDepth'][index][i]) * effective_baseline_pA for i in range(len(eventsdb['BlockDepth'][index]))]
         blockages = [baseline_before_pA - effective_baseline_pA] + blockages + [(baseline_after_pA - effective_baseline_pA)]
-        
+
         level_duration = np.append(level_duration, len(baseline_after)/4.16666666667)
         level_current_pA = ''
         stdev_pA = ''
@@ -155,12 +138,12 @@ def do_Stuff(file_path_string,events_directory_path,directory_path):
             level_duration_us = level_duration_us + '%.16g;' %level_duration[i]
             blockages_pA = blockages_pA + '%.16g;' %blockages[i]
             stdev_pA = stdev_pA + '%.16g;' %stdev[i]
-            
+   
         level_current_pA = level_current_pA[:-1]
         level_duration_us = level_duration_us[:-1]
         blockages_pA = blockages_pA[:-1]
         stdev_pA = stdev_pA[:-1]
-        
+
         area_pC = 0.
         for I in event:
             delta_t = 1/4.16666666667
@@ -175,6 +158,7 @@ def do_Stuff(file_path_string,events_directory_path,directory_path):
                                  'baseline_before_pA' : baseline_before_pA,
                                  'baseline_after_pA' : baseline_after_pA,
                                  'effective_baseline_pA' : effective_baseline_pA,
+                                 'area_pC' : area_pC,
                                  'average_blockage_pA' : average_blockage_pA,
                                  'relative_average_blockage' : relative_average_blockage,
                                  'max_blockage_pA' : max_blockage_pA,
@@ -215,7 +199,7 @@ def main():
     directory_path = os.path.dirname(os.path.abspath(file_path_string))
     directory_path = directory_path + '\\' + file_name[:-7] + '\\'
     events_directory_path = directory_path + 'events\\'
-    do_Stuff(file_path_string,events_directory_path,directory_path)
+    do_Stuff(file_path_string,events_directory_path,directory_path,file_name)
     
 
 if __name__=="__main__":
