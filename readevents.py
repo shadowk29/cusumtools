@@ -16,7 +16,6 @@
 ##    You should have received a copy of the GNU General Public License
 ##    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
 import pandas as pd
 from pandasql import sqldf
 import matplotlib
@@ -510,26 +509,6 @@ class App(tk.Frame):
                     filters[key].set('Inactive')
             msg[key].grid(row=0,column=0,stick=tk.E+tk.W)
             i += 1
-            
-##    def delay_probability(self):
-##        eventsdb = self.eventsdb
-##        eventsdb_sorted = sqldf('SELECT * from eventsdb ORDER BY event_delay_s',locals())
-##        numevents = len(eventsdb)
-##        delay = [1.0 - float(i)/float(numevents) for i in range(0,numevents)]
-##        eventsdb_sorted['delay_probability'] = delay
-##        self.eventsdb = sqldf('SELECT * from eventsdb_sorted ORDER BY id',locals())
-##        for key, val in self.eventsdb_subset.iteritems():
-##            val = self.eventsdb
-##        
-##    def survival_probability(self):
-##        eventsdb = self.eventsdb
-##        eventsdb_sorted = sqldf('SELECT * from eventsdb ORDER BY duration_us',locals())
-##        numevents = len(eventsdb)
-##        survival = [1.0 - float(i)/float(numevents) for i in range(0,numevents)]
-##        eventsdb_sorted['survival_probability'] = survival
-##        self.eventsdb = sqldf('SELECT * from eventsdb_sorted ORDER BY id',locals())
-##        for key, val in self.eventsdb_subset.iteritems():
-##            val = self.eventsdb
 
 
     def first_level_fraction(self):
@@ -918,7 +897,24 @@ class App(tk.Frame):
         self.f.subplots_adjust(bottom=0.14,left=0.21)
         xsign = np.sign(np.average(x_col))
         ysign = np.sign(np.average(y_col))
-        z, x, y, image = self.a.hist2d(np.log10(xsign*x_col) if bool(logscale_x) else x_col,np.log10(ysign*y_col) if bool(logscale_y) else y_col,bins=[int(xbins),int(ybins)],norm=matplotlib.colors.LogNorm())
+        x = np.log10(xsign*x_col) if bool(logscale_x) else x_col
+        y = np.log10(ysign*y_col) if bool(logscale_y) else y_col
+##        data = np.vstack([x, y])
+##        kde = gaussian_kde(data)
+##        xgrid = np.linspace(np.min(x), np.max(x), int(xbins))
+##        ygrid = np.linspace(np.min(y), np.max(y), int(ybins))
+##        Xgrid, Ygrid = np.meshgrid(xgrid, ygrid)
+##        Z = kde.evaluate(np.vstack([Xgrid.ravel(), Ygrid.ravel()]))
+##        Z = np.log10(Z)
+##        print np.max(Z), np.min(Z)
+##        Z[Z<-6] = -6
+##        self.a.imshow(Z.reshape(Xgrid.shape),
+##           origin='lower', aspect='auto', interpolation='gaussian',
+##           extent=[np.min(x), np.max(x), np.min(y), np.max(y)],
+##           cmap='Blues')
+##        self.canvas.show()
+
+        z, x, y, image = self.a.hist2d(x,y,bins=[int(xbins),int(ybins)],norm=matplotlib.colors.LogNorm())
         x = x[:-1] + np.diff(x)/2.0
         y = y[:-1] + np.diff(y)/2.0
         xy = [zip([a]*len(y),y) for a in x]
@@ -959,6 +955,7 @@ class App(tk.Frame):
                 self.plot_2d_histogram()
             except AttributeError:
                 self.status_string.set("X and Y must have the same length")
+                raise
         else:
             pass
 
