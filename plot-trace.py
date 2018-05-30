@@ -423,7 +423,7 @@ class App(tk.Frame):
 
         current = np.average(self.filtered_data[:end_index])
         
-        f, Pxx = welch(self.filtered_data[:end_index], plot_samplerate,nperseg=length)
+        f, Pxx = welch(self.filtered_data, plot_samplerate,nperseg=length)
         self.rms = self.integrate_noise(f, Pxx)
         
         if self.normalize.get():
