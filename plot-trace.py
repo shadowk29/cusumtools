@@ -355,7 +355,7 @@ class App(tk.Frame):
 
         
 
-        time = np.linspace(1.0/plot_samplerate,len(self.plot_data)/plot_samplerate,len(self.plot_data))+self.start_time
+        time = np.linspace(1.0/plot_samplerate,len(self.plot_data)/float(plot_samplerate),len(self.plot_data))+self.start_time
         
         a.set_xlabel(r'Time ($\mu s$)')
         a.set_ylabel('Current (pA)')
