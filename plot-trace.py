@@ -22,7 +22,7 @@ import numpy as np
 import tkFileDialog
 import Tkinter as tk
 from matplotlib.figure import Figure
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2TkAgg
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
 import scipy.io as sio
 from scipy.signal import bessel, filtfilt, welch
 from scikits.samplerate import resample
@@ -62,7 +62,7 @@ class App(tk.Frame):
         self.trace_fig = Figure(figsize=(7,5), dpi=100)
         self.trace_canvas = FigureCanvasTkAgg(self.trace_fig, master=self.trace_frame)
         self.trace_toolbar_frame = tk.Frame(self.trace_frame)
-        self.trace_toolbar = NavigationToolbar2TkAgg(self.trace_canvas, self.trace_toolbar_frame)
+        self.trace_toolbar = NavigationToolbar2Tk(self.trace_canvas, self.trace_toolbar_frame)
         self.trace_toolbar.update()
 
         
@@ -78,7 +78,7 @@ class App(tk.Frame):
         self.psd_fig = Figure(figsize=(7,5), dpi=100)
         self.psd_canvas = FigureCanvasTkAgg(self.psd_fig, master=self.psd_frame)
         self.psd_toolbar_frame = tk.Frame(self.psd_frame)
-        self.psd_toolbar = NavigationToolbar2TkAgg(self.psd_canvas, self.psd_toolbar_frame)
+        self.psd_toolbar = NavigationToolbar2Tk(self.psd_canvas, self.psd_toolbar_frame)
         self.psd_toolbar.update()
         
 
@@ -280,7 +280,7 @@ class App(tk.Frame):
             
     def load_memmaps(self):
         columntypes = np.dtype([('current', np.uint16)])
-        self.maps = [np.memmap(f, dtype=columntypes, mode='r')['current'] for f in self.sorted_files]
+        self.maps = [np.memmap(str(f), dtype=columntypes, mode='r')['current'] for f in self.sorted_files]
         self.settings = [sio.loadmat(f.replace('.log','.mat')) for f in self.sorted_files]
         total = 0
         self.file_start_index = [0]
@@ -399,7 +399,7 @@ class App(tk.Frame):
                 a.plot((xmin*1e6,xmax*1e6), (means[i]-sign*self.threshold*stdevs[i],means[i]-sign*self.threshold*stdevs[i]), '--',color='y')
                 a.plot((xmin*1e6,xmax*1e6), (means[i],means[i]), '--', color='black')
                 
-        self.trace_canvas.show()
+        self.trace_canvas.draw()
 
     def update_psd(self):
         self.load_mapped_data()
@@ -462,7 +462,7 @@ class App(tk.Frame):
             tick.set_color('r')
         a2.format_coord = make_format(a2, a)
         
-        self.psd_canvas.show()
+        self.psd_canvas.draw()
 
         self.wildcard.set('Standard deviation is {:0.2f} pA'.format(np.std(self.filtered_data)))
         
