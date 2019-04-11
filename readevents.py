@@ -552,16 +552,21 @@ class App(tk.Frame):
         data_path = tkFileDialog.asksaveasfilename(defaultextension='.csv')
         subset_list = self.get_active_subsets(0)
         if self.export_type == 'hist1d':
-            x_label = self.x_option.cget('text')
-            logscale_x = self.x_log_var.get()
-            if (logscale_x):
-                x_label = 'Log({0})'.format(x_label)
             data = OrderedDict()
-            data[x_label] = self.xdata
             if len(subset_list) > 1:
                 for i in range(len(subset_list)):
+                    x_label = self.x_option.cget('text')
+                    logscale_x = self.x_log_var.get()
+                    if (logscale_x):
+                        x_label = 'Log({0})'.format(x_label)
+                    data['{0} {1}'.format(subset_list[i],x_label)] = self.xdata[i]
                     data['{0} Count'.format(subset_list[i])] = self.ydata[i]
             else:
+                x_label = self.x_option.cget('text')
+                logscale_x = self.x_log_var.get()
+                if (logscale_x):
+                    x_label = 'Log({0})'.format(x_label)
+                data[x_label] = self.xdata
                 data['{0} Count'.format(subset_list[0])] = self.ydata
             data_frame = pd.DataFrame(data)
             data_frame.to_csv(data_path, index=False)
@@ -839,6 +844,7 @@ class App(tk.Frame):
         self.f.clf()
         self.a = self.f.add_subplot(111)
         self.f.subplots_adjust(bottom=0.14,left=0.21)
+        self.xdata = []
         self.ydata = []
         if logscale_x:
             self.a.set_xlabel('Log(' +str(x_label)+')')
@@ -847,7 +853,8 @@ class App(tk.Frame):
                 for i in range(len(subset_list)):
                     col[i] *= np.sign(np.average(col[i]))
                     col[i] = np.log10(col[i])
-                    y, self.xdata, patches = self.a.hist(col[i],bins=int(numbins),log=bool(logscale_y),histtype='step',stacked=False,fill=False,label=subset_list[i])
+                    y, x, patches = self.a.hist(col[i],bins=int(numbins),log=bool(logscale_y),histtype='step',stacked=False,fill=False,label=subset_list[i])
+                    self.xdata.append(x)
                     self.ydata.append(y)
             else:
                 col *= np.sign(np.average(col))
@@ -862,7 +869,8 @@ class App(tk.Frame):
                         y, self.xdata, patches = self.a.hist(col[i],range=(0,0.5),bins=(0,0.1,0.2,0.3,0.4,0.5),log=bool(logscale_y),histtype='step',stacked=False,fill=False,label=subset_list[i])
                         self.ydata.append(y)
                     else:
-                        y, self.xdata, patches = self.a.hist(col[i],bins=int(numbins),log=bool(logscale_y),histtype='step',stacked=False,fill=False,label=subset_list[i])
+                        y, x, patches = self.a.hist(col[i],bins=int(numbins),log=bool(logscale_y),histtype='step',stacked=False,fill=False,label=subset_list[i])
+                        self.xdata.append(x)
                         self.ydata.append(y)
             else:
                 if x_label == 'Fold Fraction':
@@ -870,7 +878,8 @@ class App(tk.Frame):
                 else:
                     self.ydata, self.xdata, patches = self.a.hist(col,bins=int(numbins),log=bool(logscale_y),histtype='step',stacked=False,fill=False,label=subset_list)
         self.a.legend(loc='best',prop={'size': 10})
-        self.xdata = self.xdata[:-1] + np.diff(self.xdata)/2.0
+        for i in range(len(subset_list)):
+            self.xdata[i] = self.xdata[i][:-1] + np.diff(self.xdata[i])/2.0
         self.canvas.show()
         self.canvas.callbacks.connect('button_press_event', self.on_click)
 
