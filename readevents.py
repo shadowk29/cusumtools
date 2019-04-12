@@ -25,7 +25,7 @@ import os
 import tkFileDialog
 import Tkinter as tk
 from matplotlib.figure import Figure
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2TkAgg
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
 from scipy.optimize import curve_fit
 import itertools
 from collections import OrderedDict
@@ -115,7 +115,7 @@ class App(tk.Frame):
         self.f = Figure(figsize=(7,5), dpi=100)
         self.canvas = FigureCanvasTkAgg(self.f, master=self.stats_frame)
         self.toolbar_frame = tk.Frame(self.stats_frame)
-        self.toolbar = NavigationToolbar2TkAgg(self.canvas, self.toolbar_frame)
+        self.toolbar = NavigationToolbar2Tk(self.canvas, self.toolbar_frame)
         self.toolbar.update()
 
 
@@ -199,7 +199,7 @@ class App(tk.Frame):
         self.event_f = Figure(figsize=(7,5), dpi=100)
         self.event_canvas = FigureCanvasTkAgg(self.event_f, master=self.events_frame)
         self.event_toolbar_frame = tk.Frame(self.events_frame)
-        self.event_toolbar = NavigationToolbar2TkAgg(self.event_canvas, self.event_toolbar_frame)
+        self.event_toolbar = NavigationToolbar2Tk(self.event_canvas, self.event_toolbar_frame)
         self.event_toolbar.update()
         self.event_info_string = tk.StringVar()
         self.event_index = tk.IntVar()
@@ -248,7 +248,7 @@ class App(tk.Frame):
         self.subset_option = tk.OptionMenu(self.db_frame, default_subset, *options,command=self.update_count)
         self.filter_button = tk.Button(self.db_frame,text='Filter Subset',command=self.filter_db)
         self.reset_button = tk.Button(self.db_frame,text='Reset Subset',command=self.reset_db)
-        self.show_subset_details_button = tk.Button(self.db_frame, text='Display Filters', command=self.display_filters)
+        self.draw_subset_details_button = tk.Button(self.db_frame, text='Display Filters', command=self.display_filters)
         self.save_subset_button = tk.Button(self.db_frame,text='Save Subset',command=self.save_subset)
         self.remove_nonconsecutive_button = tk.Button(self.db_frame,text='Remove Non-Consecutive',command=self.remove_nonconsecutive_events)
         self.filter_entry = tk.Entry(self.db_frame)
@@ -261,7 +261,7 @@ class App(tk.Frame):
         self.reset_button.grid(row=1,column=4,columnspan=2,sticky=tk.E+tk.W)
         
         self.save_subset_button.grid(row=2,column=0,columnspan=2,sticky=tk.E+tk.W)
-        self.show_subset_details_button.grid(row=2,column=2,columnspan=2,sticky=tk.E+tk.W)
+        self.draw_subset_details_button.grid(row=2,column=2,columnspan=2,sticky=tk.E+tk.W)
         self.remove_nonconsecutive_button.grid(row=2,column=4,columnspan=2,sticky=tk.E+tk.W)
 
         #Folder widgets
@@ -404,7 +404,7 @@ class App(tk.Frame):
                 self.xdata.append(valid_delays)
                 self.ydata.append(probability)
                 self.a.legend(loc='best',prop={'size': 10})
-                self.canvas.show()
+                self.canvas.draw()
                 self.status_string.set(fit_string)
             else:
                 log_delays = np.log10(valid_delays)
@@ -429,7 +429,7 @@ class App(tk.Frame):
                 self.a.plot(bincenters,fit,label='{0} Fit'.format(subset))
                 fit_string = fit_string + u'{0}: {1}/{2} events used. Capture Rate is {3:.3g} \u00B1 {4:.1g} Hz (R\u00B2 = {5:.2g})\n'.format(subset,len(valid_delays),len(indices), popt[0], -t.isf(0.975,len(counts))*np.sqrt(np.diag(pcov))[0], rsquared)
                 self.a.legend(loc='best',prop={'size': 10})
-                self.canvas.show()
+                self.canvas.draw()
                 self.status_string.set(fit_string)
         
     def not_implemented(self):
@@ -688,7 +688,7 @@ class App(tk.Frame):
 
             self.plot_1d_histogram()
             self.a.plot(x, self.multi_gauss(x, self.num_states,popt))
-            self.canvas.show()
+            self.canvas.draw()
             
             blockage_levels = [np.array(a,dtype=float)[1:-1] for a in self.eventsdb_subset[subset]['blockages_pA'].str.split(';')]
             for b in blockage_levels:
@@ -741,7 +741,7 @@ class App(tk.Frame):
 
         self.a.set_xlim([x_min, x_max])
         self.a.set_ylim([y_min, y_max])
-        self.canvas.show()
+        self.canvas.draw()
 
         
 
@@ -831,7 +831,7 @@ class App(tk.Frame):
             self.a.set_xscale('log')
         if logscale_y:
             self.a.set_yscale('log')
-        self.canvas.show()
+        self.canvas.draw()
 
     def plot_1d_histogram(self):
         subset_list = self.get_active_subsets(0)
@@ -880,7 +880,7 @@ class App(tk.Frame):
         self.a.legend(loc='best',prop={'size': 10})
         for i in range(len(subset_list)):
             self.xdata[i] = self.xdata[i][:-1] + np.diff(self.xdata[i])/2.0
-        self.canvas.show()
+        self.canvas.draw()
         self.canvas.callbacks.connect('button_press_event', self.on_click)
 
         
@@ -921,7 +921,7 @@ class App(tk.Frame):
 ##           origin='lower', aspect='auto', interpolation='gaussian',
 ##           extent=[np.min(x), np.max(x), np.min(y), np.max(y)],
 ##           cmap='Blues')
-##        self.canvas.show()
+##        self.canvas.draw()
 
         z, x, y, image = self.a.hist2d(x,y,bins=[int(xbins),int(ybins)],norm=matplotlib.colors.LogNorm())
         x = x[:-1] + np.diff(x)/2.0
@@ -932,7 +932,7 @@ class App(tk.Frame):
         self.xdata = xy[:,0]
         self.ydata = xy[:,1]
         self.zdata = z
-        self.canvas.show()
+        self.canvas.draw()
         
 
     def disable_options(self, *args):
@@ -1010,7 +1010,7 @@ class App(tk.Frame):
                 a.plot(event_file['time'],event_file['current'],event_file['time'],event_file['cusum'])
             elif event_type == 1:
                 a.plot(event_file['time'],event_file['current'],event_file['time'],event_file['cusum'],event_file['time'],event_file['stepfit'])
-            self.event_canvas.show()
+            self.event_canvas.draw()
             self.event_info_string.set('Successfully plotted event {0}'.format(index))
         else:
             self.event_info_string.set('Event {0} is missing or deleted'.format(index))
