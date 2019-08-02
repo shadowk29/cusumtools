@@ -82,14 +82,14 @@ class SpectrumSample:
         self.pink = 1
         self.brown = 1.0e-3
         self.p0 = [self.thermal, self.pink, self.brown]
-        popt, pcov = curve_fit(psd_fit, self.f, self.Pxx, self.p0)
+        popt, pcov = curve_fit(psd_fit, self.f, np.log10(self.Pxx), self.p0, sigma=np.sqrt(np.arange(1,len(self.f))+np.sqrt(3)/3))
         self.thermal, self.pink, self.brown = popt
         pl.loglog(self.f, self.Pxx, self.f, psd_fit(self.f, self.thermal, self.pink, self.brown))
         pl.show()
         
 
 def psd_fit(f, thermal, pink, brown):
-    return thermal*f + pink + brown/f
+    return np.log10(thermal*f + pink + brown/f)
 
 def noise_fit(x, bulk, surface, access, length, charge, mobility):
     fac = 1.0 / (1.0 + (4.0/np.pi)*(length/(x + mobility)))
