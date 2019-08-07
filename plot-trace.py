@@ -493,7 +493,9 @@ class App(tk.Frame):
         
         self.psd_canvas.draw()
 
-        self.wildcard.set('RMS = {:0.2f} pA\tL[old] = {:.3g}\tL[adjusted] = {:.3g}'.format(np.std(self.filtered_data), L_simple, L_adj))
+        psd1hz = 10**self.fitfunc(1.0, f0, alpha, fstar, offset)*current**2/bandwidth
+
+        self.wildcard.set(u'RMS = {:0.2f} pA\tL[old] = {:.3g}\tL[adjusted] = {:.3g}\tPSD@1Hz = {:.3g} pA\u00b2/Hz'.format(np.std(self.filtered_data), L_simple, L_adj,psd1hz))
   
         
     def fitfunc(self, f, f0, alpha, fstar, offset):
