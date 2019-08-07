@@ -26,6 +26,7 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolb
 import scipy.io as sio
 from scipy.signal import bessel, filtfilt, welch
 from scikits.samplerate import resample
+from scipy.optimize import curve_fit
 import pylab as pl
 import glob
 import os
@@ -161,6 +162,9 @@ class App(tk.Frame):
         self.initialize_samplerate()
 
     ##### utility functions #####
+
+    
+
 
     def overlay_cusum(self):
         analysis_dir = tkFileDialog.askdirectory(initialdir='G:/NPN/Filter Scaling/K435PC/500bp',title='Choose analysis directory')
@@ -406,11 +410,13 @@ class App(tk.Frame):
         self.filtered_data = self.data
         self.plot_data = self.filtered_data
         plot_samplerate = self.samplerate
+        bandwidth = 1.0e6
         
         if self.cutoff_entry.get()!='' and self.order_entry!='':
             self.filter_data()
             self.plot_data = self.filtered_data
-            maxf = 2*float(self.cutoff_entry.get())       
+            maxf = 2*float(self.cutoff_entry.get())
+            bandwidth = maxf/2.0
         else:
             maxf = 2e6
         if (self.psd_length_entry.get()!=''):
@@ -428,7 +434,7 @@ class App(tk.Frame):
         
         if self.normalize.get():
             Pxx /= current**2
-            Pxx *= maxf/2.0
+            Pxx *= bandwidth
             self.rms /= np.absolute(current)
            
         self.f = f
@@ -440,7 +446,26 @@ class App(tk.Frame):
         minP = 10**np.floor(np.amin(logPxx))
         maxP = 10**np.ceil(np.amax(logPxx))
 
+
+        df = f[1]-f[0]
+        fitmax = 10000
+        freqstop = len(f[f<=100])
+        N = len(f[f<fitmax])
+        fnorm = self.f[1:N]
+        if self.normalize.get():
+            Pxx_norm = self.Pxx[1:N]
+        else:
+            Pxx_norm = self.Pxx[1:N]*bandwidth/current**2
+
+        popt, pcov = curve_fit(self.fitfunc, fnorm, np.log10(Pxx_norm), p0=[1.0,1,1000.0, 0.0001], sigma=np.sqrt(np.arange(1,N)+np.sqrt(3)/3), maxfev=100000)
+            
+        f0 = popt[0]
+        alpha = popt[1]
+        fstar = popt[2]
+        offset = popt[3]
         
+        L_simple = self.old_L(Pxx_norm[:freqstop], df, bandwidth)
+        L_adj = self.corrected_L(fnorm[:freqstop], Pxx_norm[:freqstop], f0, alpha, fstar, offset, df, bandwidth)
         
         self.psd_fig.clf()
         a = self.psd_fig.add_subplot(111)
@@ -450,6 +475,10 @@ class App(tk.Frame):
         a.set_ylim(minP, maxP)
         self.psd_fig.subplots_adjust(bottom=0.14,left=0.21)
         a.loglog(f[1:],Pxx[1:],'b-')
+        if self.normalize.get():
+            a.loglog(fnorm, 10**self.fitfunc(f[1:N], f0, alpha, fstar, offset),'g')
+        else:
+            a.loglog(fnorm, 10**self.fitfunc(f[1:N], f0, alpha, fstar, offset)*current**2/bandwidth,'g')
         for tick in a.get_yticklabels():
             tick.set_color('b')
 
@@ -464,9 +493,21 @@ class App(tk.Frame):
         
         self.psd_canvas.draw()
 
-        self.wildcard.set('Standard deviation is {:0.2f} pA'.format(np.std(self.filtered_data)))
+        self.wildcard.set('RMS = {:0.2f} pA\tL[old] = {:.3g}\tL[adjusted] = {:.3g}'.format(np.std(self.filtered_data), L_simple, L_adj))
+  
         
-        
+    def fitfunc(self, f, f0, alpha, fstar, offset):
+        return np.log10((f0/f)**alpha + alpha*(f0/fstar)**(1+alpha)*(f/f0) + offset)
+
+
+    def corrected_L(self, f, Pxx, f0, alpha, fstar, offset, df, B):
+        integrand = Pxx - alpha*(f0/fstar)**(1+alpha)*(f/f0) - offset
+        return np.sqrt(np.sum(integrand)*df/B)
+
+    def old_L(self, Pxx, df, B):
+        return np.sqrt(np.sum(Pxx)*df/B)
+
+    
     def update_data(self):
         self.get_filenames(self.file_path)
         self.load_memmaps()
