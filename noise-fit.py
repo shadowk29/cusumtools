@@ -2,10 +2,11 @@ import numpy as np
 from scipy.signal import welch
 from scipy.optimize import curve_fit
 import matplotlib.pyplot as pl
+import glob
 
 
 class Pore:
-    def __init__(self, tracefiles, samplerate, psdlength, cutoff, diameters, concentration, conductances, conductivity, thickness):
+    def __init__(self, tracefiles, samplerate, psdlength, cutoff, concentration, conductivity, thickness, voltage):
         ##physical constants and initial guesses
         Na = 6.022e23
         self.e = 1.602e-19 ## C
@@ -13,15 +14,16 @@ class Pore:
         K_mobility = 1.0e11 ## nm^2/Vs https://doi.org/10.1021/nl052107w
         self.conductivity = conductivity
         self.lengthscale = (concentration * Na / 1.0e24)**(1.0/3.0)
+        self.voltage = voltage
+        self.thickness = thickness
 
-
-        self.diameters = diameters
-        self.conductances = conductances
+        
 
         self.spectra = []
         for f in tracefiles:
             self.spectra.append(SpectrumSample(f, samplerate, psdlength, cutoff))
 
+        self.initial_estimates()
         self.g = self.conductance * self.lengthscale / conductivity
         self.x = self.diameters * self.lengthscale
         self.length = thickess * lengthscale
@@ -30,7 +32,14 @@ class Pore:
         self.surface = 2.0e-3 ## https://doi.org/10.1088/1361-6528/ab2d35
         self.bulk = 1.5e-6 ## https://doi.org/10.1088/1361-6528/ab2d35
         self.access = 1.5e-6 ## https://doi.org/10.1088/1361-6528/ab2d35
-            
+
+    def initial_estimates(self):
+        self.diameters = []
+        self.conductances = []
+        for s in self.spectra:
+            self.conductances.append(s.current/self.voltage) #conversion?
+            self.diameters.append(self.conductances[-1]/(2.0*self.conductivity)*(1+np.sqrt(1+16*self.conductivity*self.thickness/(np.pi*self.conductances[-1]))))
+        
     def fit_spectra(self):
         for s in self.spectra:
             s.fit_spectrum()
@@ -38,7 +47,7 @@ class Pore:
 
     def fit_pink_scaling(self):
         p0 = [self.bulk, self.surface, self.access, self.length, self.charge, self.mobility]
-        popt, pcov = curve_fit(noise_fit, self.diameters, self,pinknoises, p0=p0)
+        popt, pcov = curve_fit(noise_fit, self.diameters, self.pinknoises, p0=p0)
         self.bulk, self.surface, self.access, self.length, self.charge, self.mobility = popt
             
     def correct_x(self):
@@ -97,8 +106,29 @@ def noise_fit(x, bulk, surface, access, length, charge, mobility):
     npose *= 1.0/x**3
     noise *= (6.0*access + fac**2 * (4.0*x/length*bulk + charge*x**2/length*surface))
     return noise
+
+
+def get_filenames(self, initialfile):
+    pattern = '*.bin'
+    files = glob.glob(pattern)
+    return files
+        
+def main():
+    ##stuff
+    voltage = 200.0 #check unit conversions
+    thickness = 10.0
+    conductivity = 10.0
+    concentration = 1.0
+    cutoff = 100
+    psdlength = 2**np.ceil(np.log2(samplerate))
+    tracefiles = get_filenames()
+    p = Pore(tracefiles, samplerate, psdlength, cutoff, concentration, conductivity, thickness, voltage)
+    p.fit_spectra()
+    p.converge_fit()
+    p.print_fit()
+
     
-        
-        
+if __name__=='__main__':
+    main()
         
         
