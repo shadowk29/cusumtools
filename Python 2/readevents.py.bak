@@ -22,8 +22,8 @@ import matplotlib
 matplotlib.use('TkAgg')
 import numpy as np
 import os
-import tkinter.filedialog
-import tkinter as tk
+import tkFileDialog
+import Tkinter as tk
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
 from scipy.optimize import curve_fit
@@ -31,6 +31,8 @@ import itertools
 from collections import OrderedDict
 from scipy.stats import t
 import pylab as pl
+from idlelib.WidgetRedirector import WidgetRedirector
+from exceptions import *
 
 pd.options.mode.chained_assignment = None  # default='warn'
 
@@ -43,6 +45,14 @@ class FlashableLabel(tk.Label):
         count -=1
         if (count > 0):
              self.after(500,self.flash, count) 
+
+
+class ReadOnlyText(tk.Entry):
+     def __init__(self, *args, **kwargs):
+         tk.Entry.__init__(self, *args, **kwargs)
+         self.redirector = WidgetRedirector(self)
+         self.insert = self.redirector.register("insert", lambda *args, **kw: "break")
+         self.delete = self.redirector.register("delete", lambda *args, **kw: "break")
 
 
 class App(tk.Frame):
@@ -281,7 +291,7 @@ class App(tk.Frame):
         plot_list_int = list()
         for i in self.lstbox.curselection():
             plot_list_int.append(self.lstbox.get(i))
-        for key, val in self.plot_list.items():
+        for key, val in self.plot_list.iteritems():
             self.plot_list[key]=0     
         for val in plot_list_int:
             self.plot_list['Subset '+str(val)]=1
@@ -304,11 +314,11 @@ class App(tk.Frame):
     def get_active_subsets(self,active):
         subset_list = []
         if self.plot_list == self.init_plot_list or active == 1:
-            for key, val in self.filter_list.items():
+            for key, val in self.filter_list.iteritems():
                 if key == 'Subset 0' or len(val) > 0:
                     subset_list.append(key)
         else:
-            for key, val in self.plot_list.items():
+            for key, val in self.plot_list.iteritems():
                 if val == 1:
                     subset_list.append(key)
         subset_list = sorted(subset_list)
@@ -390,7 +400,7 @@ class App(tk.Frame):
                 self.a.plot(valid_delays,probability,'.',label='{0}'.format(subset))
                 self.a.plot(valid_delays,fit,label='{0} Fit'.format(subset))
                 self.a.set_yscale('log')
-                fit_string = fit_string + '{0}: {1}/{2} events used. Capture Rate is {3:.3g} \u00B1 {4:.1g} Hz (R\u00B2 = {5:.2g})\n'.format(subset,len(valid_delays),len(indices), popt[0], -t.isf(0.975,len(valid_delays))*np.sqrt(np.diag(pcov))[0], rsquared)
+                fit_string = fit_string + u'{0}: {1}/{2} events used. Capture Rate is {3:.3g} \u00B1 {4:.1g} Hz (R\u00B2 = {5:.2g})\n'.format(subset,len(valid_delays),len(indices), popt[0], -t.isf(0.975,len(valid_delays))*np.sqrt(np.diag(pcov))[0], rsquared)
                 self.xdata.append(valid_delays)
                 self.ydata.append(probability)
                 self.a.legend(loc='best',prop={'size': 10})
@@ -417,7 +427,7 @@ class App(tk.Frame):
                 self.a.set_ylabel('Count')
                 self.a.plot(bincenters,counts,drawstyle='steps-mid',label='{0}'.format(subset))
                 self.a.plot(bincenters,fit,label='{0} Fit'.format(subset))
-                fit_string = fit_string + '{0}: {1}/{2} events used. Capture Rate is {3:.3g} \u00B1 {4:.1g} Hz (R\u00B2 = {5:.2g})\n'.format(subset,len(valid_delays),len(indices), popt[0], -t.isf(0.975,len(counts))*np.sqrt(np.diag(pcov))[0], rsquared)
+                fit_string = fit_string + u'{0}: {1}/{2} events used. Capture Rate is {3:.3g} \u00B1 {4:.1g} Hz (R\u00B2 = {5:.2g})\n'.format(subset,len(valid_delays),len(indices), popt[0], -t.isf(0.975,len(counts))*np.sqrt(np.diag(pcov))[0], rsquared)
                 self.a.legend(loc='best',prop={'size': 10})
                 self.canvas.draw()
                 self.status_string.set(fit_string)
@@ -480,14 +490,14 @@ class App(tk.Frame):
         top.title('Filters Used')
 
 
-        subset_frame = dict((key, tk.LabelFrame(top, text=key)) for key, val in self.eventsdb_subset.items())
+        subset_frame = dict((key, tk.LabelFrame(top, text=key)) for key, val in self.eventsdb_subset.iteritems())
         subset_frame = OrderedDict(sorted(subset_frame.items()))
             
-        filters = dict((key, tk.StringVar()) for key, val in subset_frame.items())
-        msg = dict((key, tk.Entry(val, textvariable=filters[key], bg=subset_frame[key].cget('bg'), relief='flat')) for key, val in subset_frame.items())
+        filters = dict((key, tk.StringVar()) for key, val in subset_frame.iteritems())
+        msg = dict((key, ReadOnlyText(val, textvariable=filters[key], bg=subset_frame[key].cget('bg'), relief='flat')) for key, val in subset_frame.iteritems())
         
         i = 0
-        for key, val in subset_frame.items():
+        for key, val in subset_frame.iteritems():
             top.columnconfigure(i,weight=1)
             val.grid(row=0, column=i, sticky=tk.E+tk.W)
             if (len(self.filter_list[key]) > 0):
@@ -505,13 +515,13 @@ class App(tk.Frame):
         durations = [np.array(a,dtype=float)[1:-1] for a in self.eventsdb['level_duration_us'].str.split(';')]
         fraction = [duration[0]/(np.sum(duration)+duration[0]) for duration in durations]
         self.eventsdb['first_level_fraction'] = fraction
-        for key, val in self.eventsdb_subset.items():
+        for key, val in self.eventsdb_subset.iteritems():
             val = self.eventsdb
         
     def folding_distribution(self):
         x = self.eventsdb['max_blockage_duration_us']/(self.eventsdb['duration_us']+self.eventsdb['max_blockage_duration_us'])
         self.eventsdb['folding'] = x
-        for key, val in self.eventsdb_subset.items():
+        for key, val in self.eventsdb_subset.iteritems():
             val = self.eventsdb
 
 
@@ -522,7 +532,7 @@ class App(tk.Frame):
         count = [i for i in range(0,numevents)]
         eventsdb_sorted['count'] = count
         self.eventsdb = sqldf('SELECT * from eventsdb_sorted ORDER BY id',locals())
-        for key, val in self.eventsdb_subset.items():
+        for key, val in self.eventsdb_subset.iteritems():
             val = self.eventsdb
         
                 
@@ -539,7 +549,7 @@ class App(tk.Frame):
 
 
     def export_plot_data(self):
-        data_path = tkinter.filedialog.asksaveasfilename(defaultextension='.csv')
+        data_path = tkFileDialog.asksaveasfilename(defaultextension='.csv')
         subset_list = self.get_active_subsets(0)
         if self.export_type == 'hist1d':
             data = OrderedDict()
@@ -600,7 +610,7 @@ class App(tk.Frame):
                     
                 data[x_string] = self.xdata[i]
                 data[y_string] = self.ydata[i]
-            data_frame = pd.DataFrame({k : pd.Series(v) for k,v in data.items()})
+            data_frame = pd.DataFrame({k : pd.Series(v) for k,v in data.iteritems()})
             data_frame.to_csv(data_path, index=False)
         else:
             self.status_string.set("Unable to export plot")
@@ -684,7 +694,7 @@ class App(tk.Frame):
             for b in blockage_levels:
                 event_type = []
                 indices = [(np.abs(state_means - blevel)).argmin() for blevel in b]
-                for level,index in zip(b,indices):
+                for level,index in itertools.izip(b,indices):
                     if level > self.state_array[2*index] and level < self.state_array[2*index+1]:
                         event_type.append(index+1)
                     else:
@@ -916,7 +926,7 @@ class App(tk.Frame):
         z, x, y, image = self.a.hist2d(x,y,bins=[int(xbins),int(ybins)],norm=matplotlib.colors.LogNorm())
         x = x[:-1] + np.diff(x)/2.0
         y = y[:-1] + np.diff(y)/2.0
-        xy = [list(zip([a]*len(y),y)) for a in x]
+        xy = [zip([a]*len(y),y) for a in x]
         z = np.ravel(z)
         xy = np.reshape(xy,(len(z),2))
         self.xdata = xy[:,0]
@@ -1006,7 +1016,7 @@ class App(tk.Frame):
             self.event_info_string.set('Event {0} is missing or deleted'.format(index))
 
     def export_event_data(self):
-        data_path = tkinter.filedialog.asksaveasfilename(defaultextension='.csv')
+        data_path = tkFileDialog.asksaveasfilename(defaultextension='.csv')
         if self.event_export_type == 0:
             np.savetxt(data_path,np.c_[self.event_export_file['time'],self.event_export_file['current'],self.event_export_file['cusum']],delimiter=',')
         elif self.event_export_type == 1:
@@ -1121,7 +1131,7 @@ class App(tk.Frame):
                       'min_blockage_pA': 'Minimum Blockage (pA)',
                       'relative_min_blockage': 'Relative Minimum Blockage (unitless)',
                       'min_blockage_duration_us': 'Minimum Blockage Duration (us)'}
-        self.unalias_dict = dict (list(zip(list(self.alias_dict.values()),list(self.alias_dict.keys()))))
+        self.unalias_dict = dict (zip(self.alias_dict.values(),self.alias_dict.keys()))
 
     def save_subset(self):
         subset = self.subset_option.cget('text')
@@ -1142,7 +1152,7 @@ class App(tk.Frame):
 def main():
     root=tk.Tk()
     root.withdraw()
-    file_path_string = tkinter.filedialog.askopenfilename(initialdir='C:/Users/kbrig035/Analysis/CUSUM/output/')
+    file_path_string = tkFileDialog.askopenfilename(initialdir='C:/Users/kbrig035/Analysis/CUSUM/output/')
     folder = os.path.dirname(os.path.abspath(file_path_string))
     title = "CUSUM Tools: " + folder
     folder = folder + '\events\\'

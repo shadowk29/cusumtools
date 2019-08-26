@@ -3,10 +3,10 @@ import os
 import numpy as np
 import sqlite3
 import mosaic.mdio.sqlite3MDIO as sql
-import Tkinter as tk
+import tkinter as tk
 import pandas as pd
 import pandasql as sqldf
-import tkFileDialog
+import tkinter.filedialog
 from progress.bar import ChargingBar, Bar
 db=sql.sqlite3MDIO()
 
@@ -183,7 +183,7 @@ def do_Stuff(file_path_string,events_directory_path,directory_path,file_name):
             eventtrace.to_csv(event_file_name, index=False, header=False)
 
         eventsdb_converted = eventsdb_converted.append(column_dict_converted, ignore_index=True)
-        bar.next()
+        next(bar)
 
     bar.finish()
     filename = directory_path + file_name[:-7] + '_converted.csv'
@@ -194,7 +194,7 @@ def main():
     root=tk.Tk()
     root.withdraw()
     #file_path_string = 'F:\\Chimera Data\\20161222 - PK079-1\\eventMD-20170110-115345.sqlite'
-    file_path_string = tkFileDialog.askopenfilename(initialdir='F:\\Chimera Data\\')
+    file_path_string = tkinter.filedialog.askopenfilename(initialdir='F:\\Chimera Data\\')
     file_name = os.path.basename(file_path_string)
     directory_path = os.path.dirname(os.path.abspath(file_path_string))
     directory_path = directory_path + '\\' + file_name[:-7] + '\\'

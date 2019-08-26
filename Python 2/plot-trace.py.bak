@@ -19,12 +19,13 @@
 import matplotlib
 matplotlib.use('TkAgg')
 import numpy as np
-import tkinter.filedialog
-import tkinter as tk
+import tkFileDialog
+import Tkinter as tk
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
 import scipy.io as sio
 from scipy.signal import bessel, filtfilt, welch
+from scikits.samplerate import resample
 from scipy.optimize import curve_fit
 import pylab as pl
 import glob
@@ -166,7 +167,7 @@ class App(tk.Frame):
 
 
     def overlay_cusum(self):
-        analysis_dir = tkinter.filedialog.askdirectory(initialdir='G:/NPN/Filter Scaling/K435PC/500bp',title='Choose analysis directory')
+        analysis_dir = tkFileDialog.askdirectory(initialdir='G:/NPN/Filter Scaling/K435PC/500bp',title='Choose analysis directory')
         baseline_path = analysis_dir + '/baseline.csv'
         ratefile_path = analysis_dir + '/rate.csv'
         config_path = analysis_dir + '/summary.txt'
@@ -200,14 +201,14 @@ class App(tk.Frame):
 
     def export_psd(self):
         try:
-            data_path = tkinter.filedialog.asksaveasfilename(defaultextension='.csv',initialdir='G:/PSDs for Sam')
+            data_path = tkFileDialog.asksaveasfilename(defaultextension='.csv',initialdir='G:\PSDs for Sam')
             np.savetxt(data_path,np.c_[self.f, self.Pxx, self.rms],delimiter=',')
         except AttributeError:
             self.wildcard.set('Plot the PSD first')
 
     def export_trace(self):
         try:
-            data_path = tkinter.filedialog.asksaveasfilename(defaultextension='.csv',initialdir='G:/Analysis/Pores/NPN/PSDs')
+            data_path = tkFileDialog.asksaveasfilename(defaultextension='.csv',initialdir='G:\Analysis\Pores\NPN\PSDs')
             np.savetxt(data_path,self.plot_data,delimiter=',')
         except AttributeError:
             self.wildcard.set('Plot the trace first')
@@ -315,7 +316,7 @@ class App(tk.Frame):
         self.filtered_data = filtfilt(b, a, padded, padtype=None)[padding:-padding]
 
     def downsample_data(self):
-        self.downsampled_data = self.filtered_data[::int(self.samplerate / self.downsample_entry.get())]
+        self.downsampled_data = resample(self.filtered_data, float(self.downsample_entry.get())/self.samplerate, 'linear')
 
     def initialize_samplerate(self):
         settings = self.settings[0]
@@ -494,7 +495,7 @@ class App(tk.Frame):
 
         psd1hz = 10**self.fitfunc(1.0, f0, alpha, fstar, offset)*current**2/bandwidth
 
-        self.wildcard.set('RMS = {:0.2f} pA\tL[old] = {:.3g}\tL[adjusted] = {:.3g}\tPSD@1Hz = {:.3g} pA\u00b2/Hz'.format(np.std(self.filtered_data), L_simple, L_adj,psd1hz))
+        self.wildcard.set(u'RMS = {:0.2f} pA\tL[old] = {:.3g}\tL[adjusted] = {:.3g}\tPSD@1Hz = {:.3g} pA\u00b2/Hz'.format(np.std(self.filtered_data), L_simple, L_adj,psd1hz))
   
         
     def fitfunc(self, f, f0, alpha, fstar, offset):
@@ -518,7 +519,7 @@ class App(tk.Frame):
 def main():
     root=tk.Tk()
     root.withdraw()
-    file_path = tkinter.filedialog.askopenfilename(initialdir='C:/Data/')
+    file_path = tkFileDialog.askopenfilename(initialdir='C:/Data/')
     App(root,file_path).grid(row=0,column=0)
     root.mainloop()
 

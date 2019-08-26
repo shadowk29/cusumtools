@@ -71,12 +71,12 @@ class Pore:
 
     def print_fit(self):
         surface_charge = self.e / self.charge * self.lengthscale**2
-        print('Length: {0} / {1} nm'.format(self.length, self.length / self.lengthscale))
-        print('Charge: {0} / {1} C/nm^2'.format(self.charge, surface_charge))
-        print('Mobility: {0} / {1} C/nm^2'.format(self.mobility, self.conductivity * self.mobility / (4.0 * surface_charge * self.lengthscale)))
-        print('Surface: {0}'.format(self.surface))
-        print('Bulk: {0}'.format(self.bulk))
-        print('Access: {0}'.format(self.access))
+        print 'Length: {0} / {1} nm'.format(self.length, self.length / self.lengthscale)
+        print 'Charge: {0} / {1} C/nm^2'.format(self.charge, surface_charge)
+        print 'Mobility: {0} / {1} C/nm^2'.format(self.mobility, self.conductivity * self.mobility / (4.0 * surface_charge * self.lengthscale))
+        print 'Surface: {0}'.format(self.surface)
+        print 'Bulk: {0}'.format(self.bulk)
+        print 'Access: {0}'.format(self.access)
         
         
         
@@ -97,7 +97,7 @@ class SpectrumSample:
         self.current = np.absolute(np.average(self.raw))
         self.Pxx *= cutoff/self.current**2
         self.Pxx *= self.f
-        print('done')
+        print 'done'
 
     def fit_spectrum(self):
         self.p0 = [self.thermal, self.pink, self.brown]
@@ -105,7 +105,7 @@ class SpectrumSample:
         #pl.show()
         popt, pcov = curve_fit(psd_fit, self.f, np.log10(self.Pxx), self.p0, sigma=np.sqrt(np.arange(1,len(self.f)+1)+np.sqrt(3)/3), maxfev=100000)
         self.thermal, self.pink, self.brown = popt
-        print(self.pink)
+        print self.pink
         #pl.loglog(self.f,self.Pxx,self.f,10**psd_fit(self.f, self.thermal, self.pink, self.brown))
         #pl.show()
         

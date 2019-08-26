@@ -20,8 +20,8 @@
 import glob
 import shutil
 import os
-import tkinter.filedialog
-import tkinter as tk
+import tkFileDialog
+import Tkinter as tk
 import time
 import scipy.io as sio
 import numpy as np
@@ -37,10 +37,10 @@ def get_filenames(initialfile):
     settings = sio.loadmat(sorted_files[0].replace('.log','.mat'))
 
     with open(settingsname, 'w') as f:
-        for key, val in settings.items():
+        for key, val in settings.iteritems():
             f.write('{0}={1}\n'.format(key, np.squeeze(val)))
         
-    print('Found {0} files matching {1}'.format(len(sorted_files),pattern))
+    print 'Found {0} files matching {1}'.format(len(sorted_files),pattern)
     return sorted_files, name
 
 def concatenate_files(file_list, name):        
@@ -48,14 +48,14 @@ def concatenate_files(file_list, name):
     i=0
     for filename in file_list:
         i += 1
-        print('file {0} of {1}'.format(i,len(file_list)))
+        print 'file {0} of {1}'.format(i,len(file_list))
         shutil.copyfileobj(open(filename, 'rb'), destination)
     destination.close()
 
 def main():
     root=tk.Tk()
     root.withdraw()
-    file_path = tkinter.filedialog.askopenfilename(initialdir='C:/Data/')
+    file_path = tkFileDialog.askopenfilename(initialdir='C:/Data/')
     file_list, name = get_filenames(file_path)
     concatenate_files(file_list, name)
 
