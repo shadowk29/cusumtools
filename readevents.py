@@ -869,7 +869,10 @@ class App(tk.Frame):
                     self.ydata, self.xdata, patches = self.a.hist(col,bins=int(numbins),log=bool(logscale_y),histtype='step',stacked=False,fill=False,label=subset_list)
         self.a.legend(loc='best',prop={'size': 10})
         for i in range(len(subset_list)):
-            self.xdata[i] = self.xdata[i][:-1] + np.diff(self.xdata[i])/2.0
+            try:
+                self.xdata[i] = self.xdata[i][:-1] + np.diff(self.xdata[i])/2.0
+            except IndexError:
+                self.xdata = self.xdata[:-1] + np.diff(self.xdata)/2.0
         self.canvas.draw()
         self.canvas.callbacks.connect('button_press_event', self.on_click)
 

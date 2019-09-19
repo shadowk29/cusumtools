@@ -53,3 +53,5 @@ Temporary Items
 *.html
 *.html
 build/readevents/xref-readevents.html
+*.pyc
+*.zip
