@@ -1102,6 +1102,7 @@ class App(tk.Frame):
                       'relative_max_blockage': 'Relative Maximum Blockage (unitless)',
                       'max_blockage_duration_us': 'Maximum Blockage Duration (us)',
                       'n_levels': 'Number of Levels',
+                      'intra_crossings': 'Intra-Event Threshold Crossings',
                       'rc_const1_us': 'RC Constant 1 (us)',
                       'rc_const2_us': 'RC Constant 2 (us)',
                       'level_current_pA': 'Level Current (pA)',

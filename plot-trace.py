@@ -456,15 +456,15 @@ class App(tk.Frame):
         else:
             Pxx_norm = self.Pxx[1:N]*bandwidth/current**2
 
-        popt, pcov = curve_fit(self.fitfunc, fnorm, np.log10(Pxx_norm), p0=[1.0,1,1000.0, 0.0001], sigma=np.sqrt(np.arange(1,N)+np.sqrt(3)/3), maxfev=100000)
+        #popt, pcov = curve_fit(self.fitfunc, fnorm, np.log10(Pxx_norm), p0=[1.0,1,1000.0, 0.0001], sigma=np.sqrt(np.arange(1,N)+np.sqrt(3)/3), maxfev=100000)
             
-        f0 = popt[0]
-        alpha = popt[1]
-        fstar = popt[2]
-        offset = popt[3]
+        #f0 = popt[0]
+        #alpha = popt[1]
+        #fstar = popt[2]
+        #offset = popt[3]
         
-        L_simple = self.old_L(Pxx_norm[:freqstop], df, bandwidth)
-        L_adj = self.corrected_L(fnorm[:freqstop], Pxx_norm[:freqstop], f0, alpha, fstar, offset, df, bandwidth)
+        #L_simple = self.old_L(Pxx_norm[:freqstop], df, bandwidth)
+        #L_adj = self.corrected_L(fnorm[:freqstop], Pxx_norm[:freqstop], f0, alpha, fstar, offset, df, bandwidth)
         
         self.psd_fig.clf()
         a = self.psd_fig.add_subplot(111)
@@ -474,10 +474,10 @@ class App(tk.Frame):
         a.set_ylim(minP, maxP)
         self.psd_fig.subplots_adjust(bottom=0.14,left=0.21)
         a.loglog(f[1:],Pxx[1:],'b-')
-        if self.normalize.get():
-            a.loglog(fnorm, 10**self.fitfunc(f[1:N], f0, alpha, fstar, offset),'g')
-        else:
-            a.loglog(fnorm, 10**self.fitfunc(f[1:N], f0, alpha, fstar, offset)*current**2/bandwidth,'g')
+        #if self.normalize.get():
+        #    a.loglog(fnorm, 10**self.fitfunc(f[1:N], f0, alpha, fstar, offset),'g')
+        #else:
+        #    a.loglog(fnorm, 10**self.fitfunc(f[1:N], f0, alpha, fstar, offset)*current**2/bandwidth,'g')
         for tick in a.get_yticklabels():
             tick.set_color('b')
 
@@ -492,9 +492,9 @@ class App(tk.Frame):
         
         self.psd_canvas.draw()
 
-        psd1hz = 10**self.fitfunc(1.0, f0, alpha, fstar, offset)*current**2/bandwidth
+        #psd1hz = 10**self.fitfunc(1.0, f0, alpha, fstar, offset)*current**2/bandwidth
 
-        self.wildcard.set('RMS = {:0.2f} pA\tL[old] = {:.3g}\tL[adjusted] = {:.3g}\tPSD@1Hz = {:.3g} pA\u00b2/Hz'.format(np.std(self.filtered_data), L_simple, L_adj,psd1hz))
+       # self.wildcard.set('RMS = {:0.2f} pA\tL[old] = {:.3g}\tL[adjusted] = {:.3g}\tPSD@1Hz = {:.3g} pA\u00b2/Hz'.format(np.std(self.filtered_data), L_simple, L_adj,psd1hz))
   
         
     def fitfunc(self, f, f0, alpha, fstar, offset):
