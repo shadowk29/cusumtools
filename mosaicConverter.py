@@ -1,3 +1,6 @@
+import numpy.random.common
+import numpy.random.bounded_integers
+import numpy.random.entropy
 import glob
 import os
 import numpy as np
