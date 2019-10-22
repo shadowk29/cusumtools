@@ -206,7 +206,8 @@ class App(tk.Frame):
         self.save_event_button = tk.Button(self.events_frame,text='Export Data',command=self.export_event_data)
         self.event_info_string.set('Ready')
         self.event_info_display = tk.Label(self.events_frame, textvariable=self.event_info_string)
-
+        self.plot_bad_events = tk.IntVar(0)
+        self.plot_bad_events_check = tk.Checkbutton(self.events_frame, text='Plot Bad Events', variable = self.plot_bad_events)
         
         self.event_toolbar_frame.grid(row=1,column=0,columnspan=6)
         self.event_canvas.get_tk_widget().grid(row=0,column=0,columnspan=6)
@@ -216,14 +217,15 @@ class App(tk.Frame):
         parent.bind("<Delete>", self.delete_key_press)
 
         self.events_frame.grid(row=0,column=6,columnspan=6,sticky=tk.N+tk.S)
-        self.event_entry.grid(row=2,column=0,columnspan=3,sticky=tk.E+tk.W)
-        self.event_info_display.grid(row=2,column=3,columnspan=3,sticky=tk.W+tk.E)
-        self.plot_event_button.grid(row=3,column=0,columnspan=3,sticky=tk.E+tk.W)
-        self.save_event_button.grid(row=3,column=3,columnspan=3,sticky=tk.E+tk.W)
-        self.next_event_button.grid(row=4,column=3,columnspan=3,sticky=tk.E+tk.W)
-        self.prev_event_button.grid(row=4,column=0,columnspan=3,sticky=tk.E+tk.W)
-        self.delete_event_button.grid(row=5,column=0,columnspan=3,sticky=tk.E+tk.W)
-        self.replicate_delete.grid(row=5,column=3,columnspan=3,sticky=tk.E+tk.W)
+        self.event_entry.grid(row=2,column=0,columnspan=2,sticky=tk.E+tk.W)
+        self.event_info_display.grid(row=2,column=2,columnspan=2,sticky=tk.W+tk.E)
+        self.plot_event_button.grid(row=3,column=0,columnspan=2,sticky=tk.E+tk.W)
+        self.save_event_button.grid(row=3,column=2,columnspan=2,sticky=tk.E+tk.W)
+        self.next_event_button.grid(row=4,column=2,columnspan=2,sticky=tk.E+tk.W)
+        self.prev_event_button.grid(row=4,column=0,columnspan=2,sticky=tk.E+tk.W)
+        self.delete_event_button.grid(row=5,column=0,columnspan=2,sticky=tk.E+tk.W)
+        self.replicate_delete.grid(row=5,column=2,columnspan=2,sticky=tk.E+tk.W)
+        self.plot_bad_events_check.grid(row=4,column=4,columnspan=2,stick=tk.E+tk.W)
         
         
 
@@ -978,7 +980,7 @@ class App(tk.Frame):
     def plot_event(self):
         subset = self.subset_option.cget('text')
         index = self.event_index.get()
-        if any(self.eventsdb_subset[subset]['id']==index):
+        if any(self.eventsdb_subset[subset]['id']==index) or self.plot_bad_events.get():
             try:
                 event_file_path = self.events_folder+'/event_%05d.csv' % index
                 event_file = pd.read_csv(event_file_path,encoding='utf-8')
@@ -991,7 +993,10 @@ class App(tk.Frame):
                     return
             eventsdb_subset = self.eventsdb_subset[subset]
             self.event_export_file = event_file
-            event_type = sqldf('SELECT type from eventsdb_subset WHERE id=%d' % index,locals())['type'][0]
+            try:
+                event_type = sqldf('SELECT type from eventsdb_subset WHERE id=%d' % index,locals())['type'][0]
+            except IndexError:
+                event_type = 0
             self.event_export_type = event_type
             if event_type == 0:
                 event_file.columns = ['time','current','cusum']
@@ -1019,36 +1024,54 @@ class App(tk.Frame):
             np.savetxt(data_path,np.c_[self.event_export_file['time'],self.event_export_file['current'],self.event_export_file['cusum'], self.event_export_file['stepfit']],delimiter=',')
 
     def next_event(self):
-        subset = self.subset_option.cget('text')
-        try:
-            current_index = self.eventsdb_subset[subset][self.eventsdb_subset[subset]['id'] == self.event_index.get()].index.tolist()[0]
-        except IndexError:
-            self.event_info_string.set('Event not found, resetting')
-            current_index = -1
-        if current_index < max(self.eventsdb['id']):
-            next_index = self.eventsdb_subset[subset][self.eventsdb_subset[subset]['id'] > self.event_index.get()].index.tolist()[0]
-            self.event_index.set(int(self.eventsdb_subset[subset]['id'][next_index]))
-            self.plot_event()
+        if not self.plot_bad_events.get():
+            subset = self.subset_option.cget('text')
+            try:
+                current_index = self.eventsdb_subset[subset][self.eventsdb_subset[subset]['id'] == self.event_index.get()].index.tolist()[0]
+            except IndexError:
+                self.event_info_string.set('Event not found, resetting')
+                current_index = -1
+            if current_index < max(self.eventsdb['id']):
+                next_index = self.eventsdb_subset[subset][self.eventsdb_subset[subset]['id'] > self.event_index.get()].index.tolist()[0]
+                self.event_index.set(int(self.eventsdb_subset[subset]['id'][next_index]))
+                self.plot_event()
+            else:
+                pass
         else:
-            pass
+            current_index = self.event_index.get()
+            if current_index < max(self.eventsdb['id']):
+                next_index = current_index + 1
+                self.event_index.set(next_index)
+                self.plot_event()
+            else:
+                pass
             
 
     def prev_event(self):
-        subset = self.subset_option.cget('text')
-        try:
-            current_index = self.eventsdb_subset[subset][self.eventsdb_subset[subset]['id'] == self.event_index.get()].index.tolist()[0]
-        except IndexError:
-            self.event_info_string.set('Event not found, resetting')
-            current_index = 1
-        if current_index > 0:
+        if not self.plot_bad_events.get():
+            subset = self.subset_option.cget('text')
             try:
-                prev_index = self.eventsdb_subset[subset][self.eventsdb_subset[subset]['id'] < self.event_index.get()].index.tolist()[-1]
-                self.event_index.set(int(self.eventsdb_subset[subset]['id'][prev_index]))
-                self.plot_event()
+                current_index = self.eventsdb_subset[subset][self.eventsdb_subset[subset]['id'] == self.event_index.get()].index.tolist()[0]
             except IndexError:
+                self.event_info_string.set('Event not found, resetting')
+                current_index = 1
+            if current_index > 0:
+                try:
+                    prev_index = self.eventsdb_subset[subset][self.eventsdb_subset[subset]['id'] < self.event_index.get()].index.tolist()[-1]
+                    self.event_index.set(int(self.eventsdb_subset[subset]['id'][prev_index]))
+                    self.plot_event()
+                except IndexError:
+                    pass
+            else:
                 pass
         else:
-            pass
+            current_index = self.event_index.get()
+            if current_index > 0:
+                next_index = current_index - 1
+                self.event_index.set(next_index)
+                self.plot_event()
+            else:
+                pass
 
     def delete_event(self):
         subset = self.subset_option.cget('text')
