@@ -1024,7 +1024,6 @@ class App(tk.Frame):
             local_stdev = np.squeeze(sqldf('SELECT local_stdev from ratedb WHERE id=%d' % index,locals()).values)
             local_baseline = np.squeeze(sqldf('SELECT local_baseline from ratedb WHERE id=%d' % index,locals()).values)
 
-            print(local_stdev, local_baseline)
             crossings = zip(crossings[::2], crossings[1::2])
             self.event_f.clf()
             a = self.event_f.add_subplot(111)
