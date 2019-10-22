@@ -49,7 +49,7 @@ class FlashableLabel(tk.Label):
 
 
 class App(tk.Frame):
-    def __init__(self, parent,eventsdb,events_folder,file_path_string):
+    def __init__(self, parent,eventsdb,ratedb,events_folder,file_path_string):
         tk.Frame.__init__(self, parent)
         
         self.file_path_string = file_path_string
@@ -58,6 +58,7 @@ class App(tk.Frame):
         [a,b] = self.eventsdb.shape
         self.eventsdb['adj_id'] = np.arange(0,a)
         self.clicks_remaining = 0
+        self.ratedb = ratedb
         
         max_subsets = 11
         self.eventsdb_subset = dict(('Subset {0}'.format(i), self.eventsdb) for i in range(max_subsets))
@@ -977,8 +978,13 @@ class App(tk.Frame):
         
         return return_col.astype(np.float64)
 
+    def parse_list(self, semilist):
+        semilist = np.squeeze(semilist)
+        return np.hstack([np.array(a,dtype=float) for a in str(semilist).split(';')]).astype(np.float64)
+
     def plot_event(self):
         subset = self.subset_option.cget('text')
+        ratedb = self.ratedb
         index = self.event_index.get()
         if any(self.eventsdb_subset[subset]['id']==index) or self.plot_bad_events.get():
             try:
@@ -1002,6 +1008,8 @@ class App(tk.Frame):
                 event_file.columns = ['time','current','cusum']
             elif event_type == 1:
                 event_file.columns = ['time','current','cusum','stepfit']
+            crossings = self.parse_list(sqldf('SELECT intra_crossing_times_us from ratedb WHERE id=%d' % index,locals()).values)
+            crossings = zip(crossings[::2], crossings[1::2])
             self.event_f.clf()
             a = self.event_f.add_subplot(111)
             a.set_xlabel('Time (us)')
@@ -1011,6 +1019,8 @@ class App(tk.Frame):
                 a.plot(event_file['time'],event_file['current'],event_file['time'],event_file['cusum'])
             elif event_type == 1:
                 a.plot(event_file['time'],event_file['current'],event_file['time'],event_file['cusum'],event_file['time'],event_file['stepfit'])
+            for start, end in crossings:
+                a.axvspan(start,end,color='g',alpha=0.3)
             self.event_canvas.draw()
             self.event_info_string.set('Successfully plotted event {0}'.format(index))
         else:
@@ -1174,11 +1184,13 @@ def main():
     root.withdraw()
     file_path_string = tkinter.filedialog.askopenfilename(initialdir='C:/Users/kbrig035/Analysis/CUSUM/output/')
     folder = os.path.dirname(os.path.abspath(file_path_string))
+    ratefile = folder + '\\rate.csv'
     title = "CUSUM Tools: " + folder
     folder = folder + '\events\\'
     root.wm_title(title)
     eventsdb = pd.read_csv(file_path_string,encoding='utf-8')
-    App(root,eventsdb,folder,file_path_string).grid(row=0,column=0)
+    ratedb = pd.read_csv(ratefile, encoding='utf-8')
+    App(root,eventsdb,ratedb,folder,file_path_string).grid(row=0,column=0)
     root.mainloop()
 
 if __name__=="__main__":
