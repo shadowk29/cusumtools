@@ -34,6 +34,7 @@ import itertools
 from collections import OrderedDict
 from scipy.stats import t
 import pylab as pl
+import re
 
 pd.options.mode.chained_assignment = None  # default='warn'
 
@@ -49,7 +50,7 @@ class FlashableLabel(tk.Label):
 
 
 class App(tk.Frame):
-    def __init__(self, parent,eventsdb,ratedb,events_folder,file_path_string):
+    def __init__(self,parent,eventsdb,ratedb,summary,events_folder,file_path_string):
         tk.Frame.__init__(self, parent)
         
         self.file_path_string = file_path_string
@@ -59,6 +60,17 @@ class App(tk.Frame):
         self.eventsdb['adj_id'] = np.arange(0,a)
         self.clicks_remaining = 0
         self.ratedb = ratedb
+
+        self.intra_threshold = 0
+        self.intra_hysteresis = 0
+        for line in summary:
+            if 'intra_threshold' in line:
+                line = re.split('=|\n',line)
+                self.intra_threshold = float(line[1])
+            if 'intra_hysteresis' in line:
+                line = re.split('=|\n',line)
+                self.intra_hysteresis = float(line[1])
+        summary.close()
         
         max_subsets = 11
         self.eventsdb_subset = dict(('Subset {0}'.format(i), self.eventsdb) for i in range(max_subsets))
@@ -1009,6 +1021,10 @@ class App(tk.Frame):
             elif event_type == 1:
                 event_file.columns = ['time','current','cusum','stepfit']
             crossings = self.parse_list(sqldf('SELECT intra_crossing_times_us from ratedb WHERE id=%d' % index,locals()).values)
+            local_stdev = np.squeeze(sqldf('SELECT local_stdev from ratedb WHERE id=%d' % index,locals()).values)
+            local_baseline = np.squeeze(sqldf('SELECT local_baseline from ratedb WHERE id=%d' % index,locals()).values)
+
+            print(local_stdev, local_baseline)
             crossings = zip(crossings[::2], crossings[1::2])
             self.event_f.clf()
             a = self.event_f.add_subplot(111)
@@ -1019,8 +1035,11 @@ class App(tk.Frame):
                 a.plot(event_file['time'],event_file['current'],event_file['time'],event_file['cusum'])
             elif event_type == 1:
                 a.plot(event_file['time'],event_file['current'],event_file['time'],event_file['cusum'],event_file['time'],event_file['stepfit'])
-            for start, end in crossings:
-                a.axvspan(start,end,color='g',alpha=0.3)
+            if self.intra_threshold > 0:
+                a.plot(event_file['time'], np.sign(event_file['current'][0])*np.ones(len(event_file['time']))*(local_baseline - self.intra_threshold * local_stdev), '--', color='y')
+                a.plot(event_file['time'], np.sign(event_file['current'][0])*np.ones(len(event_file['time']))*(local_baseline - (self.intra_threshold - self.intra_hysteresis) * local_stdev), '--', color='g')
+                for start, end in crossings:
+                    a.axvspan(start,end,color='g',alpha=0.3)
             self.event_canvas.draw()
             self.event_info_string.set('Successfully plotted event {0}'.format(index))
         else:
@@ -1185,12 +1204,14 @@ def main():
     file_path_string = tkinter.filedialog.askopenfilename(initialdir='C:/Users/kbrig035/Analysis/CUSUM/output/')
     folder = os.path.dirname(os.path.abspath(file_path_string))
     ratefile = folder + '\\rate.csv'
+    summary = folder +'\\summary.txt'
     title = "CUSUM Tools: " + folder
     folder = folder + '\events\\'
     root.wm_title(title)
+    summary = open(summary, 'r')
     eventsdb = pd.read_csv(file_path_string,encoding='utf-8')
     ratedb = pd.read_csv(ratefile, encoding='utf-8')
-    App(root,eventsdb,ratedb,folder,file_path_string).grid(row=0,column=0)
+    App(root,eventsdb,ratedb,summary,folder,file_path_string).grid(row=0,column=0)
     root.mainloop()
 
 if __name__=="__main__":

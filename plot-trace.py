@@ -187,10 +187,10 @@ class App(tk.Frame):
             self.wildcard.set('baseline.csv not found in given directory')
         with open(config_path,'r') as config:
             for line in config:
-                if 'threshold' in line:
+                if 'threshold' in line and 'intra' not in line:
                     line = re.split('=|\n',line)
                     self.threshold = float(line[1])
-                if 'hysteresis' in line:
+                if 'hysteresis' in line and 'intra' not in line:
                     line = re.split('=|\n',line)
                     self.hysteresis = float(line[1])
                 if 'cutoff' in line:
