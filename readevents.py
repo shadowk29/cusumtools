@@ -1020,11 +1020,12 @@ class App(tk.Frame):
                 event_file.columns = ['time','current','cusum']
             elif event_type == 1:
                 event_file.columns = ['time','current','cusum','stepfit']
-            crossings = self.parse_list(sqldf('SELECT intra_crossing_times_us from ratedb WHERE id=%d' % index,locals()).values)
-            local_stdev = np.squeeze(sqldf('SELECT local_stdev from ratedb WHERE id=%d' % index,locals()).values)
-            local_baseline = np.squeeze(sqldf('SELECT local_baseline from ratedb WHERE id=%d' % index,locals()).values)
+            if ratedb is not None:
+                crossings = self.parse_list(sqldf('SELECT intra_crossing_times_us from ratedb WHERE id=%d' % index,locals()).values)
+                local_stdev = np.squeeze(sqldf('SELECT local_stdev from ratedb WHERE id=%d' % index,locals()).values)
+                local_baseline = np.squeeze(sqldf('SELECT local_baseline from ratedb WHERE id=%d' % index,locals()).values)
 
-            crossings = zip(crossings[::2], crossings[1::2])
+                crossings = zip(crossings[::2], crossings[1::2])
             self.event_f.clf()
             a = self.event_f.add_subplot(111)
             a.set_xlabel('Time (us)')
@@ -1034,7 +1035,7 @@ class App(tk.Frame):
                 a.plot(event_file['time'],event_file['current'],event_file['time'],event_file['cusum'])
             elif event_type == 1:
                 a.plot(event_file['time'],event_file['current'],event_file['time'],event_file['cusum'],event_file['time'],event_file['stepfit'])
-            if self.intra_threshold > 0:
+            if self.intra_threshold > 0 and ratedb is not None:
                 a.plot(event_file['time'], np.sign(event_file['current'][0])*np.ones(len(event_file['time']))*(local_baseline - self.intra_threshold * local_stdev), '--', color='y')
                 a.plot(event_file['time'], np.sign(event_file['current'][0])*np.ones(len(event_file['time']))*(local_baseline - (self.intra_threshold - self.intra_hysteresis) * local_stdev), '--', color='g')
                 for start, end in crossings:
@@ -1209,7 +1210,10 @@ def main():
     root.wm_title(title)
     summary = open(summary, 'r')
     eventsdb = pd.read_csv(file_path_string,encoding='utf-8')
-    ratedb = pd.read_csv(ratefile, encoding='utf-8')
+    try:
+        ratedb = pd.read_csv(ratefile, encoding='utf-8')
+    except:
+        ratedb=None
     App(root,eventsdb,ratedb,summary,folder,file_path_string).grid(row=0,column=0)
     root.mainloop()
 
