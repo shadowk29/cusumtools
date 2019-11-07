@@ -1021,11 +1021,16 @@ class App(tk.Frame):
             elif event_type == 1:
                 event_file.columns = ['time','current','cusum','stepfit']
             if ratedb is not None:
-                crossings = self.parse_list(sqldf('SELECT intra_crossing_times_us from ratedb WHERE id=%d' % index,locals()).values)
-                local_stdev = np.squeeze(sqldf('SELECT local_stdev from ratedb WHERE id=%d' % index,locals()).values)
-                local_baseline = np.squeeze(sqldf('SELECT local_baseline from ratedb WHERE id=%d' % index,locals()).values)
+                try:
+                    crossings = self.parse_list(sqldf('SELECT intra_crossing_times_us from ratedb WHERE id=%d' % index,locals()).values)
+                    local_stdev = np.squeeze(sqldf('SELECT local_stdev from ratedb WHERE id=%d' % index,locals()).values)
+                    local_baseline = np.squeeze(sqldf('SELECT local_baseline from ratedb WHERE id=%d' % index,locals()).values)
+                    crossings = zip(crossings[::2], crossings[1::2])
+                except:
+                    ratedb = None
+                    self.ratedb = None
 
-                crossings = zip(crossings[::2], crossings[1::2])
+                
             self.event_f.clf()
             a = self.event_f.add_subplot(111)
             a.set_xlabel('Time (us)')
