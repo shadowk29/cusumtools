@@ -349,11 +349,16 @@ class App(tk.Frame):
             db = self.ratefile
             start_time = self.start_time
             end_time = self.end_time
-            good_start = np.squeeze(sqldf('SELECT start_time_s from db WHERE start_time_s >= {0} AND start_time_s < {1} AND type IN (0,1)'.format(start_time,end_time),locals()).values)*1e6
-            bad_start = np.squeeze(sqldf('SELECT start_time_s from db WHERE start_time_s >= {0} AND start_time_s < {1} AND type>1'.format(start_time,end_time),locals()).values)*1e6
-            good_end = np.squeeze(sqldf('SELECT end_time_s from db WHERE end_time_s >= {0} AND end_time_s < {1} AND type IN (0,1)'.format(start_time,end_time),locals()).values)*1e6
-            bad_end = np.squeeze(sqldf('SELECT end_time_s from db WHERE end_time_s >= {0} AND end_time_s < {1} AND type>1'.format(start_time,end_time),locals()).values)*1e6
+            good_start = np.atleast_1d(np.squeeze(sqldf('SELECT start_time_s from db WHERE start_time_s >= {0} AND start_time_s < {1} AND type IN (0,1)'.format(start_time,end_time),locals()).values)*1e6)
+            bad_start = np.atleast_1d(np.squeeze(sqldf('SELECT start_time_s from db WHERE start_time_s >= {0} AND start_time_s < {1} AND type>1'.format(start_time,end_time),locals()).values)*1e6)
+            good_end = np.atleast_1d(np.squeeze(sqldf('SELECT end_time_s from db WHERE end_time_s >= {0} AND end_time_s < {1} AND type IN (0,1)'.format(start_time,end_time),locals()).values)*1e6)
+            bad_end = np.atleast_1d(np.squeeze(sqldf('SELECT end_time_s from db WHERE end_time_s >= {0} AND end_time_s < {1} AND type>1'.format(start_time,end_time),locals()).values)*1e6)
 
+            
+            if good_start[0] > good_end[0]:
+                good_start = good_start[1:]
+            if bad_start[0] > bad_end[0]:
+                bad_start = bad_start[1:]
             for gs, ge in zip(np.atleast_1d(good_start),np.atleast_1d(good_end)):
                 a.axvspan(gs,ge,color='g',alpha=0.3)
             for bs, be in zip(np.atleast_1d(bad_start),np.atleast_1d(bad_end)):
