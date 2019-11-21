@@ -58,6 +58,7 @@ class App(tk.Frame):
         parent.deiconify()
         self.events_flag = False
         self.baseline_flag = False
+        self.overlay_flag = False
         self.file_path = file_path
                 
         ##### Trace plotting widgets #####
@@ -175,6 +176,7 @@ class App(tk.Frame):
         config_path = analysis_dir + '/summary.txt'
         self.events_flag = True
         self.baseline_flag = True
+        self.overlay_flag = True
         try:
             self.ratefile = pd.read_csv(ratefile_path,encoding='utf-8')
         except IOError:
@@ -345,7 +347,7 @@ class App(tk.Frame):
         self.trace_fig.clf()
         a = self.trace_fig.add_subplot(111)
 
-        if self.events_flag:
+        if self.events_flag and self.overlay_flag == True:
             db = self.ratefile
             start_time = self.start_time
             end_time = self.end_time
@@ -353,14 +355,15 @@ class App(tk.Frame):
             bad_start = np.atleast_1d(np.squeeze(sqldf('SELECT start_time_s from db WHERE start_time_s >= {0} AND start_time_s < {1} AND type>1'.format(start_time,end_time),locals()).values)*1e6)
             good_end = np.atleast_1d(np.squeeze(sqldf('SELECT end_time_s from db WHERE end_time_s >= {0} AND end_time_s < {1} AND type IN (0,1)'.format(start_time,end_time),locals()).values)*1e6)
             bad_end = np.atleast_1d(np.squeeze(sqldf('SELECT end_time_s from db WHERE end_time_s >= {0} AND end_time_s < {1} AND type>1'.format(start_time,end_time),locals()).values)*1e6)
-
             
-            if good_start[0] > good_end[0]:
-                good_start = good_start[1:]
-            if bad_start[0] > bad_end[0]:
-                bad_start = bad_start[1:]
+            if len(good_start) > 0 and len(good_end) > 0:
+                if good_start[0] > good_end[0]:
+                    good_start = good_start[1:]
+            if len(bad_start) > 0 and len(bad_end) > 0:
+                if bad_start[0] > bad_end[0]:
+                    bad_start = bad_start[1:]
             for gs, ge in zip(np.atleast_1d(good_start),np.atleast_1d(good_end)):
-                a.axvspan(gs,ge,color='g',alpha=0.3)
+                 a.axvspan(gs,ge,color='g',alpha=0.3)
             for bs, be in zip(np.atleast_1d(bad_start),np.atleast_1d(bad_end)):
                 a.axvspan(bs,be,color='r',alpha=0.3)
 
