@@ -1191,7 +1191,7 @@ class App(tk.Frame):
         subset = self.subset_option.cget('text')
         folder = os.path.dirname(os.path.abspath(self.file_path_string))
         subset_file_path = folder + '\eventsdb-{0}.csv'.format(subset)
-        subset_file = open(subset_file_path,'wb')
+        subset_file = open(subset_file_path,'w')
         filter_file_path = folder + '\eventsdb-{0}-filters.txt'.format(subset)
         filter_file = open(filter_file_path,'w')
         self.eventsdb_subset[subset].to_csv(subset_file,index=False)
