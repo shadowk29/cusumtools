@@ -413,6 +413,8 @@ class App(tk.Frame):
         if plotsum != 2 and plotsum != 3:
             return
         subset = self.cluster_subset_option.cget('text')
+
+        features = len(self.feature_options)
         
         logscale_x = self.feature_options_log[indices[0]].get()
         logscale_y = self.feature_options_log[indices[1]].get()
@@ -424,22 +426,30 @@ class App(tk.Frame):
         ysign = np.sign(np.average(y_col))
         x = np.log10(xsign*x_col) if bool(logscale_x) else x_col
         y = np.log10(ysign*y_col) if bool(logscale_y) else y_col
-        x_norm = x / np.max(x*xsign)
-        y_norm = y/ np.max(y*ysign)
-        cluster_data = np.vstack((x_norm,y_norm)).T
+       
         if plotsum == 3:
             logscale_z = self.feature_options_log[indices[2]].get()
             z_label = self.feature_options[indices[2]].cget('text')
             z_col = np.squeeze(np.array(self.parse_db_col(self.unalias_dict.get(z_label,z_label),subset)))
             zsign = np.sign(np.average(z_col))
             z = np.log10(zsign*z_col) if bool(logscale_z) else z_col
-            z_norm = z / np.max(z*zsign)
-            cluster_data = np.vstack((x_norm, y_norm, z_norm)).T
+
+        data = []
+        for i in range(features):
+            logscale = self.feature_options_log[i].get()
+            label = self.feature_options[i].cget('text')
+            col = np.squeeze(np.array(self.parse_db_col(self.unalias_dict.get(label,label),subset)))
+            sign = np.sign(np.average(col))
+            col = np.log10(sign*col) if bool(logscale) else col
+            col /= np.max(np.absolute(col))
+            data.append(col)
+        data = np.vstack(data).T
 
 
+        
         ##perform clustering
         clusterer = hdbscan.HDBSCAN(min_cluster_size=self.min_cluster_pts.get(), min_samples=self.min_pts.get(), gen_min_span_tree=True, cluster_selection_epsilon=self.eps.get())
-        clusterer.fit(cluster_data)
+        clusterer.fit(data)
         palette = sns.color_palette()
         cluster_colors = [sns.desaturate(palette[col], sat)
                   if col >= 0 else (0,0,0) for col, sat in
@@ -448,7 +458,7 @@ class App(tk.Frame):
 
         
         self.cluster_f.clf()
-        self.cluster_f.subplots_adjust(bottom=0.2,left=0.3)
+        self.cluster_f.subplots_adjust(bottom=0.15,left=0.2)
         if plotsum == 3:
             ax = self.cluster_f.add_subplot(111, projection = '3d')
         else:
