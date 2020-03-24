@@ -16,9 +16,9 @@
 ##    You should have received a copy of the GNU General Public License
 ##    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import numpy.random.common
-import numpy.random.bounded_integers
-import numpy.random.entropy
+#import numpy.random.common
+#import numpy.random.bounded_integers
+#import numpy.random.entropy
 import pandas as pd
 from pandasql import sqldf
 import matplotlib
@@ -35,6 +35,7 @@ from collections import OrderedDict
 from scipy.stats import t
 import pylab as pl
 import re
+from tkinter import ttk
 
 pd.options.mode.chained_assignment = None  # default='warn'
 
@@ -52,6 +53,7 @@ class FlashableLabel(tk.Label):
 class App(tk.Frame):
     def __init__(self,parent,eventsdb,ratedb,summary,events_folder,file_path_string):
         tk.Frame.__init__(self, parent)
+        self.ntbk = ttk.Notebook(parent)
         
         self.file_path_string = file_path_string
         self.events_folder = events_folder
@@ -113,11 +115,17 @@ class App(tk.Frame):
         
         parent.deiconify()
 
+        self.ntbk.grid(row=0,column=0,sticky=tk.E+tk.W+tk.N+tk.S)
         
-
+        ##parent frame for notebook stats tab
+        self.stats_tab_frame = tk.Frame(self.ntbk)
+        self.stats_tab_frame.grid(row=0,column=0,sticky=tk.E+tk.W+tk.N+tk.S) 
+        self.ntbk.add(self.stats_tab_frame, text='Statistics')
+             
+        
         
         #Statistics plotting widgets
-        self.stats_frame = tk.LabelFrame(parent,text='Statistics View')
+        self.stats_frame = tk.LabelFrame(self.stats_tab_frame,text='Statistics View')
         self.f = Figure(figsize=(7,5), dpi=100)
         self.canvas = FigureCanvasTkAgg(self.f, master=self.stats_frame)
         self.toolbar_frame = tk.Frame(self.stats_frame)
@@ -128,7 +136,7 @@ class App(tk.Frame):
         self.toolbar_frame.grid(row=1,column=0,columnspan=6)
         self.canvas.get_tk_widget().grid(row=0,column=0,columnspan=6)
 
-#########|##############################################
+########################################################
         self.plot_subsets = tk.Button(self.stats_frame, text='Subsets to Plot',command=self.plot_subset_select)
         self.plot_subsets.grid(row=1,column=5,sticky=tk.E+tk.W)
 
@@ -199,7 +207,7 @@ class App(tk.Frame):
 
         #Single Event widgets
 
-        self.events_frame = tk.LabelFrame(parent,text='Single Event View')
+        self.events_frame = tk.LabelFrame(self.stats_tab_frame,text='Single Event View')
         self.events_frame.columnconfigure(0, weight=1)
         self.events_frame.columnconfigure(3, weight=1)
         self.event_f = Figure(figsize=(7,5), dpi=100)
@@ -245,7 +253,7 @@ class App(tk.Frame):
 
         #Datbase widgets
 
-        self.db_frame = tk.LabelFrame(parent,text='Database Controls')
+        self.db_frame = tk.LabelFrame(self.stats_tab_frame,text='Database Controls')
         self.db_frame.columnconfigure(0, weight=1)
         self.db_frame.columnconfigure(2, weight=1)
         self.db_frame.columnconfigure(4, weight=1)
@@ -275,13 +283,62 @@ class App(tk.Frame):
         #Folder widgets
 
         #Status Update widgets
-        self.status_frame = tk.LabelFrame(parent,text='Status')
+        self.status_frame = tk.LabelFrame(self.stats_tab_frame,text='Status')
         self.status_frame.grid(row=2,column=6,columnspan=6,sticky=tk.E+tk.W+tk.S+tk.N)
         self.status_string = tk.StringVar()
         self.status_string.set('Ready')
         self.status_display = FlashableLabel(self.status_frame, textvariable=self.status_string, background='black', foreground='white')
 
         self.status_display.grid(row=0,column=0,columnspan=6,sticky=tk.E+tk.W+tk.S+tk.N)
+
+
+
+
+
+        ##parent frame for notebook clustering tab
+        self.cluster_tab_frame = tk.Frame(self.ntbk)
+        self.cluster_tab_frame.grid(row=0,column=0,sticky=tk.E+tk.W+tk.N+tk.S)
+        self.ntbk.add(self.cluster_tab_frame, text='Clustering')
+
+
+        #Cluster plotting widgets
+        self.cluster_controls_frame = tk.LabelFrame(self.cluster_tab_frame,text='Clustering Settings')
+        self.cluster_controls_frame.grid(row=0,column=0,columnspan=6,sticky=tk.N+tk.S)
+        
+        self.min_cluster_pts_label = tk.Label(self.cluster_controls_frame, text='Min Cluster Size')
+        self.min_pts_label = tk.Label(self.cluster_controls_frame, text='Min Neighbours')
+        self.eps_label = tk.Label(self.cluster_controls_frame, text='Distance Cutoff')
+        self.min_cluster_pts = tk.IntVar()
+        self.min_cluster_pts.set(30)
+        self.min_pts = tk.IntVar()
+        self.min_pts.set(5)
+        self.eps = tk.DoubleVar()
+        self.eps.set(0)
+        self.min_cluster_pts_entry = tk.Entry(self.cluster_controls_frame, textvariable=self.min_cluster_pts)
+        self.min_pts_entry = tk.Entry(self.cluster_controls_frame, textvariable=self.min_pts)
+        self.eps_entry = tk.Entry(self.cluster_controls_frame, textvariable=self.eps)
+
+        self.min_cluster_pts_label.grid(row=0,column=0,stick=tk.E+tk.W)
+        self.min_pts_label.grid(row=1,column=0,stick=tk.E+tk.W)
+        self.eps_label.grid(row=2,column=0,stick=tk.E+tk.W)
+        self.min_cluster_pts_entry.grid(row=0,column=1,sticky=tk.E+tk.W)
+        self.min_pts_entry.grid(row=1,column=1,sticky=tk.E+tk.W)
+        self.eps_entry.grid(row=2,column=1,sticky=tk.E+tk.W)
+        
+
+        self.cluster_frame = tk.LabelFrame(self.cluster_tab_frame,text='Cluster View')
+        self.cluster_frame.grid(row=0,column=6,columnspan=6,sticky=tk.N+tk.S)
+        
+        self.cluster_f = Figure(figsize=(7,5), dpi=100)
+        self.cluster_canvas = FigureCanvasTkAgg(self.cluster_f, master=self.cluster_frame)
+        self.cluster_toolbar_frame = tk.Frame(self.cluster_frame)
+        self.cluster_toolbar = NavigationToolbar2Tk(self.cluster_canvas, self.cluster_toolbar_frame)
+        self.cluster_toolbar.update()
+
+        self.cluster_toolbar_frame.grid(row=1,column=0,columnspan=6)
+        self.cluster_canvas.get_tk_widget().grid(row=0,column=0,columnspan=6)
+
+        
 
 #######################################
     def plot_subset_select(self):
