@@ -339,6 +339,17 @@ class App(tk.Frame):
         self.feature_options_log_check.append(tk.Checkbutton(self.cluster_controls_frame, text='Logscale', variable = self.feature_options_log[0]))
         self.feature_options_log_check.append(tk.Checkbutton(self.cluster_controls_frame, text='Logscale', variable = self.feature_options_log[1]))
 
+        self.plot_options = []
+        self.plot_options.append(tk.IntVar())
+        self.plot_options.append(tk.IntVar())
+        self.plot_options[0].set(1)
+        self.plot_options[1].set(1)
+
+        self.plot_options_check = []
+        self.plot_options_check.append(tk.Checkbutton(self.cluster_controls_frame, text='Plot', variable = self.plot_options[0], command=self.disable_plots))
+        self.plot_options_check.append(tk.Checkbutton(self.cluster_controls_frame, text='Plot', variable = self.plot_options[1], command=self.disable_plots))
+
+        
         self.add_feature_button = tk.Button(self.cluster_controls_frame, text='Add Feature', command=self.add_feature)
         self.delete_feature_button = []
 
@@ -349,15 +360,19 @@ class App(tk.Frame):
         self.min_pts_entry.grid(row=1,column=1,sticky=tk.E+tk.W)
         self.eps_entry.grid(row=2,column=1,sticky=tk.E+tk.W)
         self.gridcounter = 3
-        for f,c in zip(self.feature_options, self.feature_options_log_check):
+        for f,c,p in zip(self.feature_options, self.feature_options_log_check, self.plot_options_check):
             f.grid(row=self.gridcounter, column=0, sticky=tk.E+tk.W)
             c.grid(row=self.gridcounter, column=1, sticky=tk.E+tk.W)
+            p.grid(row=self.gridcounter, column=2, sticky=tk.E+tk.W)
             self.gridcounter += 1
         self.add_feature_button.grid(row=self.gridcounter, column=0, sticky=tk.E+tk.W)
-        
 
+        self.update_cluster_button = tk.Button(self.cluster_controls_frame, text='Update Clusters', command=self.update_cluster)
+        self.update_cluster_button.grid(row=0,column=2,rowspan=3,columnspan=2,sticky=tk.E+tk.W+tk.N+tk.S)
+        
+        
         self.cluster_frame = tk.LabelFrame(self.cluster_tab_frame,text='Cluster View')
-        self.cluster_frame.grid(row=0,column=6,columnspan=6,sticky=tk.N+tk.S)
+        self.cluster_frame.grid(row=0,column=6,columnspan=6,sticky=tk.N+tk.S+tk.E+tk.W)
         
         self.cluster_f = Figure(figsize=(7,5), dpi=100)
         self.cluster_canvas = FigureCanvasTkAgg(self.cluster_f, master=self.cluster_frame)
@@ -370,11 +385,32 @@ class App(tk.Frame):
 
         
 
+        
+
 #######################################
+    def disable_plots(self):
+        plotsum = 0
+        for p in self.plot_options:
+            plotsum += p.get()
+        if plotsum == 3:
+            for p,c in zip(self.plot_options, self.plot_options_check):
+                if p.get() == 0:
+                    c['state'] = 'disabled'
+                else:
+                    c['state'] = 'normal'
+        else:
+            for c in self.plot_options_check:
+                c['state'] = 'normal'
+        
+    def update_cluster(self):
+        pass
+    
     def add_feature(self):
         self.feature_options_log.append(tk.IntVar())
         self.feature_col_options.append(tk.StringVar())
+        self.plot_options.append(tk.IntVar())
         self.feature_col_options[-1].set('Number of Levels')
+        self.plot_options_check.append(tk.Checkbutton(self.cluster_controls_frame, text='Plot', variable = self.plot_options[-1], command=self.disable_plots))
         self.feature_options_log_check.append(tk.Checkbutton(self.cluster_controls_frame, text='Logscale', variable = self.feature_options_log[-1]))
         self.feature_options.append(tk.OptionMenu(self.cluster_controls_frame, self.feature_col_options[-1], *[self.alias_dict.get(option,option) for option in self.column_list]))
         self.delete_feature_button.append(tk.Button(self.cluster_controls_frame, text='Delete Feature'))
@@ -382,9 +418,11 @@ class App(tk.Frame):
         self.delete_feature_button[-1].bind('<Button-1>', func=lambda x: self.delete_feature(button))
         self.feature_options[-1].grid(row=self.gridcounter,column=0,sticky=tk.E+tk.W)
         self.feature_options_log_check[-1].grid(row=self.gridcounter, column=1, sticky=tk.E+tk.W)
-        self.delete_feature_button[-1].grid(row=self.gridcounter, column=2, sticky=tk.E+tk.W)
+        self.plot_options_check[-1].grid(row=self.gridcounter, column=2, sticky=tk.E+tk.W)
+        self.delete_feature_button[-1].grid(row=self.gridcounter, column=3, sticky=tk.E+tk.W)
         self.gridcounter += 1
         self.add_feature_button.grid(row=self.gridcounter,column=0, sticky=tk.E+tk.W)
+        self.disable_plots()
 
     def delete_feature(self, widget):
         index = self.delete_feature_button.index(widget) + 2 #+2 because there will always be a minimum of two features
@@ -394,6 +432,8 @@ class App(tk.Frame):
         temp.destroy()
         temp = self.feature_options.pop(index)
         temp.destroy()
+        temp = self.plot_options_check.pop(index)
+        temp.destroy()
 
         reset = self.feature_options[index:]
         for r in reset:
@@ -401,9 +441,12 @@ class App(tk.Frame):
         reset = self.feature_options_log_check[index:]
         for r in reset:
             r.grid(row = r.grid_info()['row']-1, column=1, stick=tk.E+tk.W)
-        reset = self.delete_feature_button[index-2:]
+        reset = self.plot_options_check[index:]
         for r in reset:
             r.grid(row = r.grid_info()['row']-1, column=2, stick=tk.E+tk.W)
+        reset = self.delete_feature_button[index-2:]
+        for r in reset:
+            r.grid(row = r.grid_info()['row']-1, column=3, stick=tk.E+tk.W)
         self.gridcounter -= 1
         
                 
