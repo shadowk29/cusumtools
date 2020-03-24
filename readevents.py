@@ -365,11 +365,18 @@ class App(tk.Frame):
             c.grid(row=self.gridcounter, column=1, sticky=tk.E+tk.W)
             p.grid(row=self.gridcounter, column=2, sticky=tk.E+tk.W)
             self.gridcounter += 1
-        self.add_feature_button.grid(row=self.gridcounter, column=0, sticky=tk.E+tk.W)
+        self.add_feature_button.grid(row=self.gridcounter, column=0, columnspan=4,sticky=tk.E+tk.W)
+
+        
 
         self.update_cluster_button = tk.Button(self.cluster_controls_frame, text='Update Clusters', command=self.update_cluster)
-        self.update_cluster_button.grid(row=0,column=2,rowspan=3,columnspan=2,sticky=tk.E+tk.W+tk.N+tk.S)
+        self.update_cluster_button.grid(row=0,column=2,rowspan=2,columnspan=2,sticky=tk.E+tk.W+tk.N+tk.S)
         
+        default_cluster_subset = tk.StringVar()
+        default_cluster_subset.set('Subset 0')
+        cluster_subset_options = ['Subset {0}'.format(i) for i in range(max_subsets)]
+        self.cluster_subset_option = tk.OptionMenu(self.cluster_controls_frame, default_cluster_subset, *cluster_subset_options)
+        self.cluster_subset_option.grid(row=2,column=2,columnspan=2, sticky=tk.E+tk.W)
         
         self.cluster_frame = tk.LabelFrame(self.cluster_tab_frame,text='Cluster View')
         self.cluster_frame.grid(row=0,column=6,columnspan=6,sticky=tk.N+tk.S+tk.E+tk.W)
@@ -388,6 +395,12 @@ class App(tk.Frame):
         
 
 #######################################
+
+    def update_cluster(self):
+        pass
+
+
+    
     def disable_plots(self):
         plotsum = 0
         for p in self.plot_options:
@@ -401,9 +414,6 @@ class App(tk.Frame):
         else:
             for c in self.plot_options_check:
                 c['state'] = 'normal'
-        
-    def update_cluster(self):
-        pass
     
     def add_feature(self):
         self.feature_options_log.append(tk.IntVar())
@@ -421,7 +431,7 @@ class App(tk.Frame):
         self.plot_options_check[-1].grid(row=self.gridcounter, column=2, sticky=tk.E+tk.W)
         self.delete_feature_button[-1].grid(row=self.gridcounter, column=3, sticky=tk.E+tk.W)
         self.gridcounter += 1
-        self.add_feature_button.grid(row=self.gridcounter,column=0, sticky=tk.E+tk.W)
+        self.add_feature_button.grid(row=self.gridcounter,column=0, columnspan=4, sticky=tk.E+tk.W)
         self.disable_plots()
 
     def delete_feature(self, widget):
