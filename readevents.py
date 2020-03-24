@@ -36,6 +36,15 @@ from scipy.stats import t
 import pylab as pl
 import re
 from tkinter import ttk
+from mpl_toolkits.mplot3d import Axes3D
+import seaborn as sns
+import sklearn.datasets as data
+import hdbscan
+##matplotlib inline
+sns.set_context('poster')
+sns.set_style('white')
+sns.set_color_codes()
+plot_kwds = {'alpha' : 0.5, 's' : 80, 'linewidths':0}
 
 pd.options.mode.chained_assignment = None  # default='warn'
 
@@ -323,7 +332,7 @@ class App(tk.Frame):
         self.feature_col_options.append(tk.StringVar())
         self.feature_col_options[0].set('Dwell Time (us)')
         self.feature_col_options.append(tk.StringVar())
-        self.feature_col_options[1].set('Maximum blockage (pA)')
+        self.feature_col_options[1].set('Maximum Blockage (pA)')
 
 
         
@@ -381,7 +390,7 @@ class App(tk.Frame):
         self.cluster_frame = tk.LabelFrame(self.cluster_tab_frame,text='Cluster View')
         self.cluster_frame.grid(row=0,column=6,columnspan=6,sticky=tk.N+tk.S+tk.E+tk.W)
         
-        self.cluster_f = Figure(figsize=(7,5), dpi=100)
+        self.cluster_f = Figure(figsize=(9, 6), dpi=100)
         self.cluster_canvas = FigureCanvasTkAgg(self.cluster_f, master=self.cluster_frame)
         self.cluster_toolbar_frame = tk.Frame(self.cluster_frame)
         self.cluster_toolbar = NavigationToolbar2Tk(self.cluster_canvas, self.cluster_toolbar_frame)
@@ -390,14 +399,77 @@ class App(tk.Frame):
         self.cluster_toolbar_frame.grid(row=1,column=0,columnspan=6)
         self.cluster_canvas.get_tk_widget().grid(row=0,column=0,columnspan=6)
 
-        
-
-        
-
 #######################################
 
     def update_cluster(self):
-        pass
+        plotsum = 0
+        indices = []
+        index = 0
+        for p in self.plot_options:
+            plotsum += p.get()
+            if p.get() == 1:
+                indices.append(index)
+            index += 1
+        if plotsum != 2 and plotsum != 3:
+            return
+        subset = self.cluster_subset_option.cget('text')
+        
+        logscale_x = self.feature_options_log[indices[0]].get()
+        logscale_y = self.feature_options_log[indices[1]].get()
+        x_label = self.feature_options[indices[0]].cget('text')
+        y_label = self.feature_options[indices[1]].cget('text')
+        x_col = np.squeeze(np.array(self.parse_db_col(self.unalias_dict.get(x_label,x_label),subset)))
+        y_col = np.squeeze(np.array(self.parse_db_col(self.unalias_dict.get(y_label,y_label),subset)))
+        xsign = np.sign(np.average(x_col))
+        ysign = np.sign(np.average(y_col))
+        x = np.log10(xsign*x_col) if bool(logscale_x) else x_col
+        y = np.log10(ysign*y_col) if bool(logscale_y) else y_col
+        x_norm = x / np.max(x*xsign)
+        y_norm = y/ np.max(y*ysign)
+        cluster_data = np.vstack((x_norm,y_norm)).T
+        if plotsum == 3:
+            logscale_z = self.feature_options_log[indices[2]].get()
+            z_label = self.feature_options[indices[2]].cget('text')
+            z_col = np.squeeze(np.array(self.parse_db_col(self.unalias_dict.get(z_label,z_label),subset)))
+            zsign = np.sign(np.average(z_col))
+            z = np.log10(zsign*z_col) if bool(logscale_z) else z_col
+            z_norm = z / np.max(z*zsign)
+            cluster_data = np.vstack((x_norm, y_norm, z_norm)).T
+
+
+        ##perform clustering
+        clusterer = hdbscan.HDBSCAN(min_cluster_size=self.min_cluster_pts.get(), min_samples=self.min_pts.get(), gen_min_span_tree=True, cluster_selection_epsilon=self.eps.get())
+        clusterer.fit(cluster_data)
+        palette = sns.color_palette()
+        cluster_colors = [sns.desaturate(palette[col], sat)
+                  if col >= 0 else (0,0,0) for col, sat in
+                  zip(clusterer.labels_, clusterer.probabilities_)]
+        clusterer._min_samples_label = 0
+
+        
+        self.cluster_f.clf()
+        self.cluster_f.subplots_adjust(bottom=0.2,left=0.3)
+        if plotsum == 3:
+            ax = self.cluster_f.add_subplot(111, projection = '3d')
+        else:
+            ax = self.cluster_f.add_subplot(111)
+
+        ax.set_xlabel(x_label, labelpad=10)
+        ax.set_ylabel(y_label, labelpad=10)
+        if logscale_x:
+            ax.set_xlabel('Log(' +str(x_label)+')', labelpad=10)
+        if logscale_y:
+            ax.set_ylabel('Log(' +str(y_label)+')', labelpad=10)
+        if plotsum == 3:
+            ax.set_zlabel(z_label, labelpad=10)
+            if logscale_z:
+                ax.set_ylabel('Log(' +str(y_label)+')', labelpad=10)
+        if plotsum == 3:
+            ax.scatter(x, y, z, c=cluster_colors, **plot_kwds)
+        else:
+            ax.scatter(x, y, c=cluster_colors, **plot_kwds)
+        self.cluster_canvas.draw()
+        
 
 
     
@@ -444,7 +516,10 @@ class App(tk.Frame):
         temp.destroy()
         temp = self.plot_options_check.pop(index)
         temp.destroy()
-
+        temp = self.plot_options.pop(index)
+        temp = self.feature_col_options.pop(index)
+        temp = self.feature_options_log.pop(index)
+        
         reset = self.feature_options[index:]
         for r in reset:
             r.grid(row = r.grid_info()['row']-1, column=0, stick=tk.E+tk.W)
