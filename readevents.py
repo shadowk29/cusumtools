@@ -318,12 +318,42 @@ class App(tk.Frame):
         self.min_pts_entry = tk.Entry(self.cluster_controls_frame, textvariable=self.min_pts)
         self.eps_entry = tk.Entry(self.cluster_controls_frame, textvariable=self.eps)
 
+
+        self.feature_col_options = []
+        self.feature_col_options.append(tk.StringVar())
+        self.feature_col_options[0].set('Dwell Time (us)')
+        self.feature_col_options.append(tk.StringVar())
+        self.feature_col_options[1].set('Maximum blockage (pA)')
+
+
+        
+        self.feature_options = []
+        self.feature_options.append(tk.OptionMenu(self.cluster_controls_frame, self.feature_col_options[0], *[self.alias_dict.get(option,option) for option in self.column_list]))
+        self.feature_options.append(tk.OptionMenu(self.cluster_controls_frame, self.feature_col_options[1], *[self.alias_dict.get(option,option) for option in self.column_list]))
+
+        self.feature_options_log = []
+        self.feature_options_log.append(tk.IntVar())
+        self.feature_options_log.append(tk.IntVar())
+
+        self.feature_options_log_check = []
+        self.feature_options_log_check.append(tk.Checkbutton(self.cluster_controls_frame, text='Logscale', variable = self.feature_options_log[0]))
+        self.feature_options_log_check.append(tk.Checkbutton(self.cluster_controls_frame, text='Logscale', variable = self.feature_options_log[1]))
+
+        self.add_feature_button = tk.Button(self.cluster_controls_frame, text='Add Feature', command=self.add_feature)
+        self.delete_feature_button = []
+
         self.min_cluster_pts_label.grid(row=0,column=0,stick=tk.E+tk.W)
         self.min_pts_label.grid(row=1,column=0,stick=tk.E+tk.W)
         self.eps_label.grid(row=2,column=0,stick=tk.E+tk.W)
         self.min_cluster_pts_entry.grid(row=0,column=1,sticky=tk.E+tk.W)
         self.min_pts_entry.grid(row=1,column=1,sticky=tk.E+tk.W)
         self.eps_entry.grid(row=2,column=1,sticky=tk.E+tk.W)
+        self.gridcounter = 3
+        for f,c in zip(self.feature_options, self.feature_options_log_check):
+            f.grid(row=self.gridcounter, column=0, sticky=tk.E+tk.W)
+            c.grid(row=self.gridcounter, column=1, sticky=tk.E+tk.W)
+            self.gridcounter += 1
+        self.add_feature_button.grid(row=self.gridcounter, column=0, sticky=tk.E+tk.W)
         
 
         self.cluster_frame = tk.LabelFrame(self.cluster_tab_frame,text='Cluster View')
@@ -341,6 +371,44 @@ class App(tk.Frame):
         
 
 #######################################
+    def add_feature(self):
+        self.feature_options_log.append(tk.IntVar())
+        self.feature_col_options.append(tk.StringVar())
+        self.feature_col_options[-1].set('Number of Levels')
+        self.feature_options_log_check.append(tk.Checkbutton(self.cluster_controls_frame, text='Logscale', variable = self.feature_options_log[-1]))
+        self.feature_options.append(tk.OptionMenu(self.cluster_controls_frame, self.feature_col_options[-1], *[self.alias_dict.get(option,option) for option in self.column_list]))
+        self.delete_feature_button.append(tk.Button(self.cluster_controls_frame, text='Delete Feature'))
+        button = self.delete_feature_button[-1]
+        self.delete_feature_button[-1].bind('<Button-1>', func=lambda x: self.delete_feature(button))
+        self.feature_options[-1].grid(row=self.gridcounter,column=0,sticky=tk.E+tk.W)
+        self.feature_options_log_check[-1].grid(row=self.gridcounter, column=1, sticky=tk.E+tk.W)
+        self.delete_feature_button[-1].grid(row=self.gridcounter, column=2, sticky=tk.E+tk.W)
+        self.gridcounter += 1
+        self.add_feature_button.grid(row=self.gridcounter,column=0, sticky=tk.E+tk.W)
+
+    def delete_feature(self, widget):
+        index = self.delete_feature_button.index(widget) + 2 #+2 because there will always be a minimum of two features
+        temp = self.delete_feature_button.pop(index-2)
+        temp.destroy()
+        temp = self.feature_options_log_check.pop(index)
+        temp.destroy()
+        temp = self.feature_options.pop(index)
+        temp.destroy()
+
+        reset = self.feature_options[index:]
+        for r in reset:
+            r.grid(row = r.grid_info()['row']-1, column=0, stick=tk.E+tk.W)
+        reset = self.feature_options_log_check[index:]
+        for r in reset:
+            r.grid(row = r.grid_info()['row']-1, column=1, stick=tk.E+tk.W)
+        reset = self.delete_feature_button[index-2:]
+        for r in reset:
+            r.grid(row = r.grid_info()['row']-1, column=2, stick=tk.E+tk.W)
+        self.gridcounter -= 1
+        
+                
+        
+            
     def plot_subset_select(self):
         self.window = tk.Toplevel()
         self.window.title("Subsets to plot")
