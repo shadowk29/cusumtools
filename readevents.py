@@ -45,7 +45,6 @@ sns.set_context('poster')
 sns.set_style('white')
 sns.set_color_codes()
 plot_kwds = {'alpha' : 0.5, 's' : 80, 'linewidths':0}
-
 pd.options.mode.chained_assignment = None  # default='warn'
 
 
@@ -420,7 +419,7 @@ class App(tk.Frame):
         self.cluster_frame = tk.LabelFrame(self.cluster_tab_frame,text='Cluster View')
         self.cluster_frame.grid(row=0,column=6,columnspan=6,sticky=tk.N+tk.S+tk.E+tk.W)
         
-        self.cluster_f = Figure(figsize=(9, 6), dpi=100)
+        self.cluster_f = Figure(figsize=(8, 6), dpi=100)
         self.cluster_canvas = FigureCanvasTkAgg(self.cluster_f, master=self.cluster_frame)
         self.cluster_toolbar_frame = tk.Frame(self.cluster_frame)
         self.cluster_toolbar = NavigationToolbar2Tk(self.cluster_canvas, self.cluster_toolbar_frame)
@@ -474,6 +473,7 @@ class App(tk.Frame):
             sign = np.sign(np.average(col))
             col = np.log10(sign*col) if bool(logscale) else col
             if norm == 'Max':
+                col -= np.average(col)
                 col /= np.max(np.absolute(col))
             elif norm == 'Gauss':
                 col -= np.average(col)
@@ -496,30 +496,38 @@ class App(tk.Frame):
         cluster_colors = [sns.desaturate(palette[col], sat)
                   if col >= 0 else (0,0,0) for col, sat in
                   zip(clusterer.labels_, clusterer.probabilities_)]
-        clusterer._min_samples_label = 0
+        #clusterer._min_samples_label = 0
 
         
         self.cluster_f.clf()
-        self.cluster_f.subplots_adjust(bottom=0.15,left=0.2)
+        self.cluster_f.subplots_adjust(bottom=0.2,left=0.2)
         if plotsum == 3:
             ax = self.cluster_f.add_subplot(111, projection = '3d')
         else:
             ax = self.cluster_f.add_subplot(111)
 
-        ax.set_xlabel(x_label, labelpad=10)
-        ax.set_ylabel(y_label, labelpad=10)
+        fontsize = 15
+        labelpad = 10
+        labelsize = 15
+        ax.set_xlabel(x_label, labelpad=labelpad, fontsize=fontsize)
+        ax.set_ylabel(y_label, labelpad=labelpad, fontsize=fontsize)
         if logscale_x:
-            ax.set_xlabel('Log(' +str(x_label)+')', labelpad=10)
+            ax.set_xlabel('Log(' +str(x_label)+')', labelpad=labelpad, fontsize=fontsize)
         if logscale_y:
-            ax.set_ylabel('Log(' +str(y_label)+')', labelpad=10)
+            ax.set_ylabel('Log(' +str(y_label)+')', labelpad=labelpad, fontsize=fontsize)
         if plotsum == 3:
-            ax.set_zlabel(z_label, labelpad=10)
+            ax.set_zlabel(z_label, labelpad=labelpad, fontsize=fontsize)
             if logscale_z:
-                ax.set_ylabel('Log(' +str(y_label)+')', labelpad=10)
+                ax.set_ylabel('Log(' +str(y_label)+')', labelpad=labelpad, fontsize=fontsize)
         if plotsum == 3:
             ax.scatter(x, y, z, c=cluster_colors, **plot_kwds)
+            ax.tick_params(axis='x', labelsize=labelsize)
+            ax.tick_params(axis='y', labelsize=labelsize)
+            ax.tick_params(axis='z', labelsize=labelsize)
         else:
             ax.scatter(x, y, c=cluster_colors, **plot_kwds)
+            ax.tick_params(axis='x', labelsize=labelsize)
+            ax.tick_params(axis='y', labelsize=labelsize)
         self.cluster_canvas.draw()
 
         self.eventsdb_subset[subset]['cluster_id'] = clusterer.labels_
@@ -1138,10 +1146,13 @@ class App(tk.Frame):
 
         self.f.clf()
         self.a = self.f.add_subplot(111)
+        labelsize=15
+        self.a.tick_params(axis='x', labelsize=labelsize)
+        self.a.tick_params(axis='y', labelsize=labelsize)
         self.a.figure.canvas.mpl_connect('button_press_event', self.on_click)
-        self.a.set_xlabel(x_label)
-        self.a.set_ylabel(y_label)
-        self.f.subplots_adjust(bottom=0.14,left=0.21)
+        self.a.set_xlabel(x_label, fontsize=labelsize)
+        self.a.set_ylabel(y_label, fontsize=labelsize)
+        self.f.subplots_adjust(bottom=0.2, left=0.2)
         
         self.xdata = np.array(x_col*xsign)
         self.ydata = np.array(y_col*ysign)
@@ -1169,12 +1180,15 @@ class App(tk.Frame):
         numbins = self.xbin_entry.get()
         self.f.clf()
         self.a = self.f.add_subplot(111)
-        self.f.subplots_adjust(bottom=0.14,left=0.21)
+        self.f.subplots_adjust(bottom=0.2,left=0.2)
         self.xdata = []
         self.ydata = []
+        labelsize=15
+        self.a.tick_params(axis='x', labelsize=labelsize)
+        self.a.tick_params(axis='y', labelsize=labelsize)
         if logscale_x:
-            self.a.set_xlabel('Log(' +str(x_label)+')')
-            self.a.set_ylabel('Count')
+            self.a.set_xlabel('Log(' +str(x_label)+')', fontsize=labelsize)
+            self.a.set_ylabel('Count', fontsize=labelsize)
             if len(subset_list) > 1:
                 for i in range(len(subset_list)):
                     col[i] *= np.sign(np.average(col[i]))
@@ -1187,8 +1201,8 @@ class App(tk.Frame):
                 col = np.log10(col)
                 self.ydata, self.xdata, patches = self.a.hist(col,bins=int(numbins),log=bool(logscale_y),histtype='step',stacked=False,fill=False,label=subset_list)
         else:
-            self.a.set_xlabel(x_label)
-            self.a.set_ylabel('Count')
+            self.a.set_xlabel(x_label, fontsize=labelsize)
+            self.a.set_ylabel('Count', fontsize=labelsize)
             if len(subset_list) > 1:
                 for i in range(len(subset_list)):
                     if x_label == 'Fold Fraction':
@@ -1204,6 +1218,8 @@ class App(tk.Frame):
                 else:
                     self.ydata, self.xdata, patches = self.a.hist(col,bins=int(numbins),log=bool(logscale_y),histtype='step',stacked=False,fill=False,label=subset_list)
         self.a.legend(loc='best',prop={'size': 10})
+        
+        
         for i in range(len(subset_list)):
             try:
                 self.xdata[i] = self.xdata[i][:-1] + np.diff(self.xdata[i])/2.0
@@ -1226,31 +1242,20 @@ class App(tk.Frame):
         ybins = self.ybin_entry.get()
         self.f.clf()
         self.a = self.f.add_subplot(111)
-        self.a.set_xlabel(x_label)
-        self.a.set_ylabel(y_label)
+        labelsize=15
+        self.a.set_xlabel(x_label, fontsize=labelsize)
+        self.a.set_ylabel(y_label, fontsize=labelsize)
         if logscale_x:
-            self.a.set_xlabel('Log(' +str(x_label)+')')
+            self.a.set_xlabel('Log(' +str(x_label)+')', fontsize=labelsize)
         if logscale_y:
-            self.a.set_ylabel('Log(' +str(y_label)+')')
-        self.f.subplots_adjust(bottom=0.14,left=0.21)
+            self.a.set_ylabel('Log(' +str(y_label)+')', fontsize=labelsize)
+        self.a.tick_params(axis='x', labelsize=labelsize)
+        self.a.tick_params(axis='y', labelsize=labelsize)
+        self.f.subplots_adjust(bottom=0.2,left=0.2)
         xsign = np.sign(np.average(x_col))
         ysign = np.sign(np.average(y_col))
         x = np.log10(xsign*x_col) if bool(logscale_x) else x_col
         y = np.log10(ysign*y_col) if bool(logscale_y) else y_col
-##        data = np.vstack([x, y])
-##        kde = gaussian_kde(data)
-##        xgrid = np.linspace(np.min(x), np.max(x), int(xbins))
-##        ygrid = np.linspace(np.min(y), np.max(y), int(ybins))
-##        Xgrid, Ygrid = np.meshgrid(xgrid, ygrid)
-##        Z = kde.evaluate(np.vstack([Xgrid.ravel(), Ygrid.ravel()]))
-##        Z = np.log10(Z)
-##        print np.max(Z), np.min(Z)
-##        Z[Z<-6] = -6
-##        self.a.imshow(Z.reshape(Xgrid.shape),
-##           origin='lower', aspect='auto', interpolation='gaussian',
-##           extent=[np.min(x), np.max(x), np.min(y), np.max(y)],
-##           cmap='Blues')
-##        self.canvas.draw()
 
         z, x, y, image = self.a.hist2d(x,y,bins=[int(xbins),int(ybins)],norm=matplotlib.colors.LogNorm())
         x = x[:-1] + np.diff(x)/2.0
@@ -1351,9 +1356,15 @@ class App(tk.Frame):
                 
             self.event_f.clf()
             a = self.event_f.add_subplot(111)
-            a.set_xlabel('Time (us)')
-            a.set_ylabel('Current (pA)')
-            self.event_f.subplots_adjust(bottom=0.14,left=0.21)
+
+            labelsize=15
+            a.tick_params(axis='x', labelsize=labelsize)
+            a.tick_params(axis='y', labelsize=labelsize)
+
+        
+            a.set_xlabel('Time (us)', fontsize=labelsize)
+            a.set_ylabel('Current (pA)', fontsize=labelsize)
+            self.event_f.subplots_adjust(bottom=0.2,left=0.2)
             if event_type == 0:
                 a.plot(event_file['time'],event_file['current'],event_file['time'],event_file['cusum'])
             elif event_type == 1:
