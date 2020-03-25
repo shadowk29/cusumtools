@@ -104,6 +104,8 @@ class App(tk.Frame):
         if 'first_level_fraction' not in eventsdb.columns:
             eventsdb['first_level_fraction']=""
             self.first_level_fraction()
+        if 'cluster_id' not in eventsdb.columns:
+            eventsdb['cluster_id']=""
             
         self.folding_distribution()
         self.count()
@@ -479,6 +481,8 @@ class App(tk.Frame):
         else:
             ax.scatter(x, y, c=cluster_colors, **plot_kwds)
         self.cluster_canvas.draw()
+
+        self.eventsdb_subset[subset]['cluster_id'] = clusterer.labels_
         
 
 
@@ -1429,6 +1433,7 @@ class App(tk.Frame):
                       'max_blockage_duration_us': 'Maximum Blockage Duration (us)',
                       'n_levels': 'Number of Levels',
                       'intra_crossings': 'Intra-Event Threshold Crossings',
+                      'cluster_id': 'Cluster ID',
                       'rc_const1_us': 'RC Constant 1 (us)',
                       'rc_const2_us': 'RC Constant 2 (us)',
                       'level_current_pA': 'Level Current (pA)',
