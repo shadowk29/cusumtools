@@ -41,6 +41,7 @@ sns.set_context('poster')
 sns.set_style('white')
 sns.set_color_codes()
 plot_kwds = {'alpha' : 0.5, 's' : 80, 'linewidths':0}
+matplotlib.rcParams['figure.constrained_layout.use'] = True
 pd.options.mode.chained_assignment = None  # default='warn'
 
 
@@ -496,7 +497,6 @@ class App(tk.Frame):
 
         
         self.cluster_f.clf()
-        self.cluster_f.subplots_adjust(bottom=0.2,left=0.2)
         if plotsum == 3:
             ax = self.cluster_f.add_subplot(111, projection = '3d')
         else:
@@ -691,7 +691,6 @@ class App(tk.Frame):
         self.f.clf()
         self.a = self.f.add_subplot(111)
         
-        self.f.subplots_adjust(bottom=0.14,left=0.21)
         self.xdata = []
         self.ydata = []
         fit_string = ''
@@ -1148,7 +1147,6 @@ class App(tk.Frame):
         self.a.figure.canvas.mpl_connect('button_press_event', self.on_click)
         self.a.set_xlabel(x_label, fontsize=labelsize)
         self.a.set_ylabel(y_label, fontsize=labelsize)
-        self.f.subplots_adjust(bottom=0.2, left=0.2)
         
         self.xdata = np.array(x_col*xsign)
         self.ydata = np.array(y_col*ysign)
@@ -1176,7 +1174,6 @@ class App(tk.Frame):
         numbins = self.xbin_entry.get()
         self.f.clf()
         self.a = self.f.add_subplot(111)
-        self.f.subplots_adjust(bottom=0.2,left=0.2)
         self.xdata = []
         self.ydata = []
         labelsize=15
@@ -1247,7 +1244,6 @@ class App(tk.Frame):
             self.a.set_ylabel('Log(' +str(y_label)+')', fontsize=labelsize)
         self.a.tick_params(axis='x', labelsize=labelsize)
         self.a.tick_params(axis='y', labelsize=labelsize)
-        self.f.subplots_adjust(bottom=0.2,left=0.2)
         xsign = np.sign(np.average(x_col))
         ysign = np.sign(np.average(y_col))
         x = np.log10(xsign*x_col) if bool(logscale_x) else x_col
@@ -1360,7 +1356,6 @@ class App(tk.Frame):
         
             a.set_xlabel('Time (us)', fontsize=labelsize)
             a.set_ylabel('Current (pA)', fontsize=labelsize)
-            self.event_f.subplots_adjust(bottom=0.2,left=0.2)
             if event_type == 0:
                 a.plot(event_file['time'],event_file['current'],event_file['time'],event_file['cusum'])
             elif event_type == 1:
