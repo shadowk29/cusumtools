@@ -221,7 +221,7 @@ class App(tk.Frame):
 
         
         self.events_frame = tk.Frame(self.ntbk)
-        self.events_frame.grid(row=0,column=0,columnspan=6,sticky=tk.N+tk.S)
+        self.events_frame.grid(row=0,column=0,sticky=tk.N+tk.S+tk.E+tk.W)
         self.ntbk.add(self.events_frame, text='Event Viewer')
         self.events_frame.columnconfigure(0, weight=1)
         self.events_frame.columnconfigure(3, weight=1)
@@ -245,8 +245,8 @@ class App(tk.Frame):
         self.plot_bad_events = tk.IntVar(0)
         self.plot_bad_events_check = tk.Checkbutton(self.events_frame, text='Plot Bad Events', variable = self.plot_bad_events)
         
-        self.event_toolbar_frame.grid(row=1,column=0,columnspan=6)
-        self.event_canvas.get_tk_widget().grid(row=0,column=0,columnspan=6)
+        self.event_toolbar_frame.grid(row=1,column=0,columnspan=6,sticky=tk.N+tk.S+tk.E+tk.W)
+        self.event_canvas.get_tk_widget().grid(row=0,column=0,columnspan=6,sticky=tk.N+tk.S+tk.E+tk.W)
         
         parent.bind("<Left>", self.left_key_press)
         parent.bind("<Right>", self.right_key_press)
