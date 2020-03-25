@@ -16,9 +16,6 @@
 ##    You should have received a copy of the GNU General Public License
 ##    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#import numpy.random.common
-#import numpy.random.bounded_integers
-#import numpy.random.entropy
 import pandas as pd
 from pandasql import sqldf
 import matplotlib
@@ -38,7 +35,6 @@ import re
 from tkinter import ttk
 from mpl_toolkits.mplot3d import Axes3D
 import seaborn as sns
-import sklearn.datasets as data
 import hdbscan
 ##matplotlib inline
 sns.set_context('poster')
