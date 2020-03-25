@@ -57,7 +57,7 @@ class FlashableLabel(tk.Label):
 class App(tk.Frame):
     def __init__(self,parent,eventsdb,ratedb,summary,events_folder,file_path_string):
         tk.Frame.__init__(self, parent)
-        self.ntbk = ttk.Notebook(parent)
+        
         
         self.file_path_string = file_path_string
         self.events_folder = events_folder
@@ -121,12 +121,18 @@ class App(tk.Frame):
         
         parent.deiconify()
 
+        self.ntbk_frame = tk.Frame(parent)
+        self.ntbk = ttk.Notebook(self.ntbk_frame)
+        self.stats_tab_frame = tk.Frame(parent)
+
+        
         self.ntbk.grid(row=0,column=0,sticky=tk.E+tk.W+tk.N+tk.S)
+        self.stats_tab_frame.grid(row=0,column=0,sticky=tk.E+tk.W+tk.N+tk.S)
+        self.ntbk_frame.grid(row=0,column=1,sticky=tk.E+tk.W+tk.N+tk.S)
         
         ##parent frame for notebook stats tab
-        self.stats_tab_frame = tk.Frame(self.ntbk)
-        self.stats_tab_frame.grid(row=0,column=0,sticky=tk.E+tk.W+tk.N+tk.S) 
-        self.ntbk.add(self.stats_tab_frame, text='Statistics')
+        
+        
              
         
         
@@ -213,7 +219,10 @@ class App(tk.Frame):
 
         #Single Event widgets
 
-        self.events_frame = tk.LabelFrame(self.stats_tab_frame,text='Single Event View')
+        
+        self.events_frame = tk.Frame(self.ntbk)
+        self.events_frame.grid(row=0,column=0,columnspan=6,sticky=tk.N+tk.S)
+        self.ntbk.add(self.events_frame, text='Event Viewer')
         self.events_frame.columnconfigure(0, weight=1)
         self.events_frame.columnconfigure(3, weight=1)
         self.event_f = Figure(figsize=(7,5), dpi=100)
@@ -243,7 +252,7 @@ class App(tk.Frame):
         parent.bind("<Right>", self.right_key_press)
         parent.bind("<Delete>", self.delete_key_press)
 
-        self.events_frame.grid(row=0,column=6,columnspan=6,sticky=tk.N+tk.S)
+        
         self.event_entry.grid(row=2,column=0,columnspan=2,sticky=tk.E+tk.W)
         self.event_info_display.grid(row=2,column=2,columnspan=2,sticky=tk.W+tk.E)
         self.plot_event_button.grid(row=3,column=0,columnspan=2,sticky=tk.E+tk.W)
