@@ -51,6 +51,31 @@ class App(tk.Frame):
         self.parent = parent
 
 
+        self.layout_stats_panel()
+        self.layout_notebook_tabs()
+        self.layout_cluster_tab()
+        self.layout_rate_tab()
+        self.layout_event_tab()
+        self.layout_db_panel()
+        
+        
+
+
+        
+
+        
+        
+
+        
+
+        
+        
+
+        
+
+#######################################
+
+    def layout_stats_panel(self):
         #define and position the main panel on the left
         self.stats_container = tk.Frame(self.parent)
         self.stats_container.grid(row=0, column=0)
@@ -74,39 +99,35 @@ class App(tk.Frame):
 
         self.stats_button = tk.Button(self.stats_control_frame, text='Button')
         self.stats_button.grid(row=0,column=0, sticky=tk.E+tk.W)
-        
 
+    def layout_notebook_tabs(self):
         #define and position the tab-enabled secondary panel on the right
         self.ntbk = ttk.Notebook(self.parent)
-        self.ntbk.grid(row=0,column=1,sticky=tk.N+tk.S)
+        self.ntbk.grid(row=0,column=1)
 
-        #define internal frames for the tabs
-
+        #cluster container
         self.cluster_container= tk.Frame(self.ntbk)
         self.cluster_container.grid(row=0,column=0)
         self.ntbk.add(self.cluster_container, text='Clustering')
         self.cluster_frame = tk.LabelFrame(self.cluster_container, text='Clustering')
         self.cluster_frame.grid(row=0,column=0, pady=(6,0))
 
-
+        #capture rate container
         self.rate_container = tk.Frame(self.ntbk)
         self.rate_container.grid(row=0, column=0)
         self.ntbk.add(self.rate_container, text='Capture Rate')
         self.rate_frame = tk.LabelFrame(self.rate_container, text='Capture Rate')
         self.rate_frame.grid(row=0,column=0, pady=(6,0))
 
-
-        
+        #single event view container
         self.event_container = tk.Frame(self.ntbk)
         self.event_container.grid(row=0, column=0)
         self.ntbk.add(self.event_container, text='Event Viewer')
         self.event_frame = tk.LabelFrame(self.event_container, text='Event Viewer')
         self.event_frame.grid(row=0,column=0, pady=(6,0))
 
-
-
-        #notebook children
-        #define a figure canvas to work with clusters
+    def layout_cluster_tab(self):
+        #cluster figure
         self.cluster_f = Figure(figsize=(7,5), dpi=100)
         self.cluster_canvas = FigureCanvasTkAgg(self.cluster_f, master=self.cluster_frame)
         self.cluster_toolbar_frame = tk.Frame(self.cluster_frame)
@@ -115,13 +136,15 @@ class App(tk.Frame):
         self.cluster_canvas.get_tk_widget().grid(row=0,column=0)
         self.cluster_toolbar_frame.grid(row=1,column=0)
 
+        #cluster control panel
         self.cluster_control_frame = tk.LabelFrame(self.cluster_container, text='Cluster Controls')
         self.cluster_control_frame.grid(row=1,column=0, sticky=tk.E+tk.W)
 
         self.cluster_button = tk.Button(self.cluster_control_frame, text='Button')
         self.cluster_button.grid(row=0,column=0, sticky=tk.E+tk.W)
 
-        #define a figure canvas to work with capture rate
+    def layout_rate_tab(self):
+        #capture rate figure
         self.rate_f = Figure(figsize=(7,5), dpi=100)
         self.rate_canvas = FigureCanvasTkAgg(self.rate_f, master=self.rate_frame)
         self.rate_toolbar_frame = tk.Frame(self.rate_frame)
@@ -130,13 +153,16 @@ class App(tk.Frame):
         self.rate_canvas.get_tk_widget().grid(row=0,column=0)
         self.rate_toolbar_frame.grid(row=1,column=0)
 
+        #capture rate control panel
         self.rate_control_frame = tk.LabelFrame(self.rate_container, text='Capture Rate Controls')
         self.rate_control_frame.grid(row=1,column=0, sticky=tk.E+tk.W)
 
         self.rate_button = tk.Button(self.rate_control_frame, text='Button')
         self.rate_button.grid(row=0,column=0, sticky=tk.E+tk.W)
 
-        #define a figure canvas to work with single event plotting
+        
+    def layout_event_tab(self):
+        #single event view figure
         self.event_f = Figure(figsize=(7,5), dpi=100)
         self.event_canvas = FigureCanvasTkAgg(self.event_f, master=self.event_frame)
         self.event_toolbar_frame = tk.Frame(self.event_frame)
@@ -145,6 +171,7 @@ class App(tk.Frame):
         self.event_canvas.get_tk_widget().grid(row=0,column=0)
         self.event_toolbar_frame.grid(row=1,column=0)
 
+        #single event control panel
         self.event_control_frame = tk.LabelFrame(self.event_container, text='Event View Controls')
         self.event_control_frame.grid(row=1,column=0, sticky=tk.E+tk.W)
 
@@ -154,20 +181,15 @@ class App(tk.Frame):
         self.event_button2 = tk.Button(self.event_control_frame, text='Button')
         self.event_button2.grid(row=1,column=0, sticky=tk.E+tk.W)
 
-
-
-
-        
-
-        ##DB controls
+    def layout_db_panel(self):
+        ##database control panel
         self.db_frame = tk.LabelFrame(self.parent, text='Database Controls')
         self.db_frame.grid(row=1,column=0,columnspan=2, sticky=tk.E+tk.W)
 
         self.filter_entry = tk.Entry(self.db_frame)
         self.filter_entry.grid(row=0, column=0, sticky=tk.E+tk.W)
 
-#######################################
-
+        
     def update_cluster(self):
         plotsum = 0
         indices = []
