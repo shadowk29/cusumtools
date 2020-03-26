@@ -50,7 +50,7 @@ class App(tk.Frame):
         parent.deiconify()
         self.parent = parent
 
-
+        #initialize event database files
         self.file_path_string = file_path_string
         self.events_folder = events_folder
         self.eventsdb = eventsdb
@@ -59,6 +59,7 @@ class App(tk.Frame):
         self.clicks_remaining = 0
         self.ratedb = ratedb
 
+        #initialize single event plotting options
         self.intra_threshold = 0
         self.intra_hysteresis = 0
         for line in summary:
@@ -70,6 +71,8 @@ class App(tk.Frame):
                 self.intra_hysteresis = float(line[1])
         summary.close()
 
+
+        #initialize subset and plot options
         max_subsets = 11
         self.eventsdb_subset = dict(('Subset {0}'.format(i), self.eventsdb) for i in range(max_subsets))
         self.capture_rate_subset = dict.fromkeys(list(self.eventsdb_subset.keys()))
@@ -79,6 +82,7 @@ class App(tk.Frame):
         self.init_plot_list = self.plot_list.copy()
         self.good_event_subset = []
 
+        #initialize columns that may be calculated during analysis if they do not already exists in the database file
         if 'event_shape' not in eventsdb.columns:
             eventsdb['event_shape']=""
         if 'trimmed_shape' not in eventsdb.columns:
@@ -93,14 +97,14 @@ class App(tk.Frame):
             self.first_level_fraction()
         if 'cluster_id' not in eventsdb.columns:
             eventsdb['cluster_id']=""
-            
+
+        #calculate new columns as needed
         self.folding_distribution()
         self.count()
-
         self.export_type = None
-
         self.manual_delete = []
-        
+
+        #initialize list of features that can be plotted
         column_list = list(eventsdb)
         self.column_list = column_list
         self.x_col_options = tk.StringVar()
@@ -111,6 +115,8 @@ class App(tk.Frame):
         self.graph_list.set('2D Histogram')
         self.alias_columns()
 
+
+        #initialize the layout of the GUI
         self.layout_stats_panel()
         self.layout_notebook_tabs()
         self.layout_db_panel()
@@ -1296,7 +1302,7 @@ class App(tk.Frame):
                       'max_blockage_duration_us': 'Maximum Blockage Duration (us)',
                       'n_levels': 'Number of Levels',
                       'intra_crossings': 'Intra-Event Threshold Crossings',
-                      'intra_crossing_times_us': 'Intra-Event Threshold Crossing Times (us)'
+                      'intra_crossing_times_us': 'Intra-Event Threshold Crossing Times (us)',
                       'cluster_id': 'Cluster ID',
                       'rc_const1_us': 'RC Constant 1 (us)',
                       'rc_const2_us': 'RC Constant 2 (us)',
