@@ -41,397 +41,130 @@ sns.set_context('poster')
 sns.set_style('white')
 sns.set_color_codes()
 plot_kwds = {'alpha' : 0.5, 's' : 80, 'linewidths':0}
+matplotlib.rcParams['figure.constrained_layout.use'] = True
 pd.options.mode.chained_assignment = None  # default='warn'
 
-
-class FlashableLabel(tk.Label):
-    def flash(self,count):
-        bg = self.cget('background')
-        fg = self.cget('foreground')
-        self.configure(background=fg,foreground=bg)
-        count -=1
-        if (count > 0):
-             self.after(500,self.flash, count) 
-
-
 class App(tk.Frame):
-    def __init__(self,parent,eventsdb,ratedb,summary,events_folder,file_path_string):
+    def __init__(self,parent):
         tk.Frame.__init__(self, parent)
-        
-        
-        self.file_path_string = file_path_string
-        self.events_folder = events_folder
-        self.eventsdb = eventsdb
-        [a,b] = self.eventsdb.shape
-        self.eventsdb['adj_id'] = np.arange(0,a)
-        self.clicks_remaining = 0
-        self.ratedb = ratedb
-
-        self.intra_threshold = 0
-        self.intra_hysteresis = 0
-        for line in summary:
-            if 'intra_threshold' in line:
-                line = re.split('=|\n',line)
-                self.intra_threshold = float(line[1])
-            if 'intra_hysteresis' in line:
-                line = re.split('=|\n',line)
-                self.intra_hysteresis = float(line[1])
-        summary.close()
-        
-        max_subsets = 11
-        self.eventsdb_subset = dict(('Subset {0}'.format(i), self.eventsdb) for i in range(max_subsets))
-        self.capture_rate_subset = dict.fromkeys(list(self.eventsdb_subset.keys()))
-        self.filter_list = dict(('Subset {0}'.format(i), []) for i in range(max_subsets))
-        self.plot_list = dict(('Subset {0}'.format(i), 0) for i in range(max_subsets))
-        self.plot_list['Subset 0'] = 1
-        self.init_plot_list = self.plot_list.copy()
-        self.good_event_subset = []
-
-        if 'event_shape' not in eventsdb.columns:
-            eventsdb['event_shape']=""
-        if 'trimmed_shape' not in eventsdb.columns:
-            eventsdb['trimmed_shape']=""
-        if 'trimmed_n_levels' not in eventsdb.columns:    
-            eventsdb['trimmed_n_levels']=""
-        if 'first_level' not in eventsdb.columns:
-            eventsdb['first_level']=""
-            eventsdb['last_level']=""
-        if 'first_level_fraction' not in eventsdb.columns:
-            eventsdb['first_level_fraction']=""
-            self.first_level_fraction()
-        if 'cluster_id' not in eventsdb.columns:
-            eventsdb['cluster_id']=""
-            
-        self.folding_distribution()
-        self.count()
-
-        self.export_type = None
-
-        self.manual_delete = []
-        
-        column_list = list(eventsdb)
-        self.column_list = column_list
-        self.x_col_options = tk.StringVar()
-        self.x_col_options.set('Level Duration (us)')
-        self.y_col_options = tk.StringVar()
-        self.y_col_options.set('Blockage Level (pA)')
-        self.graph_list = tk.StringVar()
-        self.graph_list.set('2D Histogram')
-        self.alias_columns()
-        
         parent.deiconify()
+        self.parent = parent
 
-        self.ntbk_frame = tk.Frame(parent)
-        self.ntbk = ttk.Notebook(self.ntbk_frame)
-        self.stats_tab_frame = tk.Frame(parent)
 
+        #define and position the main panel on the left
+        self.stats_container = tk.Frame(self.parent)
+        self.stats_container.grid(row=0, column=0)
+        self.stats_frame = tk.LabelFrame(self.stats_container, text='Statistics')
+        self.stats_frame.grid(row=0,column=0)
+
+        #Left panel children
+        #define a figure canvas to go in the left panel
+        self.stats_f = Figure(figsize=(7,5), dpi=100)
+        self.stats_canvas = FigureCanvasTkAgg(self.stats_f, master=self.stats_frame)
+        self.stats_toolbar_frame = tk.Frame(self.stats_frame)
+        self.stats_toolbar = NavigationToolbar2Tk(self.stats_canvas, self.stats_toolbar_frame)
+        self.stats_toolbar.update()
+        self.stats_canvas.get_tk_widget().grid(row=0,column=0)
+        self.stats_toolbar_frame.grid(row=1,column=0)
+
+        #define a control panel for the left panel to go below the figure
         
-        self.ntbk.grid(row=0,column=0,sticky=tk.E+tk.W+tk.N+tk.S)
-        self.stats_tab_frame.grid(row=0,column=0,sticky=tk.E+tk.W+tk.N+tk.S)
-        self.ntbk_frame.grid(row=0,column=1,sticky=tk.E+tk.W+tk.N+tk.S)
+        self.stats_control_frame = tk.LabelFrame(self.stats_container, text='Plotting Control')
+        self.stats_control_frame.grid(row=1,column=0, sticky=tk.E+tk.W)
+
+        self.stats_button = tk.Button(self.stats_control_frame, text='Button')
+        self.stats_button.grid(row=0,column=0, sticky=tk.E+tk.W)
         
-        ##parent frame for notebook stats tab
-        
-        
-             
-        
-        
-        #Statistics plotting widgets
-        self.stats_frame = tk.LabelFrame(self.stats_tab_frame,text='Statistics View')
-        self.f = Figure(figsize=(7,5), dpi=100)
-        self.canvas = FigureCanvasTkAgg(self.f, master=self.stats_frame)
-        self.toolbar_frame = tk.Frame(self.stats_frame)
-        self.toolbar = NavigationToolbar2Tk(self.canvas, self.toolbar_frame)
-        self.toolbar.update()
+
+        #define and position the tab-enabled secondary panel on the right
+        self.ntbk = ttk.Notebook(self.parent)
+        self.ntbk.grid(row=0,column=1,sticky=tk.N+tk.S)
+
+        #define internal frames for the tabs
+
+        self.cluster_container= tk.Frame(self.ntbk)
+        self.cluster_container.grid(row=0,column=0)
+        self.ntbk.add(self.cluster_container, text='Clustering')
+        self.cluster_frame = tk.LabelFrame(self.cluster_container, text='Clustering')
+        self.cluster_frame.grid(row=0,column=0, pady=(6,0))
 
 
-        self.toolbar_frame.grid(row=1,column=0,columnspan=6)
-        self.canvas.get_tk_widget().grid(row=0,column=0,columnspan=6)
-
-########################################################
-        self.plot_subsets = tk.Button(self.stats_frame, text='Subsets to Plot',command=self.plot_subset_select)
-        self.plot_subsets.grid(row=1,column=5,sticky=tk.E+tk.W)
-
-        self.good_events = tk.Button(self.stats_frame, text='Good events',command=self.declare_good_events)
-        self.good_events.grid(row=1,column=4,sticky=tk.E+tk.W)
-########################################################
-        
-        self.plot_button = tk.Button(self.stats_frame,text='Update Plot',command=self.update_plot)
-        self.export_plot_button = tk.Button(self.stats_frame,text='Export Data',command=self.export_plot_data)
-        self.x_option = tk.OptionMenu(self.stats_frame, self.x_col_options, *[self.alias_dict.get(option,option) for option in self.column_list])
-        self.y_option = tk.OptionMenu(self.stats_frame, self.y_col_options, *[self.alias_dict.get(option,option) for option in self.column_list])
-        self.graph_option = tk.OptionMenu(self.stats_frame, self.graph_list, 'XY Plot', '1D Histogram', '2D Histogram', command=self.disable_options)
-        self.include_baseline=tk.IntVar()
-        self.include_baseline_check = tk.Checkbutton(self.stats_frame, text='Include Baseline', variable=self.include_baseline)
-        self.x_log_var = tk.IntVar()
-        self.x_log_check = tk.Checkbutton(self.stats_frame, text='Log X', variable = self.x_log_var)
-        self.y_log_var = tk.IntVar()
-        self.y_log_check = tk.Checkbutton(self.stats_frame, text='Log Y', variable = self.y_log_var)
-        
-        self.x_bins=tk.Label(self.stats_frame,text='X Bins:')
-        self.y_bins=tk.Label(self.stats_frame,text='Y Bins:')
-
-        self.xbin_entry = tk.Entry(self.stats_frame)
-        self.xbin_entry.insert(0,100)
-        self.ybin_entry = tk.Entry(self.stats_frame)
-        self.ybin_entry.insert(0,100)
-
-        self.n_states=tk.Label(self.stats_frame,text='Num States:')
-        self.n_states_entry = tk.Entry(self.stats_frame)
-        self.define_state_button = tk.Button(self.stats_frame,text='Redefine Blockage States',command=self.define_states)
-        self.define_event_shapes_button = tk.Button(self.stats_frame,text='Redefine Event Shapes',command=self.define_shapes)
-
-        self.capture_rate_button = tk.Button(self.stats_frame,text='Fit Capture Rate',command=self.capture_rate)
-        self.use_histogram = tk.IntVar()
-        self.use_histogram_check = tk.Checkbutton(self.stats_frame, text='Use Histogram', variable = self.use_histogram)
-
-
-        self.stats_frame.grid(row=0,column=0,columnspan=6,sticky=tk.N+tk.S)
-        self.x_log_check.grid(row=3,column=2,sticky=tk.E+tk.W)
-        self.y_log_check.grid(row=4,column=2,sticky=tk.E+tk.W)
-        self.x_bins.grid(row=3,column=3,sticky=tk.E+tk.W)
-        self.y_bins.grid(row=4,column=3,sticky=tk.E+tk.W)
-        self.xbin_entry.grid(row=3,column=4,sticky=tk.E+tk.W)
-        self.ybin_entry.grid(row=4,column=4,sticky=tk.E+tk.W)
-        self.graph_option.grid(row=3,column=0,sticky=tk.E+tk.W)
-        self.include_baseline_check.grid(row=4,column=0,sticky=tk.E+tk.W)
-        self.x_option.grid(row=3,column=1,sticky=tk.E+tk.W)
-        self.y_option.grid(row=4,column=1,sticky=tk.E+tk.W)
-        self.plot_button.grid(row=3,column=5,sticky=tk.E+tk.W)
-        self.export_plot_button.grid(row=4,column=5,sticky=tk.E+tk.W)
-
-        parent.bind("<Return>", self.enter_key_press)
-
-
-        self.n_states.grid(row=5,column=0,sticky=tk.E+tk.W)
-        self.n_states_entry.grid(row=5,column=1,sticky=tk.E+tk.W)
-        self.define_state_button.grid(row=5,column=2,sticky=tk.E+tk.W)
-        self.define_event_shapes_button.grid(row=5,column=3,sticky=tk.E+tk.W)
-        self.capture_rate_button.grid(row=5,column=4,sticky=tk.E+tk.W)
-        self.use_histogram_check.grid(row=5,column=5,sticky=tk.E+tk.W)
-
-
-        parent.bind("<Control-Key>", self.key_press)
+        self.rate_container = tk.Frame(self.ntbk)
+        self.rate_container.grid(row=0, column=0)
+        self.ntbk.add(self.rate_container, text='Capture Rate')
+        self.rate_frame = tk.LabelFrame(self.rate_container, text='Capture Rate')
+        self.rate_frame.grid(row=0,column=0, pady=(6,0))
 
 
         
-        
-
-        #Single Event widgets
-
-        
-        self.events_frame = tk.Frame(self.ntbk)
-        self.events_frame.grid(row=0,column=0,sticky=tk.N+tk.S+tk.E+tk.W)
-        self.ntbk.add(self.events_frame, text='Event Viewer')
-        self.events_frame.columnconfigure(0, weight=1)
-        self.events_frame.columnconfigure(3, weight=1)
-        self.event_f = Figure(figsize=(7,5), dpi=100)
-        self.event_canvas = FigureCanvasTkAgg(self.event_f, master=self.events_frame)
-        self.event_toolbar_frame = tk.Frame(self.events_frame)
-        self.event_toolbar = NavigationToolbar2Tk(self.event_canvas, self.event_toolbar_frame)
-        self.event_toolbar.update()
-        self.event_info_string = tk.StringVar()
-        self.event_index = tk.IntVar()
-        self.event_index.set(self.eventsdb_subset['Subset 0']['id'][0])
-        self.event_entry = tk.Entry(self.events_frame, textvariable=self.event_index)
-        self.plot_event_button = tk.Button(self.events_frame,text='Plot Event',command=self.plot_event)
-        self.next_event_button = tk.Button(self.events_frame,text='Next',command=self.next_event)
-        self.prev_event_button = tk.Button(self.events_frame,text='Prev',command=self.prev_event)
-        self.delete_event_button = tk.Button(self.events_frame,text='Delete',command=self.delete_event)
-        self.replicate_delete = tk.Button(self.events_frame,text='Replicate Deletions',command=self.replicate_manual_deletions)
-        self.save_event_button = tk.Button(self.events_frame,text='Export Data',command=self.export_event_data)
-        self.event_info_string.set('Ready')
-        self.event_info_display = tk.Label(self.events_frame, textvariable=self.event_info_string)
-        self.plot_bad_events = tk.IntVar(0)
-        self.plot_bad_events_check = tk.Checkbutton(self.events_frame, text='Plot Bad Events', variable = self.plot_bad_events)
-        
-        self.event_toolbar_frame.grid(row=1,column=0,columnspan=6,sticky=tk.N+tk.S+tk.E+tk.W)
-        self.event_canvas.get_tk_widget().grid(row=0,column=0,columnspan=6,sticky=tk.N+tk.S+tk.E+tk.W)
-        
-        parent.bind("<Left>", self.left_key_press)
-        parent.bind("<Right>", self.right_key_press)
-        parent.bind("<Delete>", self.delete_key_press)
-
-        
-        self.event_entry.grid(row=2,column=0,columnspan=2,sticky=tk.E+tk.W)
-        self.event_info_display.grid(row=2,column=2,columnspan=2,sticky=tk.W+tk.E)
-        self.plot_event_button.grid(row=3,column=0,columnspan=2,sticky=tk.E+tk.W)
-        self.save_event_button.grid(row=3,column=2,columnspan=2,sticky=tk.E+tk.W)
-        self.next_event_button.grid(row=4,column=2,columnspan=2,sticky=tk.E+tk.W)
-        self.prev_event_button.grid(row=4,column=0,columnspan=2,sticky=tk.E+tk.W)
-        self.delete_event_button.grid(row=5,column=0,columnspan=2,sticky=tk.E+tk.W)
-        self.replicate_delete.grid(row=5,column=2,columnspan=2,sticky=tk.E+tk.W)
-        self.plot_bad_events_check.grid(row=4,column=4,columnspan=2,stick=tk.E+tk.W)
-        
-        
-
-
-        #Datbase widgets
-
-        self.db_frame = tk.LabelFrame(self.stats_tab_frame,text='Database Controls')
-        self.db_frame.columnconfigure(0, weight=1)
-        self.db_frame.columnconfigure(2, weight=1)
-        self.db_frame.columnconfigure(4, weight=1)
-
-        default_subset = tk.StringVar()
-        default_subset.set('Subset 0')
-        options = ['Subset {0}'.format(i) for i in range(max_subsets)]
-        self.subset_option = tk.OptionMenu(self.db_frame, default_subset, *options,command=self.update_count)
-        self.filter_button = tk.Button(self.db_frame,text='Filter Subset',command=self.filter_db)
-        self.reset_button = tk.Button(self.db_frame,text='Reset Subset',command=self.reset_db)
-        self.draw_subset_details_button = tk.Button(self.db_frame, text='Display Filters', command=self.display_filters)
-        self.save_subset_button = tk.Button(self.db_frame,text='Save Subset',command=self.save_subset)
-        self.remove_nonconsecutive_button = tk.Button(self.db_frame,text='Remove Non-Consecutive',command=self.remove_nonconsecutive_events)
-        self.filter_entry = tk.Entry(self.db_frame)
-
-        
-        self.db_frame.grid(row=2,column=0,columnspan=6,sticky=tk.E+tk.W+tk.S+tk.N)
-        self.filter_entry.grid(row=0,column=0,columnspan=6,sticky=tk.E+tk.W)
-        self.subset_option.grid(row=1,column=0,columnspan=2,sticky=tk.E+tk.W)
-        self.filter_button.grid(row=1,column=2,columnspan=2,sticky=tk.E+tk.W)
-        self.reset_button.grid(row=1,column=4,columnspan=2,sticky=tk.E+tk.W)
-        
-        self.save_subset_button.grid(row=2,column=0,columnspan=2,sticky=tk.E+tk.W)
-        self.draw_subset_details_button.grid(row=2,column=2,columnspan=2,sticky=tk.E+tk.W)
-        self.remove_nonconsecutive_button.grid(row=2,column=4,columnspan=2,sticky=tk.E+tk.W)
-
-        #Folder widgets
-
-        #Status Update widgets
-        self.status_frame = tk.LabelFrame(self.stats_tab_frame,text='Status')
-        self.status_frame.grid(row=2,column=6,columnspan=6,sticky=tk.E+tk.W+tk.S+tk.N)
-        self.status_string = tk.StringVar()
-        self.status_string.set('Ready')
-        self.status_display = FlashableLabel(self.status_frame, textvariable=self.status_string, background='black', foreground='white')
-
-        self.status_display.grid(row=0,column=0,columnspan=6,sticky=tk.E+tk.W+tk.S+tk.N)
+        self.event_container = tk.Frame(self.ntbk)
+        self.event_container.grid(row=0, column=0)
+        self.ntbk.add(self.event_container, text='Event Viewer')
+        self.event_frame = tk.LabelFrame(self.event_container, text='Event Viewer')
+        self.event_frame.grid(row=0,column=0, pady=(6,0))
 
 
 
-
-
-        ##parent frame for notebook clustering tab
-        self.cluster_tab_frame = tk.Frame(self.ntbk)
-        self.cluster_tab_frame.grid(row=0,column=0,sticky=tk.E+tk.W+tk.N+tk.S)
-        self.ntbk.add(self.cluster_tab_frame, text='Clustering')
-
-
-        #Cluster plotting widgets
-        self.cluster_controls_frame = tk.LabelFrame(self.cluster_tab_frame,text='Clustering Settings')
-        self.cluster_controls_frame.grid(row=0,column=0,columnspan=6,sticky=tk.N+tk.S)
-        
-        self.min_cluster_pts_label = tk.Label(self.cluster_controls_frame, text='Min Cluster Size')
-        self.min_pts_label = tk.Label(self.cluster_controls_frame, text='Min Neighbours')
-        self.eps_label = tk.Label(self.cluster_controls_frame, text='Distance Cutoff')
-        self.min_cluster_pts = tk.IntVar()
-        self.min_cluster_pts.set(30)
-        self.min_pts = tk.IntVar()
-        self.min_pts.set(5)
-        self.eps = tk.DoubleVar()
-        self.eps.set(0)
-        self.min_cluster_pts_entry = tk.Entry(self.cluster_controls_frame, textvariable=self.min_cluster_pts)
-        self.min_pts_entry = tk.Entry(self.cluster_controls_frame, textvariable=self.min_pts)
-        self.eps_entry = tk.Entry(self.cluster_controls_frame, textvariable=self.eps)
-
-
-        self.feature_col_options = []
-        self.feature_col_options.append(tk.StringVar())
-        self.feature_col_options[0].set('Dwell Time (us)')
-        self.feature_col_options.append(tk.StringVar())
-        self.feature_col_options[1].set('Maximum Blockage (pA)')
-
-        self.featurelabel = tk.Label(self.cluster_controls_frame, text='Feature')
-        self.loglabel = tk.Label(self.cluster_controls_frame, text='Log')
-        self.plotlabel = tk.Label(self.cluster_controls_frame, text='Plot')
-        self.normlabel = tk.Label(self.cluster_controls_frame, text='Normalization')
-        self.dellabel = tk.Label(self.cluster_controls_frame, text='Delete')
-
-        
-        
-        self.feature_options = []
-        self.feature_options.append(tk.OptionMenu(self.cluster_controls_frame, self.feature_col_options[0], *[self.alias_dict.get(option,option) for option in self.column_list]))
-        self.feature_options.append(tk.OptionMenu(self.cluster_controls_frame, self.feature_col_options[1], *[self.alias_dict.get(option,option) for option in self.column_list]))
-
-        self.feature_options_log = []
-        self.feature_options_log.append(tk.IntVar())
-        self.feature_options_log.append(tk.IntVar())
-
-        self.feature_options_log_check = []
-        self.feature_options_log_check.append(tk.Checkbutton(self.cluster_controls_frame, text='', variable = self.feature_options_log[0]))
-        self.feature_options_log_check.append(tk.Checkbutton(self.cluster_controls_frame, text='', variable = self.feature_options_log[1]))
-
-        self.plot_options = []
-        self.plot_options.append(tk.IntVar())
-        self.plot_options.append(tk.IntVar())
-        self.plot_options[0].set(1)
-        self.plot_options[1].set(1)
-
-        self.plot_options_check = []
-        self.plot_options_check.append(tk.Checkbutton(self.cluster_controls_frame, text='', variable = self.plot_options[0], command=self.disable_plots))
-        self.plot_options_check.append(tk.Checkbutton(self.cluster_controls_frame, text='', variable = self.plot_options[1], command=self.disable_plots))
-
-        self.feature_norms = []
-        self.feature_norms.append(tk.StringVar())
-        self.feature_norms.append(tk.StringVar())
-        self.feature_norms[0].set('Max')
-        self.feature_norms[1].set('Max')
-        self.normalization_options = ['Max', 'Gauss', 'MAD', 'None']
-        self.norm_options = []
-        self.norm_options.append(tk.OptionMenu(self.cluster_controls_frame, self.feature_norms[0], *self.normalization_options))
-        self.norm_options.append(tk.OptionMenu(self.cluster_controls_frame, self.feature_norms[1], *self.normalization_options))
-
-        
-        self.add_feature_button = tk.Button(self.cluster_controls_frame, text='Add Feature', command=self.add_feature)
-        self.delete_feature_button = []
-
-        self.min_cluster_pts_label.grid(row=0,column=0,stick=tk.E+tk.W)
-        self.min_pts_label.grid(row=1,column=0,stick=tk.E+tk.W)
-        self.eps_label.grid(row=2,column=0,stick=tk.E+tk.W)
-        self.min_cluster_pts_entry.grid(row=0,column=1,columnspan=2,sticky=tk.E+tk.W)
-        self.min_pts_entry.grid(row=1,column=1,columnspan=2,sticky=tk.E+tk.W)
-        self.eps_entry.grid(row=2,column=1,columnspan=2,sticky=tk.E+tk.W)
-
-
-        sept = ttk.Separator(self.cluster_controls_frame, orient='horizontal')
-        sept.grid(row=3,column=0,columnspan=5,sticky=tk.E+tk.W)
-        self.featurelabel.grid(row=4,column=0,sticky=tk.E+tk.W)
-        self.loglabel.grid(row=4,column=1,sticky=tk.E+tk.W)
-        self.plotlabel.grid(row=4,column=2,sticky=tk.E+tk.W)
-        self.normlabel.grid(row=4,column=3,sticky=tk.E+tk.W)
-        self.dellabel.grid(row=4,column=4,sticky=tk.E+tk.W)
-        sepb = ttk.Separator(self.cluster_controls_frame, orient='horizontal')
-        sepb.grid(row=5,column=0,columnspan=5,sticky=tk.E+tk.W)
-
-        
-        self.gridcounter = 6
-        for f,c,p,n in zip(self.feature_options, self.feature_options_log_check, self.plot_options_check, self.norm_options):
-            f.grid(row=self.gridcounter, column=0, sticky=tk.E+tk.W)
-            c.grid(row=self.gridcounter, column=1, sticky=tk.E+tk.W)
-            p.grid(row=self.gridcounter, column=2, sticky=tk.E+tk.W)
-            n.grid(row=self.gridcounter, column=3, sticky=tk.E+tk.W)
-            self.gridcounter += 1
-        self.add_feature_button.grid(row=self.gridcounter, column=0, columnspan=5,sticky=tk.E+tk.W)
-
-        self.update_cluster_button = tk.Button(self.cluster_controls_frame, text='Update Clusters', command=self.update_cluster)
-        self.update_cluster_button.grid(row=0,column=3,columnspan=2,sticky=tk.E+tk.W+tk.N+tk.S)
-        
-        default_cluster_subset = tk.StringVar()
-        default_cluster_subset.set('Subset 0')
-        cluster_subset_options = ['Subset {0}'.format(i) for i in range(max_subsets)]
-        self.cluster_subset_option = tk.OptionMenu(self.cluster_controls_frame, default_cluster_subset, *cluster_subset_options)
-        self.cluster_subset_option.grid(row=2,column=3,columnspan=2, sticky=tk.E+tk.W)
-        
-        self.cluster_frame = tk.LabelFrame(self.cluster_tab_frame,text='Cluster View')
-        self.cluster_frame.grid(row=0,column=6,columnspan=6,sticky=tk.N+tk.S+tk.E+tk.W)
-        
-        self.cluster_f = Figure(figsize=(8, 6), dpi=100)
+        #notebook children
+        #define a figure canvas to work with clusters
+        self.cluster_f = Figure(figsize=(7,5), dpi=100)
         self.cluster_canvas = FigureCanvasTkAgg(self.cluster_f, master=self.cluster_frame)
         self.cluster_toolbar_frame = tk.Frame(self.cluster_frame)
         self.cluster_toolbar = NavigationToolbar2Tk(self.cluster_canvas, self.cluster_toolbar_frame)
         self.cluster_toolbar.update()
+        self.cluster_canvas.get_tk_widget().grid(row=0,column=0)
+        self.cluster_toolbar_frame.grid(row=1,column=0)
 
-        self.cluster_toolbar_frame.grid(row=1,column=0,columnspan=6)
-        self.cluster_canvas.get_tk_widget().grid(row=0,column=0,columnspan=6)
+        self.cluster_control_frame = tk.LabelFrame(self.cluster_container, text='Cluster Controls')
+        self.cluster_control_frame.grid(row=1,column=0, sticky=tk.E+tk.W)
+
+        self.cluster_button = tk.Button(self.cluster_control_frame, text='Button')
+        self.cluster_button.grid(row=0,column=0, sticky=tk.E+tk.W)
+
+        #define a figure canvas to work with capture rate
+        self.rate_f = Figure(figsize=(7,5), dpi=100)
+        self.rate_canvas = FigureCanvasTkAgg(self.rate_f, master=self.rate_frame)
+        self.rate_toolbar_frame = tk.Frame(self.rate_frame)
+        self.rate_toolbar = NavigationToolbar2Tk(self.rate_canvas, self.rate_toolbar_frame)
+        self.rate_toolbar.update()
+        self.rate_canvas.get_tk_widget().grid(row=0,column=0)
+        self.rate_toolbar_frame.grid(row=1,column=0)
+
+        self.rate_control_frame = tk.LabelFrame(self.rate_container, text='Capture Rate Controls')
+        self.rate_control_frame.grid(row=1,column=0, sticky=tk.E+tk.W)
+
+        self.rate_button = tk.Button(self.rate_control_frame, text='Button')
+        self.rate_button.grid(row=0,column=0, sticky=tk.E+tk.W)
+
+        #define a figure canvas to work with single event plotting
+        self.event_f = Figure(figsize=(7,5), dpi=100)
+        self.event_canvas = FigureCanvasTkAgg(self.event_f, master=self.event_frame)
+        self.event_toolbar_frame = tk.Frame(self.event_frame)
+        self.event_toolbar = NavigationToolbar2Tk(self.event_canvas, self.event_toolbar_frame)
+        self.event_toolbar.update()
+        self.event_canvas.get_tk_widget().grid(row=0,column=0)
+        self.event_toolbar_frame.grid(row=1,column=0)
+
+        self.event_control_frame = tk.LabelFrame(self.event_container, text='Event View Controls')
+        self.event_control_frame.grid(row=1,column=0, sticky=tk.E+tk.W)
+
+        self.event_button = tk.Button(self.event_control_frame, text='Button')
+        self.event_button.grid(row=0,column=0, sticky=tk.E+tk.W)
+
+        self.event_button2 = tk.Button(self.event_control_frame, text='Button')
+        self.event_button2.grid(row=1,column=0, sticky=tk.E+tk.W)
+
+
+
+
+        
+
+        ##DB controls
+        self.db_frame = tk.LabelFrame(self.parent, text='Database Controls')
+        self.db_frame.grid(row=1,column=0,columnspan=2, sticky=tk.E+tk.W)
+
+        self.filter_entry = tk.Entry(self.db_frame)
+        self.filter_entry.grid(row=0, column=0, sticky=tk.E+tk.W)
 
 #######################################
 
@@ -505,7 +238,6 @@ class App(tk.Frame):
 
         
         self.cluster_f.clf()
-        self.cluster_f.subplots_adjust(bottom=0.2,left=0.2)
         if plotsum == 3:
             ax = self.cluster_f.add_subplot(111, projection = '3d')
         else:
@@ -700,7 +432,6 @@ class App(tk.Frame):
         self.f.clf()
         self.a = self.f.add_subplot(111)
         
-        self.f.subplots_adjust(bottom=0.14,left=0.21)
         self.xdata = []
         self.ydata = []
         fit_string = ''
@@ -1157,7 +888,6 @@ class App(tk.Frame):
         self.a.figure.canvas.mpl_connect('button_press_event', self.on_click)
         self.a.set_xlabel(x_label, fontsize=labelsize)
         self.a.set_ylabel(y_label, fontsize=labelsize)
-        self.f.subplots_adjust(bottom=0.2, left=0.2)
         
         self.xdata = np.array(x_col*xsign)
         self.ydata = np.array(y_col*ysign)
@@ -1185,7 +915,6 @@ class App(tk.Frame):
         numbins = self.xbin_entry.get()
         self.f.clf()
         self.a = self.f.add_subplot(111)
-        self.f.subplots_adjust(bottom=0.2,left=0.2)
         self.xdata = []
         self.ydata = []
         labelsize=15
@@ -1256,7 +985,6 @@ class App(tk.Frame):
             self.a.set_ylabel('Log(' +str(y_label)+')', fontsize=labelsize)
         self.a.tick_params(axis='x', labelsize=labelsize)
         self.a.tick_params(axis='y', labelsize=labelsize)
-        self.f.subplots_adjust(bottom=0.2,left=0.2)
         xsign = np.sign(np.average(x_col))
         ysign = np.sign(np.average(y_col))
         x = np.log10(xsign*x_col) if bool(logscale_x) else x_col
@@ -1369,7 +1097,6 @@ class App(tk.Frame):
         
             a.set_xlabel('Time (us)', fontsize=labelsize)
             a.set_ylabel('Current (pA)', fontsize=labelsize)
-            self.event_f.subplots_adjust(bottom=0.2,left=0.2)
             if event_type == 0:
                 a.plot(event_file['time'],event_file['current'],event_file['time'],event_file['cusum'])
             elif event_type == 1:
@@ -1538,25 +1265,14 @@ class App(tk.Frame):
     def onclick(event):
         self.status_string.set('button=%d, x=%d, y=%d, xdata=%f, ydata=%f' % (event.button, event.x, event.y, event.xdata, event.ydata))
 
+        
+                
+        
 def main():
     root=tk.Tk()
     root.withdraw()
-    file_path_string = tkinter.filedialog.askopenfilename(initialdir='C:/Users/kbrig035/Analysis/CUSUM/output/')
-    folder = os.path.dirname(os.path.abspath(file_path_string))
-    ratefile = folder + '\\rate.csv'
-    summary = folder +'\\summary.txt'
-    title = "CUSUM Tools: " + folder
-    folder = folder + '\events\\'
-    root.wm_title(title)
-    summary = open(summary, 'r')
-    eventsdb = pd.read_csv(file_path_string,encoding='utf-8')
-    try:
-        ratedb = pd.read_csv(ratefile, encoding='utf-8')
-    except:
-        ratedb=None
-    App(root,eventsdb,ratedb,summary,folder,file_path_string).grid(row=0,column=0)
+    App(root).grid(row=0,column=0)
     root.mainloop()
 
 if __name__=="__main__":
     main()
-
