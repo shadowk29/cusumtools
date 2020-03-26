@@ -1296,6 +1296,7 @@ class App(tk.Frame):
                       'max_blockage_duration_us': 'Maximum Blockage Duration (us)',
                       'n_levels': 'Number of Levels',
                       'intra_crossings': 'Intra-Event Threshold Crossings',
+                      'intra_crossing_times_us': 'Intra-Event Threshold Crossing Times (us)'
                       'cluster_id': 'Cluster ID',
                       'rc_const1_us': 'RC Constant 1 (us)',
                       'rc_const2_us': 'RC Constant 2 (us)',
