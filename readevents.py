@@ -45,7 +45,7 @@ matplotlib.rcParams['figure.constrained_layout.use'] = True
 pd.options.mode.chained_assignment = None  # default='warn'
 
 class App(tk.Frame):
-    def __init__(self,parent):
+    def __init__(self, parent):
         tk.Frame.__init__(self, parent)
         parent.deiconify()
         self.parent = parent
@@ -53,26 +53,9 @@ class App(tk.Frame):
 
         self.layout_stats_panel()
         self.layout_notebook_tabs()
-        self.layout_cluster_tab()
-        self.layout_rate_tab()
-        self.layout_event_tab()
         self.layout_db_panel()
         
         
-
-
-        
-
-        
-        
-
-        
-
-        
-        
-
-        
-
 #######################################
 
     def layout_stats_panel(self):
@@ -125,6 +108,10 @@ class App(tk.Frame):
         self.ntbk.add(self.event_container, text='Event Viewer')
         self.event_frame = tk.LabelFrame(self.event_container, text='Event Viewer')
         self.event_frame.grid(row=0,column=0, pady=(6,0))
+
+        self.layout_cluster_tab()
+        self.layout_rate_tab()
+        self.layout_event_tab()
 
     def layout_cluster_tab(self):
         #cluster figure
