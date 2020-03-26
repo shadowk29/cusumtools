@@ -45,11 +45,71 @@ matplotlib.rcParams['figure.constrained_layout.use'] = True
 pd.options.mode.chained_assignment = None  # default='warn'
 
 class App(tk.Frame):
-    def __init__(self, parent):
+    def __init__(self,parent,eventsdb,ratedb,summary,events_folder,file_path_string):
         tk.Frame.__init__(self, parent)
         parent.deiconify()
         self.parent = parent
 
+
+        self.file_path_string = file_path_string
+        self.events_folder = events_folder
+        self.eventsdb = eventsdb
+        [a,b] = self.eventsdb.shape
+        self.eventsdb['adj_id'] = np.arange(0,a)
+        self.clicks_remaining = 0
+        self.ratedb = ratedb
+
+        self.intra_threshold = 0
+        self.intra_hysteresis = 0
+        for line in summary:
+            if 'intra_threshold' in line:
+                line = re.split('=|\n',line)
+                self.intra_threshold = float(line[1])
+            if 'intra_hysteresis' in line:
+                line = re.split('=|\n',line)
+                self.intra_hysteresis = float(line[1])
+        summary.close()
+
+        max_subsets = 11
+        self.eventsdb_subset = dict(('Subset {0}'.format(i), self.eventsdb) for i in range(max_subsets))
+        self.capture_rate_subset = dict.fromkeys(list(self.eventsdb_subset.keys()))
+        self.filter_list = dict(('Subset {0}'.format(i), []) for i in range(max_subsets))
+        self.plot_list = dict(('Subset {0}'.format(i), 0) for i in range(max_subsets))
+        self.plot_list['Subset 0'] = 1
+        self.init_plot_list = self.plot_list.copy()
+        self.good_event_subset = []
+
+        if 'event_shape' not in eventsdb.columns:
+            eventsdb['event_shape']=""
+        if 'trimmed_shape' not in eventsdb.columns:
+            eventsdb['trimmed_shape']=""
+        if 'trimmed_n_levels' not in eventsdb.columns:    
+            eventsdb['trimmed_n_levels']=""
+        if 'first_level' not in eventsdb.columns:
+            eventsdb['first_level']=""
+            eventsdb['last_level']=""
+        if 'first_level_fraction' not in eventsdb.columns:
+            eventsdb['first_level_fraction']=""
+            self.first_level_fraction()
+        if 'cluster_id' not in eventsdb.columns:
+            eventsdb['cluster_id']=""
+            
+        self.folding_distribution()
+        self.count()
+
+        self.export_type = None
+
+        self.manual_delete = []
+        
+        column_list = list(eventsdb)
+        self.column_list = column_list
+        self.x_col_options = tk.StringVar()
+        self.x_col_options.set('Level Duration (us)')
+        self.y_col_options = tk.StringVar()
+        self.y_col_options.set('Blockage Level (pA)')
+        self.graph_list = tk.StringVar()
+        self.graph_list.set('2D Histogram')
+        self.alias_columns()
 
         self.layout_stats_panel()
         self.layout_notebook_tabs()
@@ -438,8 +498,8 @@ class App(tk.Frame):
 
     def capture_rate(self):
         subset_list = self.get_active_subsets(0)
-        self.f.clf()
-        self.a = self.f.add_subplot(111)
+        self.stats_f.clf()
+        self.a = self.stats_f.add_subplot(111)
         
         self.xdata = []
         self.ydata = []
@@ -483,7 +543,7 @@ class App(tk.Frame):
                 self.xdata.append(valid_delays)
                 self.ydata.append(probability)
                 self.a.legend(loc='best',prop={'size': 10})
-                self.canvas.draw()
+                self.stats_canvas.draw()
                 self.status_string.set(fit_string)
             else:
                 log_delays = np.log10(valid_delays)
@@ -508,7 +568,7 @@ class App(tk.Frame):
                 self.a.plot(bincenters,fit,label='{0} Fit'.format(subset))
                 fit_string = fit_string + '{0}: {1}/{2} events used. Capture Rate is {3:.3g} \u00B1 {4:.1g} Hz (R\u00B2 = {5:.2g})\n'.format(subset,len(valid_delays),len(indices), popt[0], -t.isf(0.975,len(counts))*np.sqrt(np.diag(pcov))[0], rsquared)
                 self.a.legend(loc='best',prop={'size': 10})
-                self.canvas.draw()
+                self.stats_canvas.draw()
                 self.status_string.set(fit_string)
         
     def not_implemented(self):
@@ -767,7 +827,7 @@ class App(tk.Frame):
 
             self.plot_1d_histogram()
             self.a.plot(x, self.multi_gauss(x, self.num_states,popt))
-            self.canvas.draw()
+            self.stats_canvas.draw()
             
             blockage_levels = [np.array(a,dtype=float)[1:-1] for a in self.eventsdb_subset[subset]['blockages_pA'].str.split(';')]
             for b in blockage_levels:
@@ -820,7 +880,7 @@ class App(tk.Frame):
 
         self.a.set_xlim([x_min, x_max])
         self.a.set_ylim([y_min, y_max])
-        self.canvas.draw()
+        self.stats_canvas.draw()
 
         
 
@@ -889,8 +949,8 @@ class App(tk.Frame):
         xsign = np.sign(np.average(x_col[0])) if len(subset_list) > 1 else np.sign(np.average(x_col))
         ysign = np.sign(np.average(y_col[0])) if len(subset_list) > 1 else np.sign(np.average(y_col))
 
-        self.f.clf()
-        self.a = self.f.add_subplot(111)
+        self.stats_f.clf()
+        self.a = self.stats_f.add_subplot(111)
         labelsize=15
         self.a.tick_params(axis='x', labelsize=labelsize)
         self.a.tick_params(axis='y', labelsize=labelsize)
@@ -912,7 +972,7 @@ class App(tk.Frame):
             self.a.set_xscale('log')
         if logscale_y:
             self.a.set_yscale('log')
-        self.canvas.draw()
+        self.stats_canvas.draw()
 
     def plot_1d_histogram(self):
         subset_list = self.get_active_subsets(0)
@@ -922,8 +982,8 @@ class App(tk.Frame):
         x_label = self.x_option.cget('text')
         col = np.squeeze(np.array([self.parse_db_col(self.unalias_dict.get(x_label,x_label),key) for key in subset_list]))
         numbins = self.xbin_entry.get()
-        self.f.clf()
-        self.a = self.f.add_subplot(111)
+        self.stats_f.clf()
+        self.a = self.stats_f.add_subplot(111)
         self.xdata = []
         self.ydata = []
         labelsize=15
@@ -968,8 +1028,8 @@ class App(tk.Frame):
                 self.xdata[i] = self.xdata[i][:-1] + np.diff(self.xdata[i])/2.0
             except IndexError:
                 self.xdata = self.xdata[:-1] + np.diff(self.xdata)/2.0
-        self.canvas.draw()
-        self.canvas.callbacks.connect('button_press_event', self.on_click)
+        self.stats_canvas.draw()
+        self.stats_canvas.callbacks.connect('button_press_event', self.on_click)
 
         
     def plot_2d_histogram(self):
@@ -983,8 +1043,8 @@ class App(tk.Frame):
         y_col = np.squeeze(np.array(self.parse_db_col(self.unalias_dict.get(y_label,y_label),subset)))
         xbins = self.xbin_entry.get()
         ybins = self.ybin_entry.get()
-        self.f.clf()
-        self.a = self.f.add_subplot(111)
+        self.stats_f.clf()
+        self.a = self.stats_f.add_subplot(111)
         labelsize=15
         self.a.set_xlabel(x_label, fontsize=labelsize)
         self.a.set_ylabel(y_label, fontsize=labelsize)
@@ -1008,7 +1068,7 @@ class App(tk.Frame):
         self.xdata = xy[:,0]
         self.ydata = xy[:,1]
         self.zdata = z
-        self.canvas.draw()
+        self.stats_canvas.draw()
         
 
     def disable_options(self, *args):
@@ -1280,8 +1340,22 @@ class App(tk.Frame):
 def main():
     root=tk.Tk()
     root.withdraw()
-    App(root).grid(row=0,column=0)
+    file_path_string = tkinter.filedialog.askopenfilename(initialdir='C:/Users/kbrig035/Analysis/CUSUM/output/')
+    folder = os.path.dirname(os.path.abspath(file_path_string))
+    ratefile = folder + '\\rate.csv'
+    summary = folder +'\\summary.txt'
+    title = "CUSUM Tools: " + folder
+    folder = folder + '\events\\'
+    root.wm_title(title)
+    summary = open(summary, 'r')
+    eventsdb = pd.read_csv(file_path_string,encoding='utf-8')
+    try:
+        ratedb = pd.read_csv(ratefile, encoding='utf-8')
+    except:
+        ratedb=None
+    App(root,eventsdb,ratedb,summary,folder,file_path_string).grid(row=0,column=0)
     root.mainloop()
 
 if __name__=="__main__":
     main()
+
