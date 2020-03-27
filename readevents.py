@@ -49,15 +49,37 @@ class App(tk.Frame):
         tk.Frame.__init__(self, parent)
         parent.deiconify()
         self.parent = parent
+        self.initialize_database(eventsdb, ratedb, summary, events_folder, file_path_string)
+        
 
+
+        #initialize the layout of the GUI
+        self.layout_stats_panel()
+        self.layout_notebook_tabs()
+        self.layout_db_panel()
+        
+        
+#######################################
+    def initialize_database(self, eventsdb, ratedb, summary, events_folder, file_path_string):
         #initialize event database files
         self.file_path_string = file_path_string
         self.events_folder = events_folder
+
         self.eventsdb = eventsdb
         [a,b] = self.eventsdb.shape
         self.eventsdb['adj_id'] = np.arange(0,a)
         self.clicks_remaining = 0
         self.ratedb = ratedb
+
+        #initialize subset and plot options
+        max_subsets = 11
+        self.eventsdb_subset = dict(('Subset {0}'.format(i), self.eventsdb) for i in range(max_subsets))
+        self.capture_rate_subset = dict.fromkeys(list(self.eventsdb_subset.keys()))
+        self.filter_list = dict(('Subset {0}'.format(i), []) for i in range(max_subsets))
+        self.plot_list = dict(('Subset {0}'.format(i), 0) for i in range(max_subsets))
+        self.plot_list['Subset 0'] = 1
+        self.init_plot_list = self.plot_list.copy()
+        self.good_event_subset = []
 
         #initialize single event plotting options
         self.intra_threshold = 0
@@ -71,17 +93,6 @@ class App(tk.Frame):
                 self.intra_hysteresis = float(line[1])
         summary.close()
 
-
-        #initialize subset and plot options
-        max_subsets = 11
-        self.eventsdb_subset = dict(('Subset {0}'.format(i), self.eventsdb) for i in range(max_subsets))
-        self.capture_rate_subset = dict.fromkeys(list(self.eventsdb_subset.keys()))
-        self.filter_list = dict(('Subset {0}'.format(i), []) for i in range(max_subsets))
-        self.plot_list = dict(('Subset {0}'.format(i), 0) for i in range(max_subsets))
-        self.plot_list['Subset 0'] = 1
-        self.init_plot_list = self.plot_list.copy()
-        self.good_event_subset = []
-
         #initialize columns that may be calculated during analysis if they do not already exists in the database file
         if 'event_shape' not in eventsdb.columns:
             eventsdb['event_shape']=""
@@ -94,16 +105,16 @@ class App(tk.Frame):
             eventsdb['last_level']=""
         if 'first_level_fraction' not in eventsdb.columns:
             eventsdb['first_level_fraction']=""
-            self.first_level_fraction()
         if 'cluster_id' not in eventsdb.columns:
             eventsdb['cluster_id']=""
-
+        
         #calculate new columns as needed
+        self.first_level_fraction()
         self.folding_distribution()
         self.count()
         self.export_type = None
         self.manual_delete = []
-
+        
         #initialize list of features that can be plotted
         column_list = list(eventsdb)
         self.column_list = column_list
@@ -114,16 +125,7 @@ class App(tk.Frame):
         self.graph_list = tk.StringVar()
         self.graph_list.set('2D Histogram')
         self.alias_columns()
-
-
-        #initialize the layout of the GUI
-        self.layout_stats_panel()
-        self.layout_notebook_tabs()
-        self.layout_db_panel()
         
-        
-#######################################
-
     def layout_stats_panel(self):
         #define and position the main panel on the left
         self.stats_container = tk.Frame(self.parent)
