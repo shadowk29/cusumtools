@@ -228,21 +228,21 @@ class App(tk.Frame):
         self.cluster_container.grid(row=0,column=0)
         self.ntbk.add(self.cluster_container, text='Clustering')
         self.cluster_frame = tk.LabelFrame(self.cluster_container, text='Clustering')
-        self.cluster_frame.grid(row=0,column=0, pady=(6,0))
+        self.cluster_frame.grid(row=0,column=0)
 
         #capture rate container
         self.rate_container = tk.Frame(self.ntbk)
         self.rate_container.grid(row=0, column=0)
         self.ntbk.add(self.rate_container, text='Capture Rate')
         self.rate_frame = tk.LabelFrame(self.rate_container, text='Capture Rate')
-        self.rate_frame.grid(row=0,column=0, pady=(6,0))
+        self.rate_frame.grid(row=0,column=0)
 
         #single event view container
         self.event_container = tk.Frame(self.ntbk)
         self.event_container.grid(row=0, column=0)
         self.ntbk.add(self.event_container, text='Event Viewer')
         self.event_frame = tk.LabelFrame(self.event_container, text='Event Viewer')
-        self.event_frame.grid(row=0,column=0, pady=(6,0))
+        self.event_frame.grid(row=0,column=0)
 
         self.layout_cluster_tab()
         self.layout_rate_tab()
@@ -449,13 +449,9 @@ class App(tk.Frame):
         self.db_frame = tk.LabelFrame(self.parent, text='Database Controls')
         self.db_frame.grid(row=1,column=0,sticky=tk.E+tk.W)
 
+
         self.filter_entry = tk.Entry(self.db_frame)
         self.filter_entry.grid(row=0, column=0, sticky=tk.E+tk.W)
-
-
-        self.db_frame.columnconfigure(0, weight=1)
-        self.db_frame.columnconfigure(2, weight=1)
-        self.db_frame.columnconfigure(4, weight=1)
 
         default_subset = tk.StringVar()
         default_subset.set('Subset 0')
@@ -469,7 +465,6 @@ class App(tk.Frame):
         self.filter_entry = tk.Entry(self.db_frame)
 
         
-        self.db_frame.grid(row=2,column=0,columnspan=6,sticky=tk.E+tk.W)
         self.filter_entry.grid(row=0,column=0,columnspan=6,sticky=tk.E+tk.W)
         self.subset_option.grid(row=1,column=0,columnspan=2,sticky=tk.E+tk.W)
         self.filter_button.grid(row=1,column=2,columnspan=2,sticky=tk.E+tk.W)
@@ -1054,7 +1049,7 @@ class App(tk.Frame):
             state_means = np.zeros(self.num_states)
             i = 0
             while i < self.num_states*2:
-                state_means[i/2] = 0.5*(self.state_array[i]+self.state_array[i+1])
+                state_means[int(i/2)] = 0.5*(self.state_array[i]+self.state_array[i+1])
                 i += 2
 
 
