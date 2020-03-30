@@ -63,9 +63,26 @@ class App(tk.Frame):
         self.layout_notebook_tabs()
         self.layout_db_panel()
         self.layout_status_panel()
+        self.set_frame_size()
+        self.disable_options()
         
         
 #######################################
+
+    def set_frame_size(self):
+        frames = [self.stats_control_frame, self.cluster_controls_frame, self.rate_control_frame, self.event_control_frame]
+        maxwidth = 0
+        for f in frames:
+            f.update()
+            if f.winfo_width() > maxwidth:
+                maxwidth = f.winfo_width()
+            f.grid_propagate(False)
+        for f in frames:
+            f.config(width = maxwidth)
+        for f in frames:
+            for i in range(f.grid_size()[0]):
+                f.columnconfigure(i, weight=1)
+
 
     def layout_status_panel(self):
         self.status_frame = tk.LabelFrame(self.parent, text='Status')
@@ -74,8 +91,8 @@ class App(tk.Frame):
         self.status_string = tk.StringVar()
         self.status_string.set('Ready')
         self.status_display = FlashableLabel(self.status_frame, textvariable=self.status_string, background='black', foreground='white')
-
-        self.status_display.grid(row=0,column=0,columnspan=6,sticky=tk.E+tk.W)
+        self.status_frame.columnconfigure(0, weight=1)
+        self.status_display.grid(row=0,column=0,sticky=tk.E+tk.W)
 
         
     def initialize_database(self, eventsdb, ratedb, summary, events_folder, file_path_string):
@@ -140,6 +157,8 @@ class App(tk.Frame):
         self.x_col_options.set('Level Duration (us)')
         self.y_col_options = tk.StringVar()
         self.y_col_options.set('Blockage Level (pA)')
+        self.z_col_options = tk.StringVar()
+        self.z_col_options.set('Number of Levels')
         self.graph_list = tk.StringVar()
         self.graph_list.set('2D Histogram')
         self.alias_columns()
@@ -161,48 +180,64 @@ class App(tk.Frame):
         self.export_plot_button = tk.Button(self.stats_control_frame,text='Export Data',command=self.export_plot_data)
         self.x_option = tk.OptionMenu(self.stats_control_frame, self.x_col_options, *[self.alias_dict.get(option,option) for option in self.column_list])
         self.y_option = tk.OptionMenu(self.stats_control_frame, self.y_col_options, *[self.alias_dict.get(option,option) for option in self.column_list])
-        self.graph_option = tk.OptionMenu(self.stats_control_frame, self.graph_list, 'XY Plot', '1D Histogram', '2D Histogram', command=self.disable_options)
+        self.z_option = tk.OptionMenu(self.stats_control_frame, self.z_col_options, *[self.alias_dict.get(option,option) for option in self.column_list])
+        plot_types = ['2D Scatterplot', '1D Histogram', '2D Histogram', '3D Scatterplot']
+        self.graph_option = tk.OptionMenu(self.stats_control_frame, self.graph_list, *plot_types, command=self.disable_options)
         self.include_baseline=tk.IntVar()
         self.include_baseline_check = tk.Checkbutton(self.stats_control_frame, text='Include Baseline', variable=self.include_baseline)
-        self.x_log_var = tk.IntVar()
-        self.x_log_check = tk.Checkbutton(self.stats_control_frame, text='Log X', variable = self.x_log_var)
-        self.y_log_var = tk.IntVar()
-        self.y_log_check = tk.Checkbutton(self.stats_control_frame, text='Log Y', variable = self.y_log_var)
 
-        self.x_bins=tk.Label(self.stats_control_frame,text='X Bins:')
-        self.y_bins=tk.Label(self.stats_control_frame,text='Y Bins:')
+        axis_label = tk.Label(self.stats_control_frame, text='Axis')
+        log_label = tk.Label(self.stats_control_frame, text='Log')
+        bins_label = tk.Label(self.stats_control_frame, text='Bins')
+        
+        self.x_log_var = tk.IntVar()
+        self.x_log_check = tk.Checkbutton(self.stats_control_frame, variable = self.x_log_var)
+        self.y_log_var = tk.IntVar()
+        self.y_log_check = tk.Checkbutton(self.stats_control_frame, variable = self.y_log_var)
+        self.z_log_var = tk.IntVar()
+        self.z_log_check = tk.Checkbutton(self.stats_control_frame, variable = self.z_log_var)
 
         self.xbin_entry = tk.Entry(self.stats_control_frame)
         self.xbin_entry.insert(0,100)
         self.ybin_entry = tk.Entry(self.stats_control_frame)
         self.ybin_entry.insert(0,100)
+        self.zbin_entry = tk.Entry(self.stats_control_frame)
+        self.zbin_entry.insert(0,100)
 
         self.n_states=tk.Label(self.stats_control_frame,text='Num States:')
         self.n_states_entry = tk.Entry(self.stats_control_frame)
         self.define_state_button = tk.Button(self.stats_control_frame,text='Redefine Blockage States',command=self.define_states)
         self.define_event_shapes_button = tk.Button(self.stats_control_frame,text='Redefine Event Shapes',command=self.define_shapes)
 
+        self.graph_option.grid(row=0,column=0,sticky=tk.E+tk.W)
+        self.export_plot_button.grid(row=0,column=1,sticky=tk.E+tk.W)
+        self.plot_button.grid(row=0,column=2,sticky=tk.E+tk.W)
+        sept = ttk.Separator(self.stats_control_frame, orient='horizontal')
+        sept.grid(row=1,column=0,columnspan=3,sticky=tk.E+tk.W)
 
-        self.x_log_check.grid(row=3,column=2,sticky=tk.E+tk.W)
-        self.y_log_check.grid(row=4,column=2,sticky=tk.E+tk.W)
-        self.x_bins.grid(row=3,column=3,sticky=tk.E+tk.W)
-        self.y_bins.grid(row=4,column=3,sticky=tk.E+tk.W)
-        self.xbin_entry.grid(row=3,column=4,sticky=tk.E+tk.W)
-        self.ybin_entry.grid(row=4,column=4,sticky=tk.E+tk.W)
-        self.graph_option.grid(row=3,column=0,sticky=tk.E+tk.W)
-        self.include_baseline_check.grid(row=4,column=0,sticky=tk.E+tk.W)
-        self.x_option.grid(row=3,column=1,sticky=tk.E+tk.W)
-        self.y_option.grid(row=4,column=1,sticky=tk.E+tk.W)
-        self.plot_button.grid(row=3,column=5,sticky=tk.E+tk.W)
-        self.export_plot_button.grid(row=4,column=5,sticky=tk.E+tk.W)
+        axis_label.grid(row=2,column=0,sticky=tk.E+tk.W)
+        log_label.grid(row=2,column=1,sticky=tk.E+tk.W)
+        bins_label.grid(row=2,column=2,sticky=tk.E+tk.W)
+        
+        sept2 = ttk.Separator(self.stats_control_frame, orient='horizontal')
+        sept2.grid(row=3,column=0,columnspan=3,sticky=tk.E+tk.W)
 
-        self.parent.bind("<Return>", self.enter_key_press)
-
-
-        self.n_states.grid(row=5,column=0,sticky=tk.E+tk.W)
-        self.n_states_entry.grid(row=5,column=1,sticky=tk.E+tk.W)
-        self.define_state_button.grid(row=5,column=2,sticky=tk.E+tk.W)
-        self.define_event_shapes_button.grid(row=5,column=3,sticky=tk.E+tk.W)
+        self.x_option.grid(row=4,column=0,sticky=tk.E+tk.W)
+        self.y_option.grid(row=5,column=0,sticky=tk.E+tk.W)
+        self.z_option.grid(row=6,column=0,sticky=tk.E+tk.W)
+        
+        self.x_log_check.grid(row=4,column=1,sticky=tk.E+tk.W)
+        self.y_log_check.grid(row=5,column=1,sticky=tk.E+tk.W)
+        self.z_log_check.grid(row=6,column=1,sticky=tk.E+tk.W)
+        self.xbin_entry.grid(row=4,column=2,sticky=tk.E+tk.W)
+        self.ybin_entry.grid(row=5,column=2,sticky=tk.E+tk.W)
+        self.zbin_entry.grid(row=6,column=2,sticky=tk.E+tk.W)
+        
+        #self.include_baseline_check.grid(row=4,column=0,sticky=tk.E+tk.W)
+        #self.n_states.grid(row=6,column=0,sticky=tk.E+tk.W)
+        #self.n_states_entry.grid(row=6,column=1,sticky=tk.E+tk.W)
+        #self.define_state_button.grid(row=6,column=2,sticky=tk.E+tk.W)
+        #self.define_event_shapes_button.grid(row=6,column=3,sticky=tk.E+tk.W)
 
 
 
@@ -221,7 +256,6 @@ class App(tk.Frame):
         self.stats_frame.grid(row=0,column=1)
         self.stats_control_frame = tk.LabelFrame(self.stats_container, text='Plotting Control')
         self.stats_control_frame.grid(row=0,column=0, sticky=tk.E+tk.W+tk.N+tk.S)
-
         
         #cluster container
         self.cluster_container= tk.Frame(self.ntbk)
@@ -231,8 +265,6 @@ class App(tk.Frame):
         self.cluster_frame.grid(row=0,column=1)
         self.cluster_controls_frame = tk.LabelFrame(self.cluster_container, text='Cluster Controls')
         self.cluster_controls_frame.grid(row=0,column=0, sticky=tk.E+tk.W+tk.N+tk.S)
-
-        
 
         #capture rate container
         self.rate_container = tk.Frame(self.ntbk)
@@ -268,8 +300,6 @@ class App(tk.Frame):
         self.cluster_toolbar_frame.grid(row=1,column=0)
 
         #cluster control panel
-
-
         self.min_cluster_pts_label = tk.Label(self.cluster_controls_frame, text='Min Cluster Size')
         self.min_pts_label = tk.Label(self.cluster_controls_frame, text='Min Neighbours')
         self.eps_label = tk.Label(self.cluster_controls_frame, text='Distance Cutoff')
@@ -283,7 +313,6 @@ class App(tk.Frame):
         self.min_pts_entry = tk.Entry(self.cluster_controls_frame, textvariable=self.min_pts)
         self.eps_entry = tk.Entry(self.cluster_controls_frame, textvariable=self.eps)
 
-
         self.feature_col_options = []
         self.feature_col_options.append(tk.StringVar())
         self.feature_col_options[0].set('Dwell Time (us)')
@@ -295,8 +324,6 @@ class App(tk.Frame):
         self.plotlabel = tk.Label(self.cluster_controls_frame, text='Plot')
         self.normlabel = tk.Label(self.cluster_controls_frame, text='Normalization')
         self.dellabel = tk.Label(self.cluster_controls_frame, text='Delete')
-
-        
         
         self.feature_options = []
         self.feature_options.append(tk.OptionMenu(self.cluster_controls_frame, self.feature_col_options[0], *[self.alias_dict.get(option,option) for option in self.column_list]))
@@ -329,7 +356,6 @@ class App(tk.Frame):
         self.norm_options = []
         self.norm_options.append(tk.OptionMenu(self.cluster_controls_frame, self.feature_norms[0], *self.normalization_options))
         self.norm_options.append(tk.OptionMenu(self.cluster_controls_frame, self.feature_norms[1], *self.normalization_options))
-
         
         self.add_feature_button = tk.Button(self.cluster_controls_frame, text='Add Feature', command=self.add_feature)
         self.delete_feature_button = []
@@ -341,7 +367,6 @@ class App(tk.Frame):
         self.min_pts_entry.grid(row=1,column=1,columnspan=2,sticky=tk.E+tk.W)
         self.eps_entry.grid(row=2,column=1,columnspan=2,sticky=tk.E+tk.W)
 
-
         sept = ttk.Separator(self.cluster_controls_frame, orient='horizontal')
         sept.grid(row=3,column=0,columnspan=5,sticky=tk.E+tk.W)
         self.featurelabel.grid(row=4,column=0,sticky=tk.E+tk.W)
@@ -351,7 +376,6 @@ class App(tk.Frame):
         self.dellabel.grid(row=4,column=4,sticky=tk.E+tk.W)
         sepb = ttk.Separator(self.cluster_controls_frame, orient='horizontal')
         sepb.grid(row=5,column=0,columnspan=5,sticky=tk.E+tk.W)
-
         
         self.gridcounter = 6
         for f,c,p,n in zip(self.feature_options, self.feature_options_log_check, self.plot_options_check, self.norm_options):
@@ -371,8 +395,6 @@ class App(tk.Frame):
         self.cluster_subset_option = tk.OptionMenu(self.cluster_controls_frame, default_cluster_subset, *cluster_subset_options)
         self.cluster_subset_option.grid(row=2,column=3,columnspan=2, sticky=tk.E+tk.W)
         
-    
-
     def layout_rate_tab(self):
         #capture rate figure
         self.rate_f = Figure(figsize=(7,5), dpi=100)
@@ -463,15 +485,22 @@ class App(tk.Frame):
         self.remove_nonconsecutive_button = tk.Button(self.db_frame,text='Remove Non-Consecutive',command=self.remove_nonconsecutive_events)
         self.filter_entry = tk.Entry(self.db_frame)
 
+        self.db_frame.columnconfigure(0, weight=1)
+        self.db_frame.columnconfigure(1, weight=1)
+        self.db_frame.columnconfigure(2, weight=1)
         
-        self.filter_entry.grid(row=0,column=0,columnspan=6,sticky=tk.E+tk.W)
-        self.subset_option.grid(row=1,column=0,columnspan=2,sticky=tk.E+tk.W)
-        self.filter_button.grid(row=1,column=2,columnspan=2,sticky=tk.E+tk.W)
-        self.reset_button.grid(row=1,column=4,columnspan=2,sticky=tk.E+tk.W)
+
         
-        self.save_subset_button.grid(row=2,column=0,columnspan=2,sticky=tk.E+tk.W)
-        self.draw_subset_details_button.grid(row=2,column=2,columnspan=2,sticky=tk.E+tk.W)
-        self.remove_nonconsecutive_button.grid(row=2,column=4,columnspan=2,sticky=tk.E+tk.W)
+        self.filter_entry.grid(row=0,column=0,columnspan=3,sticky=tk.E+tk.W)
+        self.subset_option.grid(row=1,column=0,sticky=tk.E+tk.W)
+        self.filter_button.grid(row=1,column=1,sticky=tk.E+tk.W)
+        self.reset_button.grid(row=1,column=2,sticky=tk.E+tk.W)
+        
+        self.save_subset_button.grid(row=2,column=0,sticky=tk.E+tk.W)
+        self.draw_subset_details_button.grid(row=2,column=1,sticky=tk.E+tk.W)
+        self.remove_nonconsecutive_button.grid(row=2,column=2,sticky=tk.E+tk.W)
+
+        
 
         
 
@@ -1314,16 +1343,38 @@ class App(tk.Frame):
         option = self.graph_option.cget('text')
         if option == '1D Histogram':
             self.y_option['state']='disabled'
+            self.z_option['state']='disabled'
             self.ybin_entry['state']='disabled'
+            self.zbin_entry['state']='disabled'
+            self.y_log_check['state']='disabled'
+            self.z_log_check['state']='disabled'
             self.xbin_entry['state']='normal'
-        elif option == 'XY Plot':
-            self.ybin_entry['state']='disabled'
+        elif option == '2D Scatterplot':
             self.xbin_entry['state']='disabled'
+            self.ybin_entry['state']='disabled'
+            self.zbin_entry['state']='disabled'
+            self.z_option['state']='disabled'
+            self.z_log_check['state']='disabled'
+            self.zbin_entry['state']='disabled'
             self.y_option['state']='normal'
-        else:
-            self.y_option['state']='normal'
-            self.ybin_entry['state']='normal'
+            self.y_log_check['state']='normal'
+        elif option == '2D Histogram':
+            self.z_option['state']='disabled'
+            self.z_log_check['state']='disabled'
+            self.zbin_entry['state']='disabled'
             self.xbin_entry['state']='normal'
+            self.ybin_entry['state']='normal'
+            self.y_option['state']='normal'
+            self.y_log_check['state']='normal'
+        elif option == '3D Scatterplot':
+            self.xbin_entry['state']='disabled'
+            self.ybin_entry['state']='disabled'
+            self.zbin_entry['state']='disabled'
+            self.y_option['state']='normal'
+            self.z_option['state']='normal'
+            self.y_log_check['state']='normal'
+            self.z_log_check['state']='normal'
+            
 
     def update_plot(self):
         option = self.graph_option.cget('text')
@@ -1510,11 +1561,6 @@ class App(tk.Frame):
 
     def delete_key_press(self,event):
         self.delete_event()
-
-    def enter_key_press(self,event):
-        self.update_plot()
-
-    
 
     def alias_columns(self):
         self.alias_dict = {'id': 'Event Number',
