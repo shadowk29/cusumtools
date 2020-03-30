@@ -60,7 +60,6 @@ class App(tk.Frame):
         self.parent = parent
         self.initialize_database(eventsdb, ratedb, summary, events_folder, file_path_string)
         #initialize the layout of the GUI
-        self.layout_stats_panel()
         self.layout_notebook_tabs()
         self.layout_db_panel()
         self.layout_status_panel()
@@ -70,7 +69,7 @@ class App(tk.Frame):
 
     def layout_status_panel(self):
         self.status_frame = tk.LabelFrame(self.parent, text='Status')
-        self.status_frame.grid(row=1,column=1,sticky=tk.E+tk.W)
+        self.status_frame.grid(row=2,column=0,sticky=tk.E+tk.W)
 
         self.status_string = tk.StringVar()
         self.status_string.set('Ready')
@@ -146,12 +145,6 @@ class App(tk.Frame):
         self.alias_columns()
         
     def layout_stats_panel(self):
-        #define and position the main panel on the left
-        self.stats_container = tk.Frame(self.parent)
-        self.stats_container.grid(row=0, column=0)
-        self.stats_frame = tk.LabelFrame(self.stats_container, text='Statistics')
-        self.stats_frame.grid(row=0,column=0)
-
         #Left panel children
         #define a figure canvas to go in the left panel
         self.stats_f = Figure(figsize=(7,5), dpi=100)
@@ -163,9 +156,6 @@ class App(tk.Frame):
         self.stats_toolbar_frame.grid(row=1,column=0)
 
         #define a control panel for the left panel to go below the figure
-        
-        self.stats_control_frame = tk.LabelFrame(self.stats_container, text='Plotting Control')
-        self.stats_control_frame.grid(row=1,column=0, sticky=tk.E+tk.W)
 
         self.plot_button = tk.Button(self.stats_control_frame,text='Update Plot',command=self.update_plot)
         self.export_plot_button = tk.Button(self.stats_control_frame,text='Export Data',command=self.export_plot_data)
@@ -221,29 +211,48 @@ class App(tk.Frame):
     def layout_notebook_tabs(self):
         #define and position the tab-enabled secondary panel on the right
         self.ntbk = ttk.Notebook(self.parent)
-        self.ntbk.grid(row=0,column=1)
+        self.ntbk.grid(row=0,column=0)
 
+        #statistics panel
+        self.stats_container = tk.Frame(self.ntbk)
+        self.stats_container.grid(row=0, column=0)
+        self.ntbk.add(self.stats_container, text='Statistics')
+        self.stats_frame = tk.LabelFrame(self.stats_container, text='Statistics')
+        self.stats_frame.grid(row=0,column=1)
+        self.stats_control_frame = tk.LabelFrame(self.stats_container, text='Plotting Control')
+        self.stats_control_frame.grid(row=0,column=0, sticky=tk.E+tk.W+tk.N+tk.S)
+
+        
         #cluster container
         self.cluster_container= tk.Frame(self.ntbk)
         self.cluster_container.grid(row=0,column=0)
         self.ntbk.add(self.cluster_container, text='Clustering')
         self.cluster_frame = tk.LabelFrame(self.cluster_container, text='Clustering')
-        self.cluster_frame.grid(row=0,column=0)
+        self.cluster_frame.grid(row=0,column=1)
+        self.cluster_controls_frame = tk.LabelFrame(self.cluster_container, text='Cluster Controls')
+        self.cluster_controls_frame.grid(row=0,column=0, sticky=tk.E+tk.W+tk.N+tk.S)
+
+        
 
         #capture rate container
         self.rate_container = tk.Frame(self.ntbk)
         self.rate_container.grid(row=0, column=0)
         self.ntbk.add(self.rate_container, text='Capture Rate')
         self.rate_frame = tk.LabelFrame(self.rate_container, text='Capture Rate')
-        self.rate_frame.grid(row=0,column=0)
+        self.rate_frame.grid(row=0,column=1)
+        self.rate_control_frame = tk.LabelFrame(self.rate_container, text='Capture Rate Controls')
+        self.rate_control_frame.grid(row=0,column=0, sticky=tk.E+tk.W+tk.N+tk.S)
 
         #single event view container
         self.event_container = tk.Frame(self.ntbk)
         self.event_container.grid(row=0, column=0)
         self.ntbk.add(self.event_container, text='Event Viewer')
         self.event_frame = tk.LabelFrame(self.event_container, text='Event Viewer')
-        self.event_frame.grid(row=0,column=0)
+        self.event_frame.grid(row=0,column=1)
+        self.event_control_frame = tk.LabelFrame(self.event_container, text='Event View Controls')
+        self.event_control_frame.grid(row=0,column=0, sticky=tk.E+tk.W+tk.N+tk.S)
 
+        self.layout_stats_panel()
         self.layout_cluster_tab()
         self.layout_rate_tab()
         self.layout_event_tab()
@@ -259,8 +268,6 @@ class App(tk.Frame):
         self.cluster_toolbar_frame.grid(row=1,column=0)
 
         #cluster control panel
-        self.cluster_controls_frame = tk.LabelFrame(self.cluster_container, text='Cluster Controls')
-        self.cluster_controls_frame.grid(row=1,column=0, sticky=tk.E+tk.W)
 
 
         self.min_cluster_pts_label = tk.Label(self.cluster_controls_frame, text='Min Cluster Size')
@@ -376,10 +383,6 @@ class App(tk.Frame):
         self.rate_canvas.get_tk_widget().grid(row=0,column=0)
         self.rate_toolbar_frame.grid(row=1,column=0)
 
-        #capture rate control panel
-        self.rate_control_frame = tk.LabelFrame(self.rate_container, text='Capture Rate Controls')
-        self.rate_control_frame.grid(row=1,column=0, sticky=tk.E+tk.W)
-
 
         self.plot_subsets = tk.Button(self.rate_control_frame, text='Subsets to Plot',command=self.plot_subset_select)
         self.plot_subsets.grid(row=0,column=0,sticky=tk.E+tk.W)
@@ -404,10 +407,6 @@ class App(tk.Frame):
         self.event_toolbar.update()
         self.event_canvas.get_tk_widget().grid(row=0,column=0)
         self.event_toolbar_frame.grid(row=1,column=0)
-
-        #single event control panel
-        self.event_control_frame = tk.LabelFrame(self.event_container, text='Event View Controls')
-        self.event_control_frame.grid(row=1,column=0, sticky=tk.E+tk.W)
 
         self.event_info_string = tk.StringVar()
         self.event_index = tk.IntVar()
@@ -447,11 +446,11 @@ class App(tk.Frame):
     def layout_db_panel(self):
         ##database control panel
         self.db_frame = tk.LabelFrame(self.parent, text='Database Controls')
-        self.db_frame.grid(row=1,column=0,sticky=tk.E+tk.W)
+        self.db_frame.grid(row=1,column=0,columnspan=2,sticky=tk.E+tk.W)
 
 
         self.filter_entry = tk.Entry(self.db_frame)
-        self.filter_entry.grid(row=0, column=0, sticky=tk.E+tk.W)
+        self.filter_entry.grid(row=0, column=0,sticky=tk.E+tk.W)
 
         default_subset = tk.StringVar()
         default_subset.set('Subset 0')
