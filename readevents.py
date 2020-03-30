@@ -142,6 +142,8 @@ class App(tk.Frame):
             eventsdb['first_level_fraction']=""
         if 'cluster_id' not in eventsdb.columns:
             eventsdb['cluster_id']=""
+        if 'cluster_prob' not in eventsdb.columns:
+            eventsdb['cluster_prob']=""
         
         #calculate new columns as needed
         self.first_level_fraction()
@@ -563,14 +565,19 @@ class App(tk.Frame):
 
         
         ##perform clustering
-        clusterer = hdbscan.HDBSCAN(min_cluster_size=self.min_cluster_pts.get(), min_samples=self.min_pts.get(), gen_min_span_tree=True, cluster_selection_epsilon=self.eps.get())
+        clusterer = hdbscan.HDBSCAN(min_cluster_size=self.min_cluster_pts.get(), min_samples=self.min_pts.get(), gen_min_span_tree=True, cluster_selection_epsilon=self.eps.get(), prediction_data=True)
         clusterer.fit(data)
         palette = sns.color_palette()
         cluster_colors = [sns.desaturate(palette[col], sat)
                   if col >= 0 else (0,0,0) for col, sat in
                   zip(clusterer.labels_, clusterer.probabilities_)]
         #clusterer._min_samples_label = 0
-
+        #soft_clusters = hdbscan.all_points_membership_vectors(clusterer)
+        #out = np.array([1 - np.sum(soft_clusters, axis=1)]).T
+        #full = np.concatenate((out, soft_clusters), axis=1)
+        #cluster_colors = [palette[np.argmax(x)]
+        #          for x in full]
+        
         
         self.cluster_f.clf()
         if plotsum == 3:
@@ -603,6 +610,7 @@ class App(tk.Frame):
         self.cluster_canvas.draw()
 
         self.eventsdb_subset[subset]['cluster_id'] = clusterer.labels_
+        self.eventsdb_subset[subset]['cluster_prob'] = clusterer.probabilities_
         
 
     def plot_3d_scatterplot(self):
@@ -1642,6 +1650,7 @@ class App(tk.Frame):
                       'intra_crossings': 'Intra-Event Threshold Crossings',
                       'intra_crossing_times_us': 'Intra-Event Threshold Crossing Times (us)',
                       'cluster_id': 'Cluster ID',
+                      'cluster_prob': 'Cluster Probability',
                       'rc_const1_us': 'RC Constant 1 (us)',
                       'rc_const2_us': 'RC Constant 2 (us)',
                       'level_current_pA': 'Level Current (pA)',
