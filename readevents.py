@@ -625,12 +625,12 @@ class App(tk.Frame):
             z = []
             for i in range(len(subset_list)):
                 x.append(np.log10(xsign*x_col[i]) if bool(logscale_x) else x_col[i])
-                y.append(np.log10(ysign*y_col[i]) if bool(logscale_x) else y_col[i])
-                z.append(np.log10(zsign*z_col[i]) if bool(logscale_x) else z_col[i])
+                y.append(np.log10(ysign*y_col[i]) if bool(logscale_y) else y_col[i])
+                z.append(np.log10(zsign*z_col[i]) if bool(logscale_z) else z_col[i])
         else:
             x = np.log10(xsign*x_col) if bool(logscale_x) else x_col
             y = np.log10(ysign*y_col) if bool(logscale_y) else y_col
-            z = znp.log10(sign*z_col) if bool(logscale_z) else z_col
+            z = np.log10(sign*z_col) if bool(logscale_z) else z_col
         
         self.stats_f.clf()
         ax = self.stats_f.add_subplot(111, projection = '3d')
