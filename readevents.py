@@ -417,9 +417,7 @@ class App(tk.Frame):
         self.use_histogram = tk.IntVar()
         self.use_histogram_check = tk.Checkbutton(self.rate_control_frame, text='Use Histogram', variable = self.use_histogram)
         self.use_histogram_check.grid(row=5,column=5,sticky=tk.E+tk.W)
-        
-
-        
+           
     def layout_event_tab(self):
         #single event view figure
         self.event_f = Figure(figsize=(7,5), dpi=100)
@@ -592,7 +590,7 @@ class App(tk.Frame):
         if plotsum == 3:
             ax.set_zlabel(z_label, labelpad=labelpad, fontsize=fontsize)
             if logscale_z:
-                ax.set_ylabel('Log(' +str(y_label)+')', labelpad=labelpad, fontsize=fontsize)
+                ax.set_zlabel('Log(' +str(z_label)+')', labelpad=labelpad, fontsize=fontsize)
         if plotsum == 3:
             ax.scatter(x, y, z, c=cluster_colors, **plot_kwds)
             ax.tick_params(axis='x', labelsize=labelsize)
@@ -607,8 +605,59 @@ class App(tk.Frame):
         self.eventsdb_subset[subset]['cluster_id'] = clusterer.labels_
         
 
+    def plot_3d_scatterplot(self):
+        subset_list = self.get_active_subsets(0)
+        logscale_x = self.x_log_var.get()
+        logscale_y = self.y_log_var.get()
+        logscale_z = self.z_log_var.get()
+        x_label = self.x_option.cget('text')
+        y_label = self.y_option.cget('text')
+        z_label = self.z_option.cget('text')
+        x_col = np.squeeze(np.array([self.parse_db_col(self.unalias_dict.get(x_label,x_label),key) for key in subset_list]))
+        y_col = np.squeeze(np.array([self.parse_db_col(self.unalias_dict.get(y_label,y_label),key) for key in subset_list]))
+        z_col = np.squeeze(np.array([self.parse_db_col(self.unalias_dict.get(z_label,z_label),key) for key in subset_list]))
+        xsign = np.sign(np.average(x_col[0])) if len(subset_list) > 1 else np.sign(np.average(x_col))
+        ysign = np.sign(np.average(y_col[0])) if len(subset_list) > 1 else np.sign(np.average(y_col))
+        zsign = np.sign(np.average(z_col[0])) if len(subset_list) > 1 else np.sign(np.average(z_col))
+        if len(subset_list) > 1:
+            x = []
+            y = []
+            z = []
+            for i in range(len(subset_list)):
+                x.append(np.log10(xsign*x_col[i]) if bool(logscale_x) else x_col[i])
+                y.append(np.log10(ysign*y_col[i]) if bool(logscale_x) else y_col[i])
+                z.append(np.log10(zsign*z_col[i]) if bool(logscale_x) else z_col[i])
+        else:
+            x = np.log10(xsign*x_col) if bool(logscale_x) else x_col
+            y = np.log10(ysign*y_col) if bool(logscale_y) else y_col
+            z = znp.log10(sign*z_col) if bool(logscale_z) else z_col
+        
+        self.stats_f.clf()
+        ax = self.stats_f.add_subplot(111, projection = '3d')
 
-    
+        fontsize = 15
+        labelpad = 10
+        labelsize = 15
+        ax.set_xlabel(x_label, labelpad=labelpad, fontsize=fontsize)
+        ax.set_ylabel(y_label, labelpad=labelpad, fontsize=fontsize)
+        ax.set_zlabel(z_label, labelpad=labelpad, fontsize=fontsize)
+        if logscale_x:
+            ax.set_xlabel('Log(' +str(x_label)+')', labelpad=labelpad, fontsize=fontsize)
+        if logscale_y:
+            ax.set_ylabel('Log(' +str(y_label)+')', labelpad=labelpad, fontsize=fontsize)
+        if logscale_z:
+            ax.set_zlabel('Log(' +str(y_label)+')', labelpad=labelpad, fontsize=fontsize)
+        if len(subset_list) > 1:
+            for i in range(len(subset_list)):
+                ax.scatter(x[i], y[i], z[i], label=subset_list[i], **plot_kwds)
+            ax.legend(loc='best', prop={'size': 10})
+        else:
+            ax.scatter(x, y, z, **plot_kwds)
+        ax.tick_params(axis='x', labelsize=labelsize)
+        ax.tick_params(axis='y', labelsize=labelsize)
+        ax.tick_params(axis='z', labelsize=labelsize)
+        self.stats_canvas.draw()
+
     def disable_plots(self):
         plotsum = 0
         for p in self.plot_options:
@@ -1232,7 +1281,7 @@ class App(tk.Frame):
 
         if len(subset_list) > 1:
             for i in range(len(subset_list)):
-                self.a.plot(self.xdata[i],self.ydata[i],marker='.',linestyle='None',label=subset_list[i],alpha=0.2)
+                self.a.plot(self.xdata[i],self.ydata[i],marker='.',linestyle='None',label=subset_list[i], **plot_kwds)
             self.a.legend(loc='best',prop={'size': 10})
         else:
             self.a.plot(self.xdata,self.ydata,marker='.',linestyle='None')
@@ -1378,7 +1427,7 @@ class App(tk.Frame):
 
     def update_plot(self):
         option = self.graph_option.cget('text')
-        if option == 'XY Plot':
+        if option == '2D Scatterplot':
             try:
                 self.plot_xy()
             except AttributeError:
@@ -1391,6 +1440,12 @@ class App(tk.Frame):
             except AttributeError:
                 self.status_string.set("X and Y must have the same length")
                 raise
+        elif option == '3D Scatterplot':
+            try:
+                self.plot_3d_scatterplot()
+            except AttributeError:
+                self.status_string.set("All axes must have the same length")
+                raise
         else:
             pass
 
@@ -1401,7 +1456,7 @@ class App(tk.Frame):
             else:
                 return_col = np.hstack([np.array(a,dtype=float)[1:-1] for a in self.eventsdb_subset[subset][col].str.split(';')])
         else:
-            return_col = self.eventsdb_subset[subset][col]
+            return_col = self.eventsdb_subset[subset][col].values
         
         return return_col.astype(np.float64)
 
