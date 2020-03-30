@@ -1432,6 +1432,8 @@ class App(tk.Frame):
                 self.plot_xy()
             except AttributeError:
                 self.status_string.set("X and Y must have the same length")
+            except ValueError:
+                self.status_string.set("You cannot mix single-entry and multi-entry columns in this plot type")
         elif option == '1D Histogram':
             self.plot_1d_histogram()
         elif option == '2D Histogram':
@@ -1439,13 +1441,15 @@ class App(tk.Frame):
                 self.plot_2d_histogram()
             except AttributeError:
                 self.status_string.set("X and Y must have the same length")
-                raise
+            except ValueError:
+                self.status_string.set("You cannot mix single-entry and multi-entry columns in this plot type")
         elif option == '3D Scatterplot':
             try:
                 self.plot_3d_scatterplot()
             except AttributeError:
                 self.status_string.set("All axes must have the same length")
-                raise
+            except ValueError:
+                self.status_string.set("You cannot mix single-entry and multi-entry columns in this plot type")
         else:
             pass
 
