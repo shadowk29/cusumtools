@@ -1359,6 +1359,7 @@ class App(tk.Frame):
                         numbins = int((max(col) - min(col))*len(col)**(1./3.)/(iqr(col)))
                     self.ydata, self.xdata, patches = self.a.hist(col,bins=int(numbins),log=bool(logscale_y),histtype='step',stacked=False,fill=False,label=subset_list)
         self.a.legend(loc='best',prop={'size': 10})
+        self.status_string.set('Using {0} bins for histogram'.format(numbins))
         
         
         for i in range(len(subset_list)):
@@ -1417,6 +1418,7 @@ class App(tk.Frame):
         self.ydata = xy[:,1]
         self.zdata = z
         self.stats_canvas.draw()
+        self.status_string.set('Using {0}x{1} bins for histogram'.format(xbins, ybins))
         
 
     def disable_options(self, *args):
