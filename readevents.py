@@ -29,7 +29,7 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolb
 from scipy.optimize import curve_fit
 import itertools
 from collections import OrderedDict
-from scipy.stats import t, median_absolute_deviation
+from scipy.stats import t, median_absolute_deviation, iqr
 import pylab as pl
 import re
 from tkinter import ttk
@@ -200,11 +200,11 @@ class App(tk.Frame):
         self.z_log_check = tk.Checkbutton(self.stats_control_frame, variable = self.z_log_var)
 
         self.xbin_entry = tk.Entry(self.stats_control_frame)
-        self.xbin_entry.insert(0,100)
+        self.xbin_entry.insert(0,0)
         self.ybin_entry = tk.Entry(self.stats_control_frame)
-        self.ybin_entry.insert(0,100)
+        self.ybin_entry.insert(0,0)
         self.zbin_entry = tk.Entry(self.stats_control_frame)
-        self.zbin_entry.insert(0,100)
+        self.zbin_entry.insert(0,0)
 
         self.n_states=tk.Label(self.stats_control_frame,text='Num States:')
         self.n_states_entry = tk.Entry(self.stats_control_frame)
@@ -1307,6 +1307,9 @@ class App(tk.Frame):
         x_label = self.x_option.cget('text')
         col = np.squeeze(np.array([self.parse_db_col(self.unalias_dict.get(x_label,x_label),key) for key in subset_list]))
         numbins = self.xbin_entry.get()
+        calc_bins = False
+        if int(numbins) == 0:
+            calc_bins = True
         self.stats_f.clf()
         self.a = self.stats_f.add_subplot(111)
         self.xdata = []
@@ -1321,12 +1324,16 @@ class App(tk.Frame):
                 for i in range(len(subset_list)):
                     col[i] *= np.sign(np.average(col[i]))
                     col[i] = np.log10(col[i])
+                    if calc_bins:
+                        numbins = int((max(col[i]) - min(col[i]))*len(col[i])**(1./3.)/(iqr(col[i])))
                     y, x, patches = self.a.hist(col[i],bins=int(numbins),log=bool(logscale_y),histtype='step',stacked=False,fill=False,label=subset_list[i])
                     self.xdata.append(x)
                     self.ydata.append(y)
             else:
                 col *= np.sign(np.average(col))
                 col = np.log10(col)
+                if calc_bins:
+                    numbins = int((max(col) - min(col))*len(col)**(1./3.)/(iqr(col)))
                 self.ydata, self.xdata, patches = self.a.hist(col,bins=int(numbins),log=bool(logscale_y),histtype='step',stacked=False,fill=False,label=subset_list)
         else:
             self.a.set_xlabel(x_label, fontsize=labelsize)
@@ -1334,9 +1341,13 @@ class App(tk.Frame):
             if len(subset_list) > 1:
                 for i in range(len(subset_list)):
                     if x_label == 'Fold Fraction':
+                        if calc_bins:
+                            numbins = int((max(col[i]) - min(col[i]))*len(col[i])**(1./3.)/(iqr(col[i])))
                         y, self.xdata, patches = self.a.hist(col[i],range=(0,0.5),bins=(0,0.1,0.2,0.3,0.4,0.5),log=bool(logscale_y),histtype='step',stacked=False,fill=False,label=subset_list[i])
                         self.ydata.append(y)
                     else:
+                        if calc_bins:
+                            numbins = int((max(col) - min(col))*len(col)**(1./3.)/(iqr(col)))
                         y, x, patches = self.a.hist(col[i],bins=int(numbins),log=bool(logscale_y),histtype='step',stacked=False,fill=False,label=subset_list[i])
                         self.xdata.append(x)
                         self.ydata.append(y)
@@ -1344,6 +1355,8 @@ class App(tk.Frame):
                 if x_label == 'Fold Fraction':
                     self.ydata, self.xdata, patches = self.a.hist(col,range=(0,0.5),bins=(0,0.1,0.2,0.3,0.4,0.5),log=bool(logscale_y),histtype='step',stacked=False,fill=False,label=subset_list)
                 else:
+                    if calc_bins:
+                        numbins = int((max(col) - min(col))*len(col)**(1./3.)/(iqr(col)))
                     self.ydata, self.xdata, patches = self.a.hist(col,bins=int(numbins),log=bool(logscale_y),histtype='step',stacked=False,fill=False,label=subset_list)
         self.a.legend(loc='best',prop={'size': 10})
         
@@ -1368,6 +1381,12 @@ class App(tk.Frame):
         y_col = np.squeeze(np.array(self.parse_db_col(self.unalias_dict.get(y_label,y_label),subset)))
         xbins = self.xbin_entry.get()
         ybins = self.ybin_entry.get()
+        calc_x_bins = False
+        if int(xbins) == 0:
+            calc_x_bins = True
+        calc_y_bins = False
+        if int(ybins) == 0:
+            calc_y_bins = True
         self.stats_f.clf()
         self.a = self.stats_f.add_subplot(111)
         labelsize=15
@@ -1384,6 +1403,10 @@ class App(tk.Frame):
         x = np.log10(xsign*x_col) if bool(logscale_x) else x_col
         y = np.log10(ysign*y_col) if bool(logscale_y) else y_col
 
+        if calc_x_bins:
+            xbins = int((max(x)-min(x))*len(x)**(1./4.)/(iqr(x)))
+        if calc_y_bins:
+            ybins = int((max(y)-min(y))*len(y)**(1./4.)/(iqr(y)))
         z, x, y, image = self.a.hist2d(x,y,bins=[int(xbins),int(ybins)],norm=matplotlib.colors.LogNorm())
         x = x[:-1] + np.diff(x)/2.0
         y = y[:-1] + np.diff(y)/2.0
