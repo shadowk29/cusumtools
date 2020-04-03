@@ -1662,13 +1662,14 @@ class App(tk.Frame):
         
             a.set_xlabel('Time (us)', fontsize=labelsize)
             a.set_ylabel('Current (pA)', fontsize=labelsize)
+            sign = np.sign(event_file['current'][0]) * np.ones(len(event_file['current'].values))
             if event_type == 0:
-                a.plot(event_file['time'],event_file['current'],event_file['time'],event_file['cusum'])
+                a.plot(event_file['time'].values,sign*event_file['current'].values,event_file['time'].values,sign*event_file['cusum'].values)
             elif event_type == 1:
-                a.plot(event_file['time'],event_file['current'],event_file['time'],event_file['cusum'],event_file['time'],event_file['stepfit'])
+                a.plot(event_file['time'].values,sign*event_file['current'].values,event_file['time'].values,sign*event_file['cusum'].values,event_file['time'].values,sign*event_file['stepfit'].values)
             if self.intra_threshold > 0 and ratedb is not None:
-                a.plot(event_file['time'], np.sign(event_file['current'][0])*np.ones(len(event_file['time']))*(local_baseline - self.intra_threshold * local_stdev), '--', color='y')
-                a.plot(event_file['time'], np.sign(event_file['current'][0])*np.ones(len(event_file['time']))*(local_baseline - (self.intra_threshold - self.intra_hysteresis) * local_stdev), '--', color='g')
+                a.plot(event_file['time'].values, np.ones(len(event_file['time'].values))*(local_baseline - self.intra_threshold * local_stdev), '--', color='y')
+                a.plot(event_file['time'].values, np.ones(len(event_file['time'].values))*(local_baseline - (self.intra_threshold - self.intra_hysteresis) * local_stdev), '--', color='g')
                 for start, end in crossings:
                     a.axvspan(start,end,color='g',alpha=0.3)
             self.event_canvas.draw()
