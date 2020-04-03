@@ -57,29 +57,15 @@ class App(tk.Frame):
     def __init__(self,parent,eventsdb,ratedb,summary,events_folder,file_path_string):
         tk.Frame.__init__(self, parent)
         parent.deiconify()
-        
         self.parent = parent
         self.initialize_database(eventsdb, ratedb, summary, events_folder, file_path_string)
-        #initialize the layout of the GUI
         self.layout_notebook_tabs()
         self.layout_db_panel()
         self.layout_status_panel()
         self.set_frame_size()
         self.disable_options()
-
-        #self.set_scaling(self.parent)
-        #self.set_scaling(self.ntbk)
-        #self.set_scaling(self.stats_control_frame)
-        #self.set_scaling(self.cluster_controls_frame)
-        #self.set_scaling(self.event_control_frame)
-        #self.set_scaling(self.rate_control_frame)
         self.set_scaling(self.status_frame)
         self.set_scaling(self.db_frame)
-        #self.set_scaling(self.stats_frame)
-        #self.set_scaling(self.cluster_container)
-        #self.set_scaling(self.rate_container)
-        #self.set_scaling(self.event_container)
-
         self.parent.bind("<Configure>", self.onsize)
         self.parent.state('zoomed')
             
