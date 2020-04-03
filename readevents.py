@@ -65,10 +65,66 @@ class App(tk.Frame):
         self.layout_status_panel()
         self.set_frame_size()
         self.disable_options()
+
+        #self.set_scaling(self.parent)
+        #self.set_scaling(self.ntbk)
+        #self.set_scaling(self.stats_control_frame)
+        #self.set_scaling(self.cluster_controls_frame)
+        #self.set_scaling(self.event_control_frame)
+        #self.set_scaling(self.rate_control_frame)
+        self.set_scaling(self.status_frame)
+        self.set_scaling(self.db_frame)
+        #self.set_scaling(self.stats_frame)
+        #self.set_scaling(self.cluster_container)
+        #self.set_scaling(self.rate_container)
+        #self.set_scaling(self.event_container)
+
+        self.parent.bind("<Configure>", self.onsize)
+            
+        
         
         
 #######################################
+    def onsize(self, event):
+        height = self.parent.winfo_height()
+        height -= self.db_frame.winfo_height()
+        height -= self.status_frame.winfo_height()
+        height -= 79
 
+        width = height * 1.4
+        try:
+            self.stats_f.set_size_inches(width / self.stats_f.dpi, height / self.stats_f.dpi)
+            canvas = self.stats_canvas.get_tk_widget()
+            canvas.config(width=self.stats_f.get_size_inches()[0]*self.stats_f.dpi, height=self.stats_f.get_size_inches()[1]*self.stats_f.dpi)
+
+            self.rate_f.set_size_inches(width / self.stats_f.dpi, height / self.stats_f.dpi)
+            canvas = self.rate_canvas.get_tk_widget()
+            canvas.config(width=self.rate_f.get_size_inches()[0]*self.rate_f.dpi, height=self.rate_f.get_size_inches()[1]*self.rate_f.dpi)
+
+            self.event_f.set_size_inches(width / self.stats_f.dpi, height / self.stats_f.dpi)
+            canvas = self.event_canvas.get_tk_widget()
+            canvas.config(width=self.event_f.get_size_inches()[0]*self.event_f.dpi, height=self.event_f.get_size_inches()[1]*self.event_f.dpi)
+
+            self.cluster_f.set_size_inches(width / self.stats_f.dpi, height / self.stats_f.dpi)
+            canvas = self.cluster_canvas.get_tk_widget()
+            canvas.config(width=self.cluster_f.get_size_inches()[0]*self.cluster_f.dpi, height=self.cluster_f.get_size_inches()[1]*self.cluster_f.dpi)
+        except (ValueError, tk.TclError) as e:
+            pass
+        except:
+            raise
+            
+        
+    def set_scaling(self, widget, rowscale=False):
+        gridsize = widget.grid_size()
+        cols = gridsize[0]
+        rows = gridsize[1]
+
+        for i in range(cols):
+            widget.columnconfigure(i, weight=1)
+        if rowscale:
+            for i in range(rows):
+               widget.rowconfigure(i, weight=1)
+            
     def set_frame_size(self):
         frames = [self.stats_control_frame, self.cluster_controls_frame, self.rate_control_frame, self.event_control_frame]
         maxwidth = 0
@@ -86,7 +142,7 @@ class App(tk.Frame):
 
     def layout_status_panel(self):
         self.status_frame = tk.LabelFrame(self.parent, text='Status')
-        self.status_frame.grid(row=2,column=0,sticky=tk.E+tk.W)
+        self.status_frame.grid(row=2,column=0,columnspan=2,sticky=tk.E+tk.W)
 
         self.status_string = tk.StringVar()
         self.status_string.set('Ready')
@@ -248,7 +304,7 @@ class App(tk.Frame):
     def layout_notebook_tabs(self):
         #define and position the tab-enabled secondary panel on the right
         self.ntbk = ttk.Notebook(self.parent)
-        self.ntbk.grid(row=0,column=0)
+        self.ntbk.grid(row=0,column=0, sticky=tk.E+tk.W+tk.S+tk.N)
 
         #statistics panel
         self.stats_container = tk.Frame(self.ntbk)
@@ -489,13 +545,8 @@ class App(tk.Frame):
         self.save_subset_button = tk.Button(self.db_frame,text='Save Subset',command=self.save_subset)
         self.remove_nonconsecutive_button = tk.Button(self.db_frame,text='Remove Non-Consecutive',command=self.remove_nonconsecutive_events)
         self.filter_entry = tk.Entry(self.db_frame)
-
-        self.db_frame.columnconfigure(0, weight=1)
-        self.db_frame.columnconfigure(1, weight=1)
-        self.db_frame.columnconfigure(2, weight=1)
         
 
-        
         self.filter_entry.grid(row=0,column=0,columnspan=3,sticky=tk.E+tk.W)
         self.subset_option.grid(row=1,column=0,sticky=tk.E+tk.W)
         self.filter_button.grid(row=1,column=1,sticky=tk.E+tk.W)
@@ -743,9 +794,6 @@ class App(tk.Frame):
         self.gridcounter -= 1
         self.disable_plots()
         
-                
-        
-            
     def plot_subset_select(self):
         self.window = tk.Toplevel()
         self.window.title("Subsets to plot")
@@ -1777,9 +1825,8 @@ class App(tk.Frame):
     def onclick(event):
         self.status_string.set('button=%d, x=%d, y=%d, xdata=%f, ydata=%f' % (event.button, event.x, event.y, event.xdata, event.ydata))
 
-        
-                
-        
+
+
 def main():
     root=tk.Tk()
     root.withdraw()
