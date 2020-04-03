@@ -494,9 +494,9 @@ class App(tk.Frame):
         self.plot_bad_events = tk.IntVar(0)
         self.plot_bad_events_check = tk.Checkbutton(self.event_control_frame, text='Plot Bad Events', variable = self.plot_bad_events)
         self.plot_event_overlay_button = tk.Button(self.event_control_frame, text='Overlay Events', command=self.plot_event_overlay)
-        self.normalize_overlay = tk.IntVar(0)
-        self.normalize_overlay.set(1)
-        self.normalize_overlay_check = tk.Checkbutton(self.event_control_frame, text='Normalize Time', variable=self.normalize_overlay)
+        self.overlay_heatmap = tk.IntVar(0)
+        self.overlay_heatmap.set(0)
+        self.overlay_heatmap_check = tk.Checkbutton(self.event_control_frame, text='Overlay Heatmap', variable=self.overlay_heatmap)
         self.event_toolbar_frame.grid(row=1,column=0,columnspan=6)
         self.event_canvas.get_tk_widget().grid(row=0,column=0,columnspan=6)
         
@@ -514,7 +514,7 @@ class App(tk.Frame):
         self.replicate_delete.grid(row=5,column=2,columnspan=2,sticky=tk.E+tk.W)
         self.plot_bad_events_check.grid(row=4,column=4,columnspan=2,stick=tk.E+tk.W)
         self.plot_event_overlay_button.grid(row=6,column=0,columnspan=2, sticky=tk.E+tk.W)
-        self.normalize_overlay_check.grid(row=6, column=2, columnspan=2, sticky=tk.E+tk.W)
+        self.overlay_heatmap_check.grid(row=6,column=2,columnspan=2,sticky=tk.E+tk.W)
 
 
         
@@ -1551,19 +1551,17 @@ class App(tk.Frame):
         subset = self.subset_option.cget('text')
         ratedb = self.ratedb
         eventsdb_subset = self.eventsdb_subset[subset]
-
-
         self.event_f.clf()
         a = self.event_f.add_subplot(111)
-
         labelsize=15
         a.tick_params(axis='x', labelsize=labelsize)
         a.tick_params(axis='y', labelsize=labelsize)
 
-        if self.normalize_overlay.get():
-            a.set_xlabel('Normalized Time', fontsize=labelsize)
-        else:
-            a.set_xlabel('Time (us)', fontsize=labelsize)
+        if self.overlay_heatmap.get():
+            x = np.empty(0)
+            y = np.empty(0)
+            w = np.empty(0)
+        a.set_xlabel('Normalized Time', fontsize=labelsize)
         a.set_ylabel('Zeroed Current (pA)', fontsize=labelsize)
         ids = np.squeeze(sqldf('SELECT id from eventsdb_subset',locals()).values)
         level_times = np.squeeze(sqldf('SELECT level_duration_us from eventsdb_subset',locals()).values)
@@ -1577,10 +1575,12 @@ class App(tk.Frame):
                 max_duration = duration
             if duration < min_duration:
                 min_duration = duration
+        total = 0
         for label, levels, baseline in zip(ids, level_times, baselines):
             levels = [np.array(a,dtype=np.float64) for a in str(levels).split(';')]
             ts = levels[0]
             tf = np.sum(levels[:-1])
+            duration = np.sum(levels[1:-1])
             
             try:
                 event_file_path = self.events_folder+'/event_%05d.csv' % label
@@ -1595,14 +1595,24 @@ class App(tk.Frame):
             times = event_file['time'].values
             currents = event_file['current'].values
             times -= ts
-            if self.normalize_overlay.get():
-                times /= (tf - ts)
+            times /= (tf - ts)
             currents -= baseline
             currents *= np.sign(baseline)
             alpha = 15/len(ids)*(1 - (duration - min_duration)/(max_duration - min_duration))
-            a.plot(times, currents, alpha=alpha, color='b')
-        if self.normalize_overlay.get():
-            a.set_xlim(-0.25, 1.25)
+            currents = currents[times > -0.25]
+            times = times[times > -0.25]
+            currents = currents[times < 1.25]
+            times = times[times < 1.25]
+            if self.overlay_heatmap.get():
+                x = np.concatenate((x, times))
+                y = np.concatenate((y, currents))
+                w = np.concatenate((w, alpha*np.ones(len(times))))
+            else:
+                a.plot(times, currents, alpha=alpha, color='b')
+        if self.overlay_heatmap.get():
+            xbins = int(5*(max(x)-min(x))*len(x)**(1./4.)/(iqr(x)))
+            ybins = int(5*(max(y)-min(y))*len(y)**(1./4.)/(iqr(y)))
+            a.hist2d(x, y, weights=w, bins=(xbins,ybins))
         self.event_canvas.draw()
 
             
@@ -1641,8 +1651,6 @@ class App(tk.Frame):
                 except:
                     ratedb = None
                     self.ratedb = None
-
-                
             self.event_f.clf()
             a = self.event_f.add_subplot(111)
 
