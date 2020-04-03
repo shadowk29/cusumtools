@@ -81,7 +81,7 @@ class App(tk.Frame):
         #self.set_scaling(self.event_container)
 
         self.parent.bind("<Configure>", self.onsize)
-        parent.state('zoomed')
+        self.parent.state('zoomed')
             
         
         
