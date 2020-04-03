@@ -86,33 +86,35 @@ class App(tk.Frame):
         
 #######################################
     def onsize(self, event):
-        height = self.parent.winfo_height()
-        height -= self.db_frame.winfo_height()
-        height -= self.status_frame.winfo_height()
-        height -= 79
-
-        width = height * 1.4
-        try:
-            self.stats_f.set_size_inches(width / self.stats_f.dpi, height / self.stats_f.dpi)
-            canvas = self.stats_canvas.get_tk_widget()
-            canvas.config(width=self.stats_f.get_size_inches()[0]*self.stats_f.dpi, height=self.stats_f.get_size_inches()[1]*self.stats_f.dpi)
-
-            self.rate_f.set_size_inches(width / self.stats_f.dpi, height / self.stats_f.dpi)
-            canvas = self.rate_canvas.get_tk_widget()
-            canvas.config(width=self.rate_f.get_size_inches()[0]*self.rate_f.dpi, height=self.rate_f.get_size_inches()[1]*self.rate_f.dpi)
-
-            self.event_f.set_size_inches(width / self.stats_f.dpi, height / self.stats_f.dpi)
-            canvas = self.event_canvas.get_tk_widget()
-            canvas.config(width=self.event_f.get_size_inches()[0]*self.event_f.dpi, height=self.event_f.get_size_inches()[1]*self.event_f.dpi)
-
-            self.cluster_f.set_size_inches(width / self.stats_f.dpi, height / self.stats_f.dpi)
-            canvas = self.cluster_canvas.get_tk_widget()
-            canvas.config(width=self.cluster_f.get_size_inches()[0]*self.cluster_f.dpi, height=self.cluster_f.get_size_inches()[1]*self.cluster_f.dpi)
-        except (ValueError, tk.TclError) as e:
+        if event.widget == self.parent:
+            height = self.parent.winfo_height()
+            height -= self.db_frame.winfo_height()
+            height -= self.status_frame.winfo_height()
+            height -= 79
+            width = height * 1.4
+            try:
+                self.stats_f.set_size_inches(width / self.stats_f.dpi, height / self.stats_f.dpi)
+                self.rate_f.set_size_inches(width / self.stats_f.dpi, height / self.stats_f.dpi)
+                self.event_f.set_size_inches(width / self.stats_f.dpi, height / self.stats_f.dpi)
+                self.cluster_f.set_size_inches(width / self.stats_f.dpi, height / self.stats_f.dpi)
+                
+            except (ValueError, tk.TclError) as e:
+                pass
+            except:
+                raise
+            self.after_idle(self.resize_canvas)
+        else:
             pass
-        except:
-            raise
-            
+
+    def resize_canvas(self):
+        canvas = self.stats_canvas.get_tk_widget()
+        canvas.config(width=self.stats_f.get_size_inches()[0]*self.stats_f.dpi, height=self.stats_f.get_size_inches()[1]*self.stats_f.dpi)
+        canvas = self.rate_canvas.get_tk_widget()
+        canvas.config(width=self.rate_f.get_size_inches()[0]*self.rate_f.dpi, height=self.rate_f.get_size_inches()[1]*self.rate_f.dpi)
+        canvas = self.event_canvas.get_tk_widget()
+        canvas.config(width=self.event_f.get_size_inches()[0]*self.event_f.dpi, height=self.event_f.get_size_inches()[1]*self.event_f.dpi)
+        canvas = self.cluster_canvas.get_tk_widget()
+        canvas.config(width=self.cluster_f.get_size_inches()[0]*self.cluster_f.dpi, height=self.cluster_f.get_size_inches()[1]*self.cluster_f.dpi)
         
     def set_scaling(self, widget, rowscale=False):
         gridsize = widget.grid_size()
