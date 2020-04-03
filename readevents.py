@@ -102,7 +102,7 @@ class App(tk.Frame):
                 pass
             except:
                 raise
-            self.after_idle(self.resize_canvas)
+            self.after(100,self.resize_canvas)
         else:
             pass
 
@@ -115,6 +115,7 @@ class App(tk.Frame):
         canvas.config(width=self.event_f.get_size_inches()[0]*self.event_f.dpi, height=self.event_f.get_size_inches()[1]*self.event_f.dpi)
         canvas = self.cluster_canvas.get_tk_widget()
         canvas.config(width=self.cluster_f.get_size_inches()[0]*self.cluster_f.dpi, height=self.cluster_f.get_size_inches()[1]*self.cluster_f.dpi)
+        self.parent.update()
         
     def set_scaling(self, widget, rowscale=False):
         gridsize = widget.grid_size()
