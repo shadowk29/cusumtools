@@ -1516,7 +1516,7 @@ class App(tk.Frame):
         a.tick_params(axis='y', labelsize=labelsize)
 
     
-        a.set_xlabel('Normalized Time (us)', fontsize=labelsize)
+        a.set_xlabel('Normalized Time', fontsize=labelsize)
         a.set_ylabel('Zeroed Current (pA)', fontsize=labelsize)
         ids = np.squeeze(sqldf('SELECT id from eventsdb_subset',locals()).values)
         level_times = np.squeeze(sqldf('SELECT level_duration_us from eventsdb_subset',locals()).values)
@@ -1528,11 +1528,11 @@ class App(tk.Frame):
             tf = np.sum(levels[:-1])
             try:
                 event_file_path = self.events_folder+'/event_%05d.csv' % label
-                event_file = pd.read_csv(event_file_path,encoding='utf-8', names=['time', 'current', 'fit'])
+                event_file = pd.read_csv(event_file_path,encoding='utf-8', names=['time', 'current', 'fit', 'stuff'])
             except IOError:
                 try:
                     event_file_path = self.events_folder+'/event_%08d.csv' % label
-                    event_file = pd.read_csv(event_file_path,encoding='utf-8', names=['time', 'current', 'fit'])
+                    event_file = pd.read_csv(event_file_path,encoding='utf-8', names=['time', 'current', 'fit', 'stuff'])
                 except IOError:
                     self.event_info_string.set(event_file_path+' not found')
                     return
@@ -1543,6 +1543,7 @@ class App(tk.Frame):
             currents -= baseline
             currents *= np.sign(baseline)
             a.plot(times, currents, alpha=0.1, color='b')
+        a.set_xlim(-0.25, 1.25)
         self.event_canvas.draw()
 
             
