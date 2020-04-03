@@ -1558,7 +1558,7 @@ class App(tk.Frame):
                 times /= (tf - ts)
             currents -= baseline
             currents *= np.sign(baseline)
-            alpha = 0.03*(1 - (duration - min_duration)/(max_duration - min_duration))
+            alpha = 15/len(ids)*(1 - (duration - min_duration)/(max_duration - min_duration))
             a.plot(times, currents, alpha=alpha, color='b')
         if self.normalize_overlay.get():
             a.set_xlim(-0.25, 1.25)
