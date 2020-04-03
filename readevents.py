@@ -1542,7 +1542,7 @@ class App(tk.Frame):
             times /= (tf - ts)
             currents -= baseline
             currents *= np.sign(baseline)
-            a.plot(times, currents, alpha=0.1, color='b')
+            a.plot(times, currents, alpha=0.02, color='b')
         a.set_xlim(-0.25, 1.25)
         self.event_canvas.draw()
 
