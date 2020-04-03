@@ -57,6 +57,7 @@ class App(tk.Frame):
     def __init__(self,parent,eventsdb,ratedb,summary,events_folder,file_path_string):
         tk.Frame.__init__(self, parent)
         parent.deiconify()
+        
         self.parent = parent
         self.initialize_database(eventsdb, ratedb, summary, events_folder, file_path_string)
         #initialize the layout of the GUI
@@ -80,6 +81,7 @@ class App(tk.Frame):
         #self.set_scaling(self.event_container)
 
         self.parent.bind("<Configure>", self.onsize)
+        parent.state('zoomed')
             
         
         
