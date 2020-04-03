@@ -1528,11 +1528,14 @@ class App(tk.Frame):
         level_times = np.squeeze(sqldf('SELECT level_duration_us from eventsdb_subset',locals()).values)
         baselines = np.squeeze(sqldf('SELECT effective_baseline_pA from eventsdb_subset',locals()).values)
         max_duration = 0
+        min_duration = 1e300
         for levels in level_times:
             levels = [np.array(a,dtype=np.float64) for a in str(levels).split(';')]
             duration = np.sum(levels[1:-1])
             if duration > max_duration:
                 max_duration = duration
+            if duration < min_duration:
+                min_duration = duration
         for label, levels, baseline in zip(ids, level_times, baselines):
             levels = [np.array(a,dtype=np.float64) for a in str(levels).split(';')]
             ts = levels[0]
@@ -1555,7 +1558,7 @@ class App(tk.Frame):
                 times /= (tf - ts)
             currents -= baseline
             currents *= np.sign(baseline)
-            alpha = 0.02*(1 - duration/max_duration)
+            alpha = 0.03*(1 - (duration - min_duration)/(max_duration - min_duration))
             a.plot(times, currents, alpha=alpha, color='b')
         if self.normalize_overlay.get():
             a.set_xlim(-0.25, 1.25)
