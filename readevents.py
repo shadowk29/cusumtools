@@ -1527,11 +1527,17 @@ class App(tk.Frame):
         ids = np.squeeze(sqldf('SELECT id from eventsdb_subset',locals()).values)
         level_times = np.squeeze(sqldf('SELECT level_duration_us from eventsdb_subset',locals()).values)
         baselines = np.squeeze(sqldf('SELECT effective_baseline_pA from eventsdb_subset',locals()).values)
-
+        max_duration = 0
+        for levels in level_times:
+            levels = [np.array(a,dtype=np.float64) for a in str(levels).split(';')]
+            duration = np.sum(levels[1:-1])
+            if duration > max_duration:
+                max_duration = duration
         for label, levels, baseline in zip(ids, level_times, baselines):
             levels = [np.array(a,dtype=np.float64) for a in str(levels).split(';')]
             ts = levels[0]
             tf = np.sum(levels[:-1])
+            
             try:
                 event_file_path = self.events_folder+'/event_%05d.csv' % label
                 event_file = pd.read_csv(event_file_path,encoding='utf-8', names=['time', 'current', 'fit', 'stuff'])
@@ -1549,7 +1555,8 @@ class App(tk.Frame):
                 times /= (tf - ts)
             currents -= baseline
             currents *= np.sign(baseline)
-            a.plot(times, currents, alpha=0.02, color='b')
+            alpha = 0.02*(1 - duration/max_duration)
+            a.plot(times, currents, alpha=alpha, color='b')
         if self.normalize_overlay.get():
             a.set_xlim(-0.25, 1.25)
         self.event_canvas.draw()
