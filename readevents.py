@@ -67,13 +67,19 @@ class App(tk.Frame):
         self.set_scaling(self.status_frame)
         self.set_scaling(self.db_frame)
         self.parent.bind("<Configure>", self.onsize)
+        self.oldwidth = self.parent.winfo_width()
+        self.oldheight = self.parent.winfo_height()
         self.parent.state('zoomed')
+        
+        
             
         
         
         
 #######################################
     def onsize(self, event):
+        if event.height == self.oldheight and event.width == self.oldwidth:
+            return
         if event.widget == self.parent:
             height = self.parent.winfo_height()
             height -= self.db_frame.winfo_height()
@@ -105,6 +111,8 @@ class App(tk.Frame):
         canvas.config(width=self.event_f.get_size_inches()[0]*self.event_f.dpi, height=self.event_f.get_size_inches()[1]*self.event_f.dpi)
         canvas = self.cluster_canvas.get_tk_widget()
         canvas.config(width=self.cluster_f.get_size_inches()[0]*self.cluster_f.dpi, height=self.cluster_f.get_size_inches()[1]*self.cluster_f.dpi)
+        self.oldwidth = self.parent.winfo_width()
+        self.oldheight = self.parent.winfo_height()
         self.parent.update()
         
     def set_scaling(self, widget, rowscale=False):
