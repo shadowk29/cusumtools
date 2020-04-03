@@ -445,6 +445,9 @@ class App(tk.Frame):
         self.plot_bad_events = tk.IntVar(0)
         self.plot_bad_events_check = tk.Checkbutton(self.event_control_frame, text='Plot Bad Events', variable = self.plot_bad_events)
         self.plot_event_overlay_button = tk.Button(self.event_control_frame, text='Overlay Events', command=self.plot_event_overlay)
+        self.normalize_overlay = tk.IntVar(0)
+        self.normalize_overlay.set(1)
+        self.normalize_overlay_check = tk.Checkbutton(self.event_control_frame, text='Normalize Time', variable=self.normalize_overlay)
         self.event_toolbar_frame.grid(row=1,column=0,columnspan=6)
         self.event_canvas.get_tk_widget().grid(row=0,column=0,columnspan=6)
         
@@ -462,6 +465,7 @@ class App(tk.Frame):
         self.replicate_delete.grid(row=5,column=2,columnspan=2,sticky=tk.E+tk.W)
         self.plot_bad_events_check.grid(row=4,column=4,columnspan=2,stick=tk.E+tk.W)
         self.plot_event_overlay_button.grid(row=6,column=0,columnspan=2, sticky=tk.E+tk.W)
+        self.normalize_overlay_check.grid(row=6, column=2, columnspan=2, sticky=tk.E+tk.W)
 
 
         
@@ -1515,8 +1519,10 @@ class App(tk.Frame):
         a.tick_params(axis='x', labelsize=labelsize)
         a.tick_params(axis='y', labelsize=labelsize)
 
-    
-        a.set_xlabel('Normalized Time', fontsize=labelsize)
+        if self.normalize_overlay.get():
+            a.set_xlabel('Normalized Time', fontsize=labelsize)
+        else:
+            a.set_xlabel('Time (us)', fontsize=labelsize)
         a.set_ylabel('Zeroed Current (pA)', fontsize=labelsize)
         ids = np.squeeze(sqldf('SELECT id from eventsdb_subset',locals()).values)
         level_times = np.squeeze(sqldf('SELECT level_duration_us from eventsdb_subset',locals()).values)
@@ -1539,11 +1545,13 @@ class App(tk.Frame):
             times = event_file['time'].values
             currents = event_file['current'].values
             times -= ts
-            times /= (tf - ts)
+            if self.normalize_overlay.get():
+                times /= (tf - ts)
             currents -= baseline
             currents *= np.sign(baseline)
             a.plot(times, currents, alpha=0.02, color='b')
-        a.set_xlim(-0.25, 1.25)
+        if self.normalize_overlay.get():
+            a.set_xlim(-0.25, 1.25)
         self.event_canvas.draw()
 
             
