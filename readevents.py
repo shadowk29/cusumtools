@@ -91,7 +91,9 @@ class App(tk.Frame):
             height -= self.db_frame.winfo_height()
             height -= self.status_frame.winfo_height()
             height -= 79
-            width = height * 1.4
+            width = self.parent.winfo_width()
+            width -= self.stats_control_frame.winfo_width()
+            width -= 8
             try:
                 self.stats_f.set_size_inches(width / self.stats_f.dpi, height / self.stats_f.dpi)
                 self.rate_f.set_size_inches(width / self.stats_f.dpi, height / self.stats_f.dpi)
