@@ -444,7 +444,7 @@ class App(tk.Frame):
         self.event_info_display = tk.Label(self.event_control_frame, textvariable=self.event_info_string)
         self.plot_bad_events = tk.IntVar(0)
         self.plot_bad_events_check = tk.Checkbutton(self.event_control_frame, text='Plot Bad Events', variable = self.plot_bad_events)
-        
+        self.plot_event_overlay_button = tk.Button(self.event_control_frame, text='Overlay Events', command=self.plot_event_overlay)
         self.event_toolbar_frame.grid(row=1,column=0,columnspan=6)
         self.event_canvas.get_tk_widget().grid(row=0,column=0,columnspan=6)
         
@@ -461,6 +461,7 @@ class App(tk.Frame):
         self.delete_event_button.grid(row=5,column=0,columnspan=2,sticky=tk.E+tk.W)
         self.replicate_delete.grid(row=5,column=2,columnspan=2,sticky=tk.E+tk.W)
         self.plot_bad_events_check.grid(row=4,column=4,columnspan=2,stick=tk.E+tk.W)
+        self.plot_event_overlay_button.grid(row=6,column=0,columnspan=2, sticky=tk.E+tk.W)
 
 
         
@@ -1501,6 +1502,50 @@ class App(tk.Frame):
         semilist = np.squeeze(semilist)
         return np.hstack([np.array(a,dtype=float) for a in str(semilist).split(';')]).astype(np.float64)
 
+    def plot_event_overlay(self):
+        subset = self.subset_option.cget('text')
+        ratedb = self.ratedb
+        eventsdb_subset = self.eventsdb_subset[subset]
+
+
+        self.event_f.clf()
+        a = self.event_f.add_subplot(111)
+
+        labelsize=15
+        a.tick_params(axis='x', labelsize=labelsize)
+        a.tick_params(axis='y', labelsize=labelsize)
+
+    
+        a.set_xlabel('Normalized Time (us)', fontsize=labelsize)
+        a.set_ylabel('Zeroed Current (pA)', fontsize=labelsize)
+        ids = np.squeeze(sqldf('SELECT id from eventsdb_subset',locals()).values)
+        level_times = np.squeeze(sqldf('SELECT level_duration_us from eventsdb_subset',locals()).values)
+        baselines = np.squeeze(sqldf('SELECT effective_baseline_pA from eventsdb_subset',locals()).values)
+
+        for label, levels, baseline in zip(ids, level_times, baselines):
+            levels = [np.array(a,dtype=np.float64) for a in str(levels).split(';')]
+            ts = levels[0]
+            tf = np.sum(levels[:-1])
+            try:
+                event_file_path = self.events_folder+'/event_%05d.csv' % label
+                event_file = pd.read_csv(event_file_path,encoding='utf-8', names=['time', 'current', 'fit'])
+            except IOError:
+                try:
+                    event_file_path = self.events_folder+'/event_%08d.csv' % label
+                    event_file = pd.read_csv(event_file_path,encoding='utf-8', names=['time', 'current', 'fit'])
+                except IOError:
+                    self.event_info_string.set(event_file_path+' not found')
+                    return
+            times = event_file['time'].values
+            currents = event_file['current'].values
+            times -= ts
+            times /= (tf - ts)
+            currents -= baseline
+            currents *= np.sign(baseline)
+            a.plot(times, currents, alpha=0.1, color='b')
+        self.event_canvas.draw()
+
+            
     def plot_event(self):
         subset = self.subset_option.cget('text')
         ratedb = self.ratedb
