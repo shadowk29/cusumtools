@@ -1481,7 +1481,7 @@ class App(tk.Frame):
         logged_z = np.empty_like(z)
         for i in range(z.shape[0]):
             for j in range(z.shape[1]):
-                logged_z[i,j] = np.log10(z[i,j]) if z[i,j] > 0 else 0
+                logged_z[i,j] = np.log10(z[i,j]) if z[i,j] > 0 else -1
         self.a.imshow(logged_z.T, origin = 'lower', interpolation = 'gaussian', extent=[np.min(x),np.max(x),np.min(y),np.max(y)], aspect='auto')
         x = x[:-1] + np.diff(x)/2.0
         y = y[:-1] + np.diff(y)/2.0
