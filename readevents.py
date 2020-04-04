@@ -1402,7 +1402,7 @@ class App(tk.Frame):
                 col *= np.sign(np.average(col))
                 col = np.log10(col)
                 if calc_bins:
-                    numbins = int((max(col) - min(col))*len(col)**(1./3.)/(iqr(col)))
+                    numbins = int(2*(max(col) - min(col))*len(col)**(1./3.)/(iqr(col)))
                 self.ydata, self.xdata, patches = self.a.hist(col,bins=int(numbins),log=bool(logscale_y),histtype='step',stacked=False,fill=False,label=subset_list)
         else:
             self.a.set_xlabel(x_label, fontsize=labelsize)
@@ -1474,9 +1474,9 @@ class App(tk.Frame):
         y = np.log10(ysign*y_col) if bool(logscale_y) else y_col
 
         if calc_x_bins:
-            xbins = int((max(x)-min(x))*len(x)**(1./4.)/(iqr(x)))
+            xbins = int(2*(max(x)-min(x))*len(x)**(1./4.)/(iqr(x)))
         if calc_y_bins:
-            ybins = int((max(y)-min(y))*len(y)**(1./4.)/(iqr(y)))
+            ybins = int(2*(max(y)-min(y))*len(y)**(1./4.)/(iqr(y)))
         z, x, y, image = self.a.hist2d(x,y,bins=[int(xbins),int(ybins)],norm=matplotlib.colors.LogNorm())
         x = x[:-1] + np.diff(x)/2.0
         y = y[:-1] + np.diff(y)/2.0
