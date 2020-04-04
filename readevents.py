@@ -1641,8 +1641,8 @@ class App(tk.Frame):
             else:
                 a.plot(times, currents, alpha=alpha, color='b')
         if self.overlay_heatmap.get():
-            xbins = int(2*(max(x)-min(x))*len(x)**(1./4.)/(iqr(x)))
-            ybins = int(2*(max(y)-min(y))*len(y)**(1./4.)/(iqr(y)))
+            xbins = int(4*(max(x)-min(x))*len(x)**(1./4.)/(iqr(x)))
+            ybins = int(4*(max(y)-min(y))*len(y)**(1./4.)/(iqr(y)))
             self.z_heatmap_data, self.x_heatmap_data, self.y_heatmap_data, image = pl.hist2d(x, y, weights=w, bins=(xbins,ybins))
             a.imshow(self.z_heatmap_data.T, origin = 'lower', interpolation = 'gaussian', extent=[np.min(x),np.max(x),np.min(y),np.max(y)], aspect='auto')
             self.x_heatmap_data = self.x_heatmap_data[:-1] + np.diff(self.x_heatmap_data)/2.0
