@@ -476,6 +476,8 @@ class App(tk.Frame):
         self.use_histogram = tk.IntVar()
         self.use_histogram_check = tk.Checkbutton(self.rate_control_frame, text='Use Histogram', variable = self.use_histogram)
         self.use_histogram_check.grid(row=5,column=5,sticky=tk.E+tk.W)
+
+        
            
     def layout_event_tab(self):
         #single event view figure
@@ -523,6 +525,10 @@ class App(tk.Frame):
         self.plot_bad_events_check.grid(row=4,column=4,columnspan=2,stick=tk.E+tk.W)
         self.plot_event_overlay_button.grid(row=6,column=0,columnspan=2, sticky=tk.E+tk.W)
         self.overlay_heatmap_check.grid(row=6,column=2,columnspan=2,sticky=tk.E+tk.W)
+
+        self.export_heatmap_button = tk.Button(self.event_control_frame,text='Export Heatmap',command=self.export_plot_data)
+        self.export_heatmap_button.grid(row=6,column=4,columnspan=2,sticky=tk.E+tk.W)
+        self.export_heatmap_button['state'] = 'disabled'
 
 
         
@@ -1130,6 +1136,15 @@ class App(tk.Frame):
                 data[y_string] = self.ydata[i]
             data_frame = pd.DataFrame({k : pd.Series(v) for k,v in data.items()})
             data_frame.to_csv(data_path, index=False)
+        elif self.export_type == 'event_heatmap':
+            data = OrderedDict()
+            x_label = 'Normalized Time'
+            y_label = 'Current (pA)'
+            data[x_label] = self.x_heatmap_data
+            data[y_label] = self.y_heatmap_data
+            data['Count'] = self.z_heatmap_data
+            data_frame = pd.DataFrame(data)
+            data_frame.to_csv(data_path, index=False)
         else:
             self.status_string.set("Unable to export plot")
 
@@ -1564,11 +1579,13 @@ class App(tk.Frame):
         labelsize=15
         a.tick_params(axis='x', labelsize=labelsize)
         a.tick_params(axis='y', labelsize=labelsize)
-
+        self.export_heatmap_button['state'] = 'disabled'
         if self.overlay_heatmap.get():
             x = np.empty(0)
             y = np.empty(0)
             w = np.empty(0)
+            self.export_type = 'event_heatmap'
+            self.export_heatmap_button['state'] = 'normal'
         a.set_xlabel('Normalized Time', fontsize=labelsize)
         a.set_ylabel('Zeroed Current (pA)', fontsize=labelsize)
         ids = np.squeeze(sqldf('SELECT id from eventsdb_subset',locals()).values)
@@ -1606,7 +1623,7 @@ class App(tk.Frame):
             times /= (tf - ts)
             currents -= baseline
             currents *= np.sign(baseline)
-            alpha = 15/len(ids)*(1 - (duration - min_duration)/(max_duration - min_duration))
+            alpha = 15/len(ids)*(1 - 0.99*(duration - min_duration)/(max_duration - min_duration))
             currents = currents[times > -0.25]
             times = times[times > -0.25]
             currents = currents[times < 1.25]
@@ -1620,7 +1637,14 @@ class App(tk.Frame):
         if self.overlay_heatmap.get():
             xbins = int(5*(max(x)-min(x))*len(x)**(1./4.)/(iqr(x)))
             ybins = int(5*(max(y)-min(y))*len(y)**(1./4.)/(iqr(y)))
-            a.hist2d(x, y, weights=w, bins=(xbins,ybins))
+            self.z_heatmap_data, self.x_heatmap_data, self.y_heatmap_data, image = a.hist2d(x, y, weights=w, bins=(xbins,ybins))
+            self.x_heatmap_data = self.x_heatmap_data[:-1] + np.diff(self.x_heatmap_data)/2.0
+            self.y_heatmap_data = self.y_heatmap_data[:-1] + np.diff(self.y_heatmap_data)/2.0
+            xy = [list(zip([a]*len(self.y_heatmap_data),self.y_heatmap_data)) for a in self.x_heatmap_data]
+            self.z_heatmap_data = np.ravel(self.z_heatmap_data)
+            xy = np.reshape(xy,(len(self.z_heatmap_data),2))
+            self.x_heatmap_data = xy[:,0]
+            self.y_heatmap_data = xy[:,1]
         self.event_canvas.draw()
 
             
