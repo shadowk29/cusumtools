@@ -1477,7 +1477,12 @@ class App(tk.Frame):
             xbins = int(2*(max(x)-min(x))*len(x)**(1./4.)/(iqr(x)))
         if calc_y_bins:
             ybins = int(2*(max(y)-min(y))*len(y)**(1./4.)/(iqr(y)))
-        z, x, y, image = self.a.hist2d(x,y,bins=[int(xbins),int(ybins)],norm=matplotlib.colors.LogNorm())
+        z, x, y, image = pl.hist2d(x,y,bins=[int(xbins),int(ybins)],norm=matplotlib.colors.LogNorm())
+        logged_z = np.empty_like(z)
+        for i in range(z.shape[0]):
+            for j in range(z.shape[1]):
+                logged_z[i,j] = np.log10(z[i,j]) if z[i,j] > 0 else 0
+        self.a.imshow(logged_z.T, origin = 'lower', interpolation = 'gaussian', extent=[np.min(x),np.max(x),np.min(y),np.max(y)], aspect='auto')
         x = x[:-1] + np.diff(x)/2.0
         y = y[:-1] + np.diff(y)/2.0
         xy = [list(zip([a]*len(y),y)) for a in x]
@@ -1543,6 +1548,7 @@ class App(tk.Frame):
                 self.plot_2d_histogram()
             except AttributeError:
                 self.status_string.set("X and Y must have the same length")
+                raise
             except ValueError:
                 self.status_string.set("You cannot mix single-entry and multi-entry columns in this plot type")
         elif option == '3D Scatterplot':
@@ -1635,9 +1641,10 @@ class App(tk.Frame):
             else:
                 a.plot(times, currents, alpha=alpha, color='b')
         if self.overlay_heatmap.get():
-            xbins = int(5*(max(x)-min(x))*len(x)**(1./4.)/(iqr(x)))
-            ybins = int(5*(max(y)-min(y))*len(y)**(1./4.)/(iqr(y)))
-            self.z_heatmap_data, self.x_heatmap_data, self.y_heatmap_data, image = a.hist2d(x, y, weights=w, bins=(xbins,ybins))
+            xbins = int(2*(max(x)-min(x))*len(x)**(1./4.)/(iqr(x)))
+            ybins = int(2*(max(y)-min(y))*len(y)**(1./4.)/(iqr(y)))
+            self.z_heatmap_data, self.x_heatmap_data, self.y_heatmap_data, image = pl.hist2d(x, y, weights=w, bins=(xbins,ybins))
+            a.imshow(self.z_heatmap_data.T, origin = 'lower', interpolation = 'gaussian', extent=[np.min(x),np.max(x),np.min(y),np.max(y)], aspect='auto')
             self.x_heatmap_data = self.x_heatmap_data[:-1] + np.diff(self.x_heatmap_data)/2.0
             self.y_heatmap_data = self.y_heatmap_data[:-1] + np.diff(self.y_heatmap_data)/2.0
             xy = [list(zip([a]*len(self.y_heatmap_data),self.y_heatmap_data)) for a in self.x_heatmap_data]
