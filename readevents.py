@@ -64,12 +64,12 @@ class App(tk.Frame):
         self.layout_status_panel()
         self.set_frame_size()
         self.disable_options()
-        self.set_scaling(self.status_frame)
-        self.set_scaling(self.db_frame)
-        self.parent.bind("<Configure>", self.onsize)
-        self.oldwidth = self.parent.winfo_width()
-        self.oldheight = self.parent.winfo_height()
-        self.parent.state('zoomed')
+        #self.set_scaling(self.status_frame)
+        #self.set_scaling(self.db_frame)
+        #self.parent.bind("<Configure>", self.onsize)
+        #self.oldwidth = self.parent.winfo_width()
+        #self.oldheight = self.parent.winfo_height()
+        #self.parent.state('zoomed')
         
         
             
@@ -629,6 +629,7 @@ class App(tk.Frame):
         
         ##perform clustering
         clusterer = hdbscan.HDBSCAN(min_cluster_size=self.min_cluster_pts.get(), min_samples=self.min_pts.get(), gen_min_span_tree=True, cluster_selection_epsilon=self.eps.get(), prediction_data=True)
+        #clusterer = hdbscan.HDBSCAN(min_cluster_size=self.min_cluster_pts.get(), prediction_data=True)
         clusterer.fit(data)
         palette = sns.color_palette()
         cluster_colors = [sns.desaturate(palette[col], sat)
@@ -638,8 +639,16 @@ class App(tk.Frame):
         #soft_clusters = hdbscan.all_points_membership_vectors(clusterer)
         #out = np.array([1 - np.sum(soft_clusters, axis=1)]).T
         #full = np.concatenate((out, soft_clusters), axis=1)
-        #cluster_colors = [palette[np.argmax(x)]
-        #          for x in full]
+
+        #print(out[:10])
+        #print(soft_clusters[:10])
+        #print(full[:10])
+        #print([np.argmax(x)-1 for x in full][:10])
+        #print(clusterer.labels_[:10])
+        #for actual, soft in zip(clusterer.labels_, [np.argmax(x)-1 for x in full]):
+        #    if actual != soft:
+        #        print(actual, soft)
+        #cluster_colors = [palette[np.argmax(x)] for x in full]
         
         
         self.cluster_f.clf()
